@@ -2,8 +2,8 @@ use glutin::{Event, ElementState, VirtualKeyCode, MouseButton};
 use std::time;
 use std::time::Instant;
 use std::ops::{FnMut};
-use na;
-use na::{Vector3, ApproxEq, Norm};
+use pt::math;
+use pt::math::{Vector3, ApproxEq, Norm, Coord};
 use pt::utils::consts;
 use pt::RenderCamera;
 use fpscamera::{FPSCamera};
@@ -19,8 +19,8 @@ pub trait CameraController {
 #[derive(Debug, Clone, Copy)]
 pub struct FPSCameraController {
     cam: FPSCamera,
-    mouse_sens: f32,
-    move_speed: f32,
+    mouse_sens: Coord,
+    move_speed: Coord,
 
     move_forward: bool,
     move_backward: bool,
@@ -34,7 +34,7 @@ pub struct FPSCameraController {
 }
 
 impl FPSCameraController {
-    pub fn new(cam: FPSCamera, mouse_sensitivity: f32, move_speed: f32) -> FPSCameraController {
+    pub fn new(cam: FPSCamera, mouse_sensitivity: Coord, move_speed: Coord) -> FPSCameraController {
         FPSCameraController {
             cam: cam,
             mouse_sens: mouse_sensitivity,
@@ -51,20 +51,20 @@ impl FPSCameraController {
         }
     }
 
-    pub fn mouse_sensitivity(&self) -> f32 {
+    pub fn mouse_sensitivity(&self) -> Coord {
         self.mouse_sens
     }
 
-    pub fn set_mouse_sensitivity(&mut self, val: f32) -> &mut FPSCameraController {
+    pub fn set_mouse_sensitivity(&mut self, val: Coord) -> &mut FPSCameraController {
         self.mouse_sens = val;
         self
     }
 
-    pub fn move_speed(&self) -> f32 {
+    pub fn move_speed(&self) -> Coord {
         self.move_speed
     }
 
-    pub fn set_move_speed(&mut self, speed: f32) -> &mut FPSCameraController {
+    pub fn set_move_speed(&mut self, speed: Coord) -> &mut FPSCameraController {
         self.move_speed = speed;
         self
     }
@@ -77,8 +77,8 @@ impl FPSCameraController {
         &mut self.cam
     }
 
-    fn apply_move(&mut self, delta_time: f32) {
-        let mut mdir: Vector3<f32> = na::zero();
+    fn apply_move(&mut self, delta_time: Coord) {
+        let mut mdir: Vector3<Coord> = math::zero();
         if self.move_forward {
             mdir += self.cam.forward();
         }
@@ -98,10 +98,10 @@ impl FPSCameraController {
             mdir -= Vector3::from(&consts::UP_VEC);
         }
 
-        if !mdir.approx_eq(&na::zero()) {
+        if !mdir.approx_eq(&math::zero()) {
             mdir = mdir.normalize();
         }
-        self.cam.pos_add(&(mdir * self.move_speed * delta_time));
+        self.cam.pos_add(&(mdir * self.move_speed * (delta_time as Coord) ));
     }
 }
 
@@ -112,7 +112,7 @@ impl CameraController for FPSCameraController {
                                                        cur_locker: &'c mut FnMut(bool)) {
         let now = Instant::now();
         let dt = now.duration_since(self.last_tp);
-        let delta_time = dt.as_secs() as f32 + 0.1e-8 * (dt.subsec_nanos() as f32);
+        let delta_time = dt.as_secs() as Coord + 0.1e-8 * (dt.subsec_nanos() as Coord);
         self.last_tp = now;
 
         for event in event_iter {
@@ -135,8 +135,8 @@ impl CameraController for FPSCameraController {
                         let cy = self.cam.height() / 2;
                         let dx = cx as i32 - x;
                         let dy = cy as i32 - y;
-                        let rx = dx as f32 / self.cam.width() as f32 * self.mouse_sens * self.cam.fovx();
-                        let ry = dy as f32 / self.cam.height() as f32 * self.mouse_sens * self.cam.fovx();
+                        let rx = dx as Coord / self.cam.width() as Coord * self.mouse_sens * self.cam.fovx();
+                        let ry = dy as Coord / self.cam.height() as Coord * self.mouse_sens * self.cam.fovx();
 
                         self.cam.yaw_add(ry).pitch_add(rx);
                         set_cursor_pos(cx as i32, cy as i32);

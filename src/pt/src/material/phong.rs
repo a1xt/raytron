@@ -1,5 +1,5 @@
 use ::{Material, Color};
-use math::{Vector3f, Point3f, Ray3f};
+use math::{Vector3f, Point3f, Ray3f, Coord};
 use math;
 use color;
 use std::f32::consts::{PI};
@@ -34,12 +34,12 @@ impl Phong {
     fn random_vector(&self, normal: &Vector3f) -> Vector3f {
 
         let mut rng = rand::thread_rng();
-        let r01 = Range::new(0.0, 1.0f32);
+        let r01 = Range::new(0.0, 1.0 as Coord);
         let u1 = r01.ind_sample(&mut rng);
         let u2 = r01.ind_sample(&mut rng);
 
-        let alpha = (1.0 - u1).powf(1.0 / (self.n as f32 + 1.0)).sqrt().acos();
-        let phi = 2.0 * PI * u2;
+        let alpha = (1.0 - u1).powf(1.0 / (self.n as Coord + 1.0)).sqrt().acos();
+        let phi = 2.0 * (PI as Coord) * u2;
 
         let xs = alpha.sin() * phi.cos();
         let ys = alpha.cos();
@@ -77,8 +77,9 @@ impl Material for Phong {
         // } else {
 
         // }
-        let k = (self.n as f32 + 2.0) / (self.n as f32 + 1.0) * normal.dot(reflected_ray);
-        color::mul_s(&self.color, k)
+  
+        let k = (self.n as Coord + 2.0) / (self.n as Coord + 1.0) * normal.dot(reflected_ray);
+        color::mul_s(&self.color, k as f32)
     }
 
     fn reflect_ray(&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> Ray3f {
@@ -116,8 +117,8 @@ impl Material for Phong {
             //     }
             // };
             let cos_theta = surface_normal.dot(&r.dir).abs();
-            let k = ((self.n as f32 + 2.0) / (self.n as f32 + 1.0)) * cos_theta;// * (1.0 / ps);
-            let c = color::mul_s(&self.color, k);
+            let k = ((self.n as Coord + 2.0) / (self.n as Coord + 1.0)) * cos_theta;// * (1.0 / ps);
+            let c = color::mul_s(&self.color, k as f32);
             //let c = color::mul_s(&color::WHITE, k);
 
             (r, c)

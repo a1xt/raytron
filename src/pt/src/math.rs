@@ -1,12 +1,15 @@
 pub extern crate nalgebra as na;
 pub use self::na::*;
 
-pub type Ray3f = Ray3<f32>;
-pub type Matrix4f = Matrix4<f32>;
-pub type Vector3f = Vector3<f32>;
-pub type Vector4f = Vector4<f32>;
-pub type Point3f = Point3<f32>;
-pub type Point4f = Point4<f32>;
+
+pub type Coord = f64;
+
+pub type Ray3f = Ray3<Coord>;
+pub type Matrix4f = Matrix4<Coord>;
+pub type Vector3f = Vector3<Coord>;
+pub type Vector4f = Vector4<Coord>;
+pub type Point3f = Point3<Coord>;
+pub type Point4f = Point4<Coord>;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F> {
@@ -23,15 +26,15 @@ impl<F> Ray3<F> {
     }
 }
 
-pub fn intersection_with_sphere<T: BaseFloat>(sphere_pos: &Point3<T>, sphere_radius: T, ray: &Ray3<T>) -> Option<T> {
-    debug_assert!(ray.dir.norm().abs_sub(T::one()) <= self::Cast::from(1.0e-6f64));
+pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Coord, ray: &Ray3f) -> Option<Coord> {
+    debug_assert!(ray.dir.norm().abs_sub(1.0) <= 1.0e-6);
     use std;
 
     let l = ray.origin - *sphere_pos;
     let b = dot(&l, &ray.dir);
     let c = dot(&l, &l) - sphere_radius * sphere_radius;
     let d2 = b * b - c;
-    if d2 >= T::zero() {
+    if d2 >= 0.0 {
         //let d = d2.sqrt();
         let t_min = -b - (b * b - c).sqrt();
         let t_max = -b + (b * b - c).sqrt();
@@ -41,10 +44,10 @@ pub fn intersection_with_sphere<T: BaseFloat>(sphere_pos: &Point3<T>, sphere_rad
         //let t2 = -b + d;
         //let (t_min, t_max) = (T::min(t1, t2), T::max(t1, t2));
 
-        if t_min >= T::zero() {
+        if t_min >= 0.0 {
             return Some(t_min);
         } 
-        else if t_max > T::zero() {
+        else if t_max > 0.0 {
             return Some(t_max);
         }
     }
@@ -111,15 +114,15 @@ pub fn hs_uniform_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
 
 pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
     //use std::f32::{cos, sin};
-    use std::f32::consts::{PI};
+    use std::f64::consts::{PI};
 
     let mut rng = rand::thread_rng();
-    let r01 = Range::new(0.0, 1.0f32);
+    let r01 = Range::new(0.0, 1.0 as Coord);
     let u1 = r01.ind_sample(&mut rng);
     let u2 = r01.ind_sample(&mut rng);
 
     let theta = (1.0 - u1).sqrt().acos();
-    let phi = 2.0 * PI * u2;
+    let phi = 2.0 * (PI as Coord) * u2;
 
     let xs = theta.sin() * phi.cos();
     let ys = theta.cos();
@@ -149,9 +152,9 @@ pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
 pub fn sph_uniform_sampling() -> Vector3f {
     let mut vec = zero();
     loop {
-        let Closed01(mut x) = random::<Closed01<f32>>();
-        let Closed01(mut y) = random::<Closed01<f32>>();
-        let Closed01(mut z) = random::<Closed01<f32>>();
+        let Closed01(mut x) = random::<Closed01<Coord>>();
+        let Closed01(mut y) = random::<Closed01<Coord>>();
+        let Closed01(mut z) = random::<Closed01<Coord>>();
         x -= 0.5;
         y -= 0.5;
         z -= 0.5;

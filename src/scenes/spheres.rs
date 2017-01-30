@@ -25,7 +25,7 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
             Point3f::new(1.0e3 + 50.0, 0.0, 0.0),
             1.0e3, ////
             //Box::new(Diffuse::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, None)),
-            Box::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 100000)),
+            Box::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 20)),
         ),
         false
     );
@@ -84,7 +84,7 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
             Point3f::new(15.0, -35.0, 5.0),
             15.,
             //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
-            Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.2, 0.8, 100)),
+            Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.3, 0.7, 100000)),
         ),
         false
     );
@@ -92,7 +92,7 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
     shp_list.add_shape(
         Sphere::new(
             Point3f::new(0.0, 60.0, -10.0),
-            15.0f32,
+            15.0,
             Box::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [12.0, 12.0, 12.0f32, 1.0]}))),
         ),
         true

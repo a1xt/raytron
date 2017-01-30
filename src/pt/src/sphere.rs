@@ -1,4 +1,4 @@
-use math::{intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f};
+use math::{intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f, Coord};
 use super::{Surface, SurfacePoint, Material};
 use std::boxed::Box;
 use math;
@@ -6,12 +6,12 @@ use math;
 //#[derive(Clone)]
 pub struct Sphere {
     pub position: Point3f,
-    pub radius: f32,
+    pub radius: Coord,
     material: Box<Material>,
 }
 
 impl Sphere {
-    pub fn new(position: Point3f, radius: f32, mat: Box<Material>) -> Sphere {
+    pub fn new(position: Point3f, radius: Coord, mat: Box<Material>) -> Sphere {
         Sphere {
             position: position,
             radius: radius,
@@ -31,7 +31,7 @@ impl Sphere {
 
 impl Surface for Sphere {
 
-    fn intersection (&self, ray: &Ray3f) -> Option<(f32, SurfacePoint)> {
+    fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)> {
         if let Some(t) = intersection_with_sphere(&self.position, self.radius, ray) {
             let pos = ray.origin + ray.dir * t;
             let norm = self.normal_to(&pos);

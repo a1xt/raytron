@@ -6,6 +6,7 @@ use std;
 use std::f32::consts::PI;
 use rand::{Closed01};
 use rand;
+use utils::consts;
 
 
 pub struct PathTracer {
@@ -46,9 +47,9 @@ impl PathTracer {
             // let reflected = self.trace_path_rec::<S, C>(scene, &new_ray, depth - 1);
             // //println!("brdf: {:?}, reflected: {:?}", color, reflected);
             // return color::sum(&le, &color::mul_v(&reflected, &color));
-
-            let (mut new_ray, reflectance) = mat.brdf(&ray.dir, &sp.position, &sp.normal);
-            new_ray.origin += sp.normal * 0.0001;
+            let shifted_ray_pos = sp.position + sp.normal * consts::RAY_SHIFT_DISTANCE;
+            //let (mut new_ray, reflectance) = mat.brdf(&ray.dir, &sp.position, &sp.normal);
+            let (mut new_ray, reflectance) = mat.brdf(&ray.dir, &shifted_ray_pos, &sp.normal);
             let li: Color = self.trace_path_rec::<S, C>(scene, &new_ray, depth - 1);
 
             return color::sum(&le, &color::mul_v(&reflectance, &li));

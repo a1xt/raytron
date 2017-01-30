@@ -1,10 +1,12 @@
-use math::{Ray3f, Matrix4f, Vector3f, Point3f};
+use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord};
 use math::{Norm};
 use math;
 use super::{SurfacePoint, Color, RenderSettings, Image};
 use std::f32;
 use image::ImageBuffer;
 use color;
+use rand::{Closed01};
+use rand;
 
 
 pub trait RenderCamera {
@@ -13,10 +15,10 @@ pub trait RenderCamera {
 
     fn height(&self) -> u32;
     fn width(&self) -> u32;
-    fn aspect(&self) -> f32;
-    fn znear(&self) -> f32;
-    fn zfar(&self) -> f32;
-    fn fovx(&self) -> f32;
+    fn aspect(&self) -> Coord;
+    fn znear(&self) -> Coord;
+    fn zfar(&self) -> Coord;
+    fn fovx(&self) -> Coord;
 
     fn pos(&self) -> Point3f;
     fn up_vec(&self) -> Vector3f;
@@ -26,7 +28,7 @@ pub trait RenderCamera {
 
 pub trait Surface {
     /// return (t, sp)
-    fn intersection (&self, ray: &Ray3f) -> Option<(f32, SurfacePoint)>;
+    fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)>;
     fn random_point (&self) -> SurfacePoint;
 }
 
@@ -51,10 +53,10 @@ pub trait Renderer<S: SceneHolder, C: RenderCamera> {
 
         let pnum: f32 = if pass_num == 0 { 1.0 } else { pass_num as f32 };
 
-        let ratio = camera.height() as f32 / camera.width() as f32;
-        let x = 2.0 * (0.5f32 * camera.fovx()).tan();
+        let ratio = camera.height() as Coord / camera.width() as Coord;
+        let x = 2.0 * (0.5 * camera.fovx()).tan() as Coord;
         let y = ratio * x;
-        let dx = x / camera.width() as f32;
+        let dx = x / camera.width() as Coord;
         let dy = dx;
 
         let x0 = (-0.5) * x + dx * 0.5;
@@ -66,10 +68,14 @@ pub trait Renderer<S: SceneHolder, C: RenderCamera> {
         let right = camera.right_vec().normalize();
 
         for i in 0..camera.height() {
-            for j in 0..camera.width() {            
+            for j in 0..camera.width() {      
 
-                let rx = x0 + dx * (j as f32);
-                let ry = y0 - dy * (i as f32);
+                let Closed01(rndx) = rand::random::<Closed01<Coord>>();
+                let Closed01(rndy) = rand::random::<Closed01<Coord>>();      
+
+                let rx = x0 + dx * (j as Coord) + dx * (rndx - 0.5);
+                let ry = y0 - dy * (i as Coord) + dy * (rndy - 0.5);
+
                 let rdir = forward + right * rx + up * ry;
                 let ray = Ray3f::new(origin, rdir.normalize());
 

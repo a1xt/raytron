@@ -1,4 +1,4 @@
-use math::{Ray3f};
+use math::{Ray3f, Coord};
 use traits::{Surface, SceneHolder, Material};
 use ::{SurfacePoint};
 use std::ops::Deref;
@@ -31,7 +31,7 @@ impl<'a> ShapeList<'a> {
 
 impl<'a> SceneHolder for ShapeList<'a> {
     fn intersection_with_scene(&self, ray: &Ray3f) -> Option<SurfacePoint> {
-        let mut t_min: f32 = std::f32::MAX;
+        let mut t_min: Coord = std::f32::MAX as Coord;
         let mut sp = None;
 
         for shape in self.shapes.iter() {

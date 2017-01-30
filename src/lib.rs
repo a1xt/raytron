@@ -24,6 +24,8 @@ use gfx::pso::resource::TextureSampler;
 use gfx::Bundle;
 use glutin::{CursorState};
 
+use pt::math::{Coord};
+
 pub use camera_controller::{CameraController, FPSCameraController};
 pub use fpscamera::{FPSCamera};
 
@@ -117,7 +119,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
                 FPSCamera::new(
                     screen_width,
                     screen_height,
-                    utils::to_rad(90.0),
+                    (90.0 as Coord).to_radians(),
                     1.0,
                     10_000.0),
                 0.5,

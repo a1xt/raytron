@@ -5,6 +5,7 @@ use traits::{Renderer, SceneHolder, RenderCamera};
 use std::f32::consts::PI;
 use rand::{Closed01};
 use rand;
+use utils::consts;
 
 
 pub struct DbgRayCaster {
@@ -29,7 +30,7 @@ impl DbgRayCaster {
                     let light_point = light.random_point();
 
                     let mut shadow_ray = Ray3f::new(sp.position, (light_point.position - sp.position).normalize());
-                    shadow_ray.origin += sp.normal * 0.1;
+                    shadow_ray.origin += sp.normal * consts::RAY_SHIFT_DISTANCE;
                     
 
                     //return Color{data: [sp.normal.x.abs(), sp.normal.y.abs(), sp.normal.z.abs(), 1.0]}; 
@@ -40,11 +41,17 @@ impl DbgRayCaster {
                         if let Some(_) = lp.material.emission() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
-                            return color::mul_s(&color::WHITE, cos_theta);
+                            return color::mul_s(&color::WHITE, cos_theta as f32);
                         }
                          else {
                             if (lp.normal.dot(&shadow_ray.dir) > 0.0) {
-                               return color::RED;
+                                let t = (lp.position - shadow_ray.origin).norm();
+                                if rand::random::<u32>() % 10000 <= 2 {
+                                    println!("tt = {}", t);
+                                }
+                                
+
+                                return color::RED;
                             }
                             //return color::RED;
                         }
