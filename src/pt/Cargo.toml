@@ -1,0 +1,13 @@
+[package]
+name = "pathtracer"
+version = "0.1.0"
+authors = ["Alexey Terekhov"]
+
+[lib]
+name = "pathtracer"
+path = "src/lib.rs"
+
+[dependencies]
+nalgebra = "*"
+image = "*"
+rand = "*"

@@ -1,0 +1,36 @@
+[package]
+name = "app"
+version = "0.1.0"
+authors = ["Alexey Terekhov"]
+
+[lib]
+name = "pt_app"
+
+[dependencies]
+
+gfx_core = { git = 'https://github.com/gfx-rs/gfx' }
+gfx_device_gl = { git = 'https://github.com/gfx-rs/gfx' }
+gfx_window_glutin = { git = 'https://github.com/gfx-rs/gfx' }
+gfx = { git = 'https://github.com/gfx-rs/gfx' }
+
+glutin = "*"
+genmesh = "*"
+image = "*"
+nalgebra = "*"
+obj-rs = "*"
+pathtracer = {path = "src/pt", version = "*"}
+
+
+
+[[example]]
+name = "test"
+path = "examples/test/main.rs"
+
+[[example]]
+name = "apptest"
+path = "examples/apptest/apptest.rs"
+
+[[example]]
+name = "spheres"
+path = "examples/spheres/spheres.rs"
+
