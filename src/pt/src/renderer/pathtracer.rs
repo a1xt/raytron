@@ -8,17 +8,20 @@ use rand::{Closed01};
 use rand;
 use utils::consts;
 
+use super::inner::{RendererHelper, CameraRayGenerator};
 
 pub struct PathTracer {
-
+    ray_gen: CameraRayGenerator,
 }
 
 impl PathTracer {
     pub fn new () -> PathTracer {
-        PathTracer { }
+        PathTracer {
+            ray_gen: CameraRayGenerator::new(),
+        }
     }
 
-    fn trace_path_rec<S, C>(&mut self, scene: &S, ray: &Ray3f, depth: u32) -> Color
+    fn trace_path_rec<S, C>(&self, scene: &S, ray: &Ray3f, depth: u32) -> Color
         where S: SceneHolder, C: RenderCamera
     {
 
@@ -111,10 +114,22 @@ impl PathTracer {
 
 }
 
-impl<S: SceneHolder, C: RenderCamera> Renderer<S, C> for PathTracer {
-    fn trace_path(&mut self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color {
+impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for PathTracer {
+    fn trace_path(&self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color {
         let mut res = self.trace_path_rec::<S, C>(scene, &initial_ray, setup.path_depth);
 
         res        
+    }
+
+    
+    
+    fn get_ray(&self, _ : &C, x: u32, y: u32) -> Ray3f {
+        self.ray_gen.get_ray(x, y)
+    }
+}
+
+impl<S:SceneHolder + Sync, C: RenderCamera + Sync> Renderer<S, C> for PathTracer {
+    fn pre_render(&mut self, scene: &S, camera: &C, setup: &RenderSettings) {
+        self.ray_gen = CameraRayGenerator::with_camera(camera);
     }
 }

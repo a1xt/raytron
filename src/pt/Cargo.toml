@@ -11,3 +11,4 @@ path = "src/lib.rs"
 nalgebra = "*"
 image = "*"
 rand = "*"
+scoped_threadpool =  {version = "0.1.*", git = "https://github.com/Kimundi/scoped-threadpool-rs"}

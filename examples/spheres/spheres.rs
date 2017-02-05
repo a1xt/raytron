@@ -30,8 +30,8 @@ use std::string::{String, ToString};
 use glutin::{Event, ElementState, VirtualKeyCode, MouseButton};
 
 fn main () {
-    let width = 400u32;
-    let height = 300u32;
+    let width = 800u32;
+    let height = 600u32;
 
     let tex_w = width as u16;
     let tex_h = height as u16;
@@ -64,8 +64,9 @@ fn main () {
     spheres::setup_camera(app.cam_ctrl_mut());
     let mut rdr = PathTracer::new();
     let mut dbg_rdr = DbgRayCaster::new();
-    let setup = RenderSettings::new(128, 8);    // (samples, depth);
-    let dbg_setup = RenderSettings::new(1, 1);
+    // RenderSettings::new(samples, depth);
+    let setup = RenderSettings::new(128, 8).with_threads(4, (80, 60));    
+    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, (200, 150));
     let mut img: Image = Image::new(width, height);
     
     
@@ -94,9 +95,12 @@ fn main () {
     let mut pass_num = 0;
     while app.run() {
         if dbg {
-            dbg_rdr.render_scene(&scene, app.cam_ctrl().camera(), &dbg_setup, &mut img);
+            dbg_rdr.render_scene_threaded(&scene, app.cam_ctrl().camera(), &dbg_setup, &mut img);
         } else {
-            rdr.render_pass(&scene, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
+            if pass_num == 0 {
+                rdr.pre_render(&scene, app.cam_ctrl().camera(), &setup);
+            }
+            rdr.render_pass_threaded(&scene, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
             pass_num += 1;
             println!("pass_num: {}", pass_num);
         }

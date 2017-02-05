@@ -7,17 +7,21 @@ use rand::{Closed01};
 use rand;
 use utils::consts;
 
+use super::inner::{RendererHelper, CameraRayGenerator};
+
 
 pub struct DbgRayCaster {
-
+    ray_gen: CameraRayGenerator,
 }
 
 impl DbgRayCaster {
     pub fn new () -> DbgRayCaster {
-        DbgRayCaster { }
+        DbgRayCaster {
+            ray_gen: CameraRayGenerator::new(),
+        }
     }
 
-    fn trace_path_rec<S, C>(&mut self, scene: &S, ray: &Ray3f, depth: u32) -> Color
+    fn trace_path_rec<S, C>(&self, scene: &S, ray: &Ray3f, depth: u32) -> Color
         where S: SceneHolder, C: RenderCamera
     {
 
@@ -33,7 +37,7 @@ impl DbgRayCaster {
                     shadow_ray.origin += sp.normal * consts::RAY_SHIFT_DISTANCE;
                     
 
-                    //return Color{data: [sp.normal.x.abs(), sp.normal.y.abs(), sp.normal.z.abs(), 1.0]}; 
+                    let color = Color{data: [sp.normal.x.abs() as f32, sp.normal.y.abs() as f32, sp.normal.z.abs() as f32, 1.0]}; 
 
 
                     if let Some(lp) = scene.intersection_with_scene(&shadow_ray){
@@ -41,17 +45,17 @@ impl DbgRayCaster {
                         if let Some(_) = lp.material.emission() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
-                            return color::mul_s(&color::WHITE, cos_theta as f32);
+                            return color::mul_s(&color, cos_theta as f32);
                         }
                          else {
-                            if (lp.normal.dot(&shadow_ray.dir) > 0.0) {
+                            if lp.normal.dot(&shadow_ray.dir) > 0.0 {
                                 let t = (lp.position - shadow_ray.origin).norm();
                                 if rand::random::<u32>() % 10000 <= 2 {
                                     println!("tt = {}", t);
                                 }
                                 
 
-                                return color::RED;
+                                //return color::RED;
                             }
                             //return color::RED;
                         }
@@ -75,57 +79,22 @@ impl DbgRayCaster {
     
     }
 
-
-//     fn trace_path_rec<S, C>(&mut self, scene: &S, ray: &Ray3f, depth: u32) -> Color
-//         where S: SceneHolder, C: RenderCamera
-//     {
-//         if depth == 0 {
-//             return color::BLACK;
-//         }
-
-//         if let Some(sp) = scene.intersection_with_scene(ray) {
-//             let mat = sp.material;
-
-//             let Closed01(rnd) = rand::random::<Closed01<f32>>();
-//             let pe = 0.5f32;
-//             let ip = 1.0 / pe;
-//             if rnd < pe { // emmited
-//                 let le = if let Some(c) = mat.emission() {
-//                     c
-//                 } else {
-//                     color::BLACK
-//                     //color::GREEN
-//                 };
-//                 return color::mul_s(&le, ip);
-
-//             } else { // reflected
-
-//                 let new_ray = mat.reflect_ray(&ray.dir, &sp.position, &sp.normal);
-//                 let cos_theta = new_ray.dir.dot(&sp.normal);                
-        
-//                 //let k =  2.0 * ip * cos_theta;       
-//                 let k = ip;
-
-//                 let r = self.trace_path_rec::<S, C>(scene, &new_ray, depth - 1);
-//                 let m = mat.reflectance();
-//                 return  color::mul_s(&color::mul_v(&r, &m), k);
-
-//             }
-
-//         } else {
-//             return color::BLACK;
-//             //return color::RED;
-//         }
-
-//     }
-
-
 }
 
-impl<S: SceneHolder, C: RenderCamera> Renderer<S, C> for DbgRayCaster {
-    fn trace_path(&mut self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color {
+impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for DbgRayCaster {
+    fn trace_path(&self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color {
         let mut res = self.trace_path_rec::<S, C>(scene, &initial_ray, setup.path_depth);
 
         res        
+    }
+
+    fn get_ray(&self, _ : &C, x: u32, y: u32) -> Ray3f {
+        self.ray_gen.get_ray(x, y)
+    }
+}
+
+impl<S: SceneHolder + Sync, C: RenderCamera + Sync> Renderer<S, C> for DbgRayCaster {
+    fn pre_render(&mut self, scene: &S, camera: &C, setup: &RenderSettings) {
+        self.ray_gen = CameraRayGenerator::with_camera(camera);
     }
 }
