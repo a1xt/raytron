@@ -30,8 +30,13 @@ use std::string::{String, ToString};
 use glutin::{Event, ElementState, VirtualKeyCode, MouseButton};
 
 fn main () {
-    let width = 800u32;
-    let height = 600u32;
+    let width = 400u32;
+    let height = 300u32;
+
+    //let pt_render_block = (64, 64);
+    //let dbg_render_block = (128, 128);
+    let pt_render_block = (80, 60);
+    let dbg_render_block = (100, 75);
 
     let tex_w = width as u16;
     let tex_h = height as u16;
@@ -60,13 +65,16 @@ fn main () {
         gfx::format::Swizzle::new()
     ).unwrap();
 
+
+    // RenderSettings::new(samples, depth);
+    let setup = RenderSettings::new(128, 4).with_threads(4, pt_render_block);    
+    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_block);
+
     let scene = spheres::create_scene();
     spheres::setup_camera(app.cam_ctrl_mut());
-    let mut rdr = PathTracer::new();
+    let mut rdr = PathTracer::new(&setup).with_direct_illumination();
     let mut dbg_rdr = DbgRayCaster::new();
-    // RenderSettings::new(samples, depth);
-    let setup = RenderSettings::new(128, 8).with_threads(4, (80, 60));    
-    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, (200, 150));
+    
     let mut img: Image = Image::new(width, height);
     
     

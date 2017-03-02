@@ -1,6 +1,6 @@
 use ::{Material, Color};
-use math::{Vector3f, Point3f, Ray3f, Coord};
-use math;
+use math::{self, Vector3f, Point3f, Ray3f, Dot, Coord};
+
 use color;
 use std::f32::consts::{PI};
 use rand;

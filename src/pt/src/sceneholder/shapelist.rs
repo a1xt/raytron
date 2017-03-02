@@ -5,7 +5,7 @@ use std::ops::Deref;
 use std::convert::AsRef;
 use std;
 use rand::random;
-
+use utils::consts;
 
 pub struct ShapeList<'a> {
     shapes: Vec<Box<Surface + 'a>>,
@@ -51,17 +51,24 @@ impl<'a> SceneHolder for ShapeList<'a> {
                 }
             }
         }
+
+        if let Some(ref mut x) = sp {
+            x.position += x.normal * consts::POSITION_EPSILON;
+        }       
       
         sp
     }
 
-    fn random_light_source<'s> (&'s self) -> Option<&'s Surface> {
-        if self.light_sources.len() > 0 {
-            //let ix = random::<usize>() % self.light_sources.len();
-            //Some(self.light_sources[ix].as_ref())
-            Some(self.light_sources[0].as_ref())
-        } else {
-            None
-        }
+    // fn random_light_source<'s> (&'s self) -> Option<&'s Surface> {
+    //     if self.light_sources.len() > 0 {
+    //         //let ix = random::<usize>() % self.light_sources.len();
+    //         //Some(self.light_sources[ix].as_ref())
+    //         Some(self.light_sources[0].as_ref())
+    //     } else {
+    //         None
+    //     }
+    // }
+    fn light_sources<'s>(&'s self) -> Box<Iterator<Item=&'s Surface> + 's> { 
+        Box::new(self.light_sources.iter().map(|s| s.as_ref()))
     }
 }

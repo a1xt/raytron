@@ -1,5 +1,5 @@
 use pt::sceneholder::{ShapeList};
-use pt::material::{Diffuse, Phong};
+use pt::material::{Diffuse};
 use pt::{Sphere, Color};
 use pt::math;
 use pt::math::{Vector3f, Point3f};
@@ -24,8 +24,8 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
         Sphere::new(
             Point3f::new(1.0e5 + 50.0, 0.0, 0.0),
             1.0e5, ////
-            //Box::new(Diffuse::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, None)),
-            Box::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 200)),
+            Box::new(Diffuse::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, None)),
+            //Box::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 200)),
         ),
         false
     );
@@ -34,8 +34,8 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
         Sphere::new(
             Point3f::new(0.0, 0.0, 1.0e5 + 50.0),
             1.0e5,
-            //Box::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
-            Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.001, 0.900, 100000))
+            Box::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
+            //Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.001, 0.900, 100000))
         ),
         false
     );
@@ -65,16 +65,18 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
             Point3f::new(0., 1.0e5 + 50.0, 0.),
             1.0e5,
             Box::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
+            //Box::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, Some(Color{data: [1.5, 1.5, 1.5, 1.0]}))),
         ),
         false
+        //true
     );
    //Sphere 1
    shp_list.add_shape(
         Sphere::new(
             Point3f::new(-20., -35.0, -20.),
             15.0,
-            //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
-            Box::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.0, 0.2, 0.0, 1.0]}))),
+            Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
+            //Box::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.0, 0.2, 0.0, 1.0]}))),
         ),
         false
     );
@@ -93,9 +95,11 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
         Sphere::new(
             Point3f::new(0.0, 39.0, 0.0),
             10.0,
-            Box::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [10.0, 10.0, 10.0f32, 1.0]}))),
+            Box::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [15.0, 15.0, 15.0f32, 1.0]}))),
+            //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
         ),
         true
+        //false
     );
 
     shp_list

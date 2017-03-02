@@ -6,20 +6,17 @@ pub use self::dbgraycaster::DbgRayCaster;
 
 use traits::{RenderCamera, SceneHolder};
 use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord};
-use math::{Norm};
-use math;
+use math::{self, Norm};
 use {SurfacePoint, Color, RenderSettings, Image};
 use image::ImageBuffer;
 use color;
-use rand::{Closed01};
-use rand;
+use rand::{self, Closed01};
 
 use std::{self, thread};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::ops::DerefMut;
 
-use crossbeam;
 use scoped_threadpool::{Pool};
 
 use self::inner::RendererHelper;
@@ -127,7 +124,7 @@ mod inner {
             let ry = self.y0 - self.dy * (y as Coord) + self.dy * (rnd_y - 0.5);
 
             let ray_dir = self.forward + self.right * rx + self.up * ry;
-            let ray = Ray3f::new(self.origin, ray_dir.normalize());
+            let ray = Ray3f::new(&self.origin, &ray_dir.normalize());
 
             ray
         }

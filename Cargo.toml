@@ -16,7 +16,7 @@ gfx = { git = 'https://github.com/gfx-rs/gfx' }
 glutin = "*"
 genmesh = "*"
 image = "*"
-nalgebra = "*"
+nalgebra = "0.10.*"
 obj-rs = "*"
 pathtracer = {path = "src/pt", version = "*"}
 

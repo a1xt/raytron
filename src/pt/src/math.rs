@@ -12,16 +12,16 @@ pub type Point3f = Point3<Coord>;
 pub type Point4f = Point4<Coord>;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Ray3<F> {
+pub struct Ray3<F> where F: Copy + Clone {
     pub origin: Point3<F>,
     pub dir: Vector3<F>,
 }
 
-impl<F> Ray3<F> {
-    pub fn new(origin: Point3<F>, dir: Vector3<F>) -> Ray3<F> {
+impl<F> Ray3<F> where F: Copy + Clone {
+    pub fn new(origin: &Point3<F>, dir: &Vector3<F>) -> Ray3<F> {
         Ray3 {
-            origin: origin,
-            dir: dir,
+            origin: *origin,
+            dir: *dir,
         }
     }
 }
@@ -63,43 +63,6 @@ use rand;
 use rand::{random, Closed01};
 use rand::distributions::{Range, IndependentSample};
 
-/// return random ray in hemisphere
-// pub fn hs_cosine_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
-//     //use std::f32::{cos, sin};
-//     use std::f32::consts::{PI};   
-
-//     let mut rng = rand::thread_rng();
-//     let r01 = Range::new(0.0, 1.0f32);
-//     let u1 = r01.ind_sample(&mut rng);
-//     let u2 = r01.ind_sample(&mut rng);
-//     //let Closed01(u1) = random::<Closed01<f32>>();
-//     //let Closed01(u2) = random::<Closed01<f32>>();
-
-//     let r = u1.sqrt();
-//     let theta = 2.0 * PI * u2;
-
-//     let x = r * theta.cos();
-//     let y = r * theta.sin();
-
-//     let vec = Vector3f::new(x, y, (1.0 - u1).sqrt()).normalize();
-
-//     if vec.dot(hemisphere_normal) > 0.0 {
-//         vec
-//     } else {
-//         vec * (-1.)
-//     }
-// }
-
-// pub fn hs_cosine_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
-
-//     let vec = sph_cosine_sampling();
-
-//     if vec.dot(hemisphere_normal) > 0.0 {
-//         vec
-//     } else {
-//         vec * (-1.)
-//     }
-// }
 
 pub fn hs_uniform_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
     let vec = sph_uniform_sampling();
@@ -166,15 +129,3 @@ pub fn sph_uniform_sampling() -> Vector3f {
     }
     vec
 }
-/*
-pub fn sph_uniform_sampling() -> Vector3f {
-    use std::f32::consts::{PI};
-
-    let Closed01(u1) = random::<Closed01<f32>>();
-    let Closed01(u2) = random::<Closed01<f32>>();
-
-    let r = (1.0 - u1 * u1).sqrt();
-    let phi = 2.0 * PI * u2;
-
-    Vector3f::new(phi.cos() * r, phi.sin() * r, u1).normalize()
-}*/

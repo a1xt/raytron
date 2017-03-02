@@ -8,7 +8,7 @@ name = "pathtracer"
 path = "src/lib.rs"
 
 [dependencies]
-nalgebra = "*"
+nalgebra = "0.10.*"
 image = "*"
 rand = "*"
 scoped_threadpool =  {version = "0.1.*", git = "https://github.com/Kimundi/scoped-threadpool-rs"}

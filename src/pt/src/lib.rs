@@ -1,4 +1,5 @@
 #![feature(step_by)]
+#![feature(conservative_impl_trait)]
 
 pub extern crate image;
 pub extern crate rand;
@@ -35,6 +36,7 @@ pub struct SurfacePoint<'a> {
     pub position: Point3f,
     pub normal: Vector3f,
     pub material: &'a Material,
+    pub surface: &'a Surface,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
