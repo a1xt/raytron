@@ -68,7 +68,11 @@ impl<'a> SceneHolder for ShapeList<'a> {
     //         None
     //     }
     // }
-    fn light_sources<'s>(&'s self) -> Box<Iterator<Item=&'s Surface> + 's> { 
+    // fn light_sources<'s>(&'s self) -> Box<Iterator<Item=&'s Surface> + 's> { 
+    //     Box::new(self.light_sources.iter().map(|s| s.as_ref()))
+    // }
+    
+    fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's> {
         Box::new(self.light_sources.iter().map(|s| s.as_ref()))
     }
 }

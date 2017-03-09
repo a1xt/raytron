@@ -5,22 +5,22 @@ use std::f32::consts::PI;
 
 pub struct Diffuse {
     color: Color,
-    emission: Option<Color>,
+    emittance: Option<Color>,
 }
 
 impl Diffuse {
-    pub fn new(color: Color, emission: Option<Color>) -> Diffuse {
+    pub fn new(color: Color, emittance: Option<Color>) -> Diffuse {
         Diffuse {
             color: color,
-            emission: emission,
+            emittance: emittance,
         }
     }
 }
 
 impl Material for Diffuse {
 
-    fn emission(&self) -> Option<Color> {
-        self.emission
+    fn emittance(&self) -> Option<Color> {
+        self.emittance
     }
 
     // fn reflectance(&self, _: &Vector3f, _: &Vector3f, _: &Vector3f) -> Color {

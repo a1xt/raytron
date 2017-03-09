@@ -66,7 +66,7 @@ impl Phong {
 }
 
 impl Material for Phong {
-    fn emission(&self) -> Option<Color> {
+    fn emittance(&self) -> Option<Color> {
         None
     }
 

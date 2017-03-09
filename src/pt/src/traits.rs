@@ -9,6 +9,7 @@ use rand::{Closed01};
 use rand;
 
 pub use renderer::Renderer;
+pub use sceneholder::SceneHolder;
 
 pub trait RenderCamera {
     fn view_matrix(&self) -> Matrix4f;
@@ -30,7 +31,10 @@ pub trait RenderCamera {
 pub trait Surface : Sync {
     /// return (t, sp)
     fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)>;
-    //fn random_point (&self) -> SurfacePoint;
+
+    /// ∫ Le dA
+    fn total_emittance(&self) -> Option<Color>;
+
     fn area (&self) -> Coord;
     fn normal_at(&self, pos: &Point3f) -> Vector3f;
 
@@ -39,21 +43,9 @@ pub trait Surface : Sync {
     fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
 }
 
-pub trait SceneHolder {
-    fn intersection_with_scene(&self, ray: &Ray3f) -> Option<SurfacePoint>;
-
-    // delete
-    //fn random_light_source<'s>(&'s self) -> Option<&'s Surface>;
-    
-    //fn ligth_sources<'s>(&'s self) -> &'s[&'s Surface];
-    //fn light_sources<'s, T>(&'s self) -> T where T: Iterator<Item=&'s Surface>;
-    fn light_sources<'s>(&'s self) -> Box<Iterator<Item=&'s Surface> + 's>;
-}
-
-
 pub trait Material : Sync {
 
-    fn emission(&self) -> Option<Color>;
+    fn emittance(&self) -> Option<Color>;
     //fn reflectance(&self, ray: &Vector3f, reflected_ray: &Vector3f, normal: &Vector3f) -> Color;
     //fn reflect_ray(&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> Ray3f;
 

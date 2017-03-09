@@ -59,7 +59,7 @@ impl PathTracer {
         if let Some(sp) = scene.intersection_with_scene(ray) {
             let mat = sp.material;
 
-            let Le = if let Some(c) = mat.emission() {
+            let Le = if let Some(c) = mat.emittance() {
                 if depth > 0 && self.di_enable {
                     color::BLACK
                 } else {
@@ -73,7 +73,7 @@ impl PathTracer {
                 let mut di = color::BLACK;
 
                 // light source sampling
-                if let Some((lp, pdf_ls)) = utils::sample_surfaces(scene.light_sources(), &sp.position) {
+                if let Some((lp, pdf_ls)) = utils::sample_light_sources(scene.light_sources(), &sp.position) {
                     let shadow_ray = Ray3f::new(&sp.position, &(lp.position - sp.position).normalize());
                     let cos_theta = sp.normal.dot(&shadow_ray.dir);
                     let cos_theta_l = lp.normal.dot(&(-shadow_ray.dir));
@@ -88,7 +88,7 @@ impl PathTracer {
                                 let pdf_sum_inv = 1.0 / (pdf_brdf + pdf_ls);
 
                                 let fr = sp.material.reflectance(&sp.normal, &ray.dir, &shadow_ray.dir);
-                                let le = lp.material.emission().unwrap();
+                                let le = lp.material.emittance().unwrap();
                                 
                                 di = color::mul_s(&color::mul_v(&fr, &le), (g * pdf_sum_inv) as f32);
                             }
@@ -102,7 +102,7 @@ impl PathTracer {
                     let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
 
                     if let Some(ip) = scene.intersection_with_scene(&shadow_ray) {
-                        if let Some(le) = ip.material.emission() {
+                        if let Some(le) = ip.material.emittance() {
 
                             let r2 = (sp.position - ip.position).norm_squared();
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
@@ -133,6 +133,7 @@ impl PathTracer {
             let indirect_illumination = color::mul_s(&color::mul_v(&fr, &Li), (1.0 / pdf_p) as f32);
 
             return color::sum(&Le, &color::sum(&direct_illumination, &indirect_illumination));
+            //return color::sum(&Le, &direct_illumination);
 
         //     let light_samples = 1.0;
         //     let brdf_samples = 1.0;
@@ -151,7 +152,7 @@ impl PathTracer {
         //             if cos_theta > 0.0 && cos_theta_l > 0.0 {                    
         //                 let di = if let Some(lp) = scene.intersection_with_scene(&shadow_ray) {
         //                     let mut res = color::BLACK;
-        //                     if let Some(e) = lp.material.emission() {
+        //                     if let Some(e) = lp.material.emittance() {
         //                         let r2 = (shifted_ray_pos - lp.position).norm_squared();
                                 
         //                         let pdf_brdf = (1.0 / PI as Coord) * (cos_theta * cos_theta_l) / r2;
@@ -179,7 +180,7 @@ impl PathTracer {
         //         let brdf_shadow_ray = Ray3f::new(shifted_ray_pos, brdf_ray_dir);
                 
         //         if let Some(lp) = scene.intersection_with_scene(&brdf_shadow_ray) {
-        //             if let Some(e) = lp.material.emission(){
+        //             if let Some(e) = lp.material.emittance(){
         //                 let cos_theta = sp.normal.dot(&brdf_ray_dir);
         //                 let cos_theta_l = lp.normal.dot(&brdf_ray_dir) * (-1.0);
         //                 let r2 = (shifted_ray_pos - lp.position).norm_squared();

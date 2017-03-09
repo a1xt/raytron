@@ -75,10 +75,10 @@ pub fn create_scene<'s> () -> ShapeList<'s> {
         Sphere::new(
             Point3f::new(-20., -35.0, -20.),
             15.0,
-            Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
-            //Box::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.0, 0.2, 0.0, 1.0]}))),
+            //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
+            Box::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.0, 0.2, 0.0, 1.0]}))),
         ),
-        false
+        true
     );
    //Sphere 2
    shp_list.add_shape(

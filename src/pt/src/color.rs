@@ -87,3 +87,7 @@ pub fn mul_v(c0: &Color, c1: &Color) -> Color {
     ]};
     c
 }
+
+pub fn rgb_to_illumination (c: &Color) -> f32 {
+    c[0] + c[1] + c[2] / 3.0
+}

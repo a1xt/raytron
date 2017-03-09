@@ -27,10 +27,10 @@ impl DbgRayCaster {
 
         if let Some(sp) = scene.intersection_with_scene(ray) {
             let mat = sp.material;
-            if let Some(c) = mat.emission() {
+            if let Some(c) = mat.emittance() {
                 return c;
             } else {
-                if let Some(light) = scene.light_sources().next() {
+                if let Some(light) = scene.light_sources().into_iter().next() {
                     let (light_point, _) = light.sample_surface(&sp.position);
 
                     let mut shadow_ray = Ray3f::new(&sp.position, &(light_point.position - sp.position).normalize());
@@ -42,7 +42,7 @@ impl DbgRayCaster {
 
                     if let Some(lp) = scene.intersection_with_scene(&shadow_ray){
                         
-                        if let Some(_) = lp.material.emission() {
+                        if let Some(_) = lp.material.emittance() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
                             return color::mul_s(&color, cos_theta as f32);

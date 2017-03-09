@@ -1,9 +1,9 @@
-use math::{intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f, Coord, Dot};
+use math::{self, intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f, Coord, Dot};
 use super::{Surface, SurfacePoint, Material};
 use std::boxed::Box;
 use std::f32::consts::PI;
-use math;
 use utils::consts;
+use color::{self, Color};
 
 //#[derive(Clone)]
 pub struct Sphere {
@@ -66,6 +66,14 @@ impl Surface for Sphere {
     fn area (&self) -> Coord {
         use std::f32::consts::PI;
         4.0 * (PI as Coord) * self.radius * self.radius
+    }
+
+    fn total_emittance(&self) -> Option<Color> {
+        if let Some(e) = self.material.emittance() {
+            Some(color::mul_s(&e, self.area() as f32))
+        } else {
+            None
+        }
     }
 
     fn normal_at(&self, pos: &Point3f) -> Vector3f {
