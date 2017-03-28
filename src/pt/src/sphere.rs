@@ -4,6 +4,7 @@ use std::boxed::Box;
 use std::f32::consts::PI;
 use utils::consts;
 use color::{self, Color};
+use rand;
 
 //#[derive(Clone)]
 pub struct Sphere {
@@ -40,7 +41,7 @@ impl Surface for Sphere {
             Some((
                 t,
                 SurfacePoint {
-                    position: pos,
+                    position: pos + norm * consts::POSITION_EPSILON,
                     normal: norm,
                     material: self.material(),
                     surface: self,
@@ -82,16 +83,14 @@ impl Surface for Sphere {
 
     fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Coord) {
         let view_dir = (*view_point - self.position).normalize();
-        // let normal = math::sph_uniform_sampling(); 
-        // let pdf = 1.0 / self.area();
-        let normal = math::hs_cosine_sampling(&view_dir);
+        // let normal = math::hs_uniform_sampling(&view_dir);
+        // let pdf = 2.0 / self.area();
+        let normal = math::sph_uniform_sampling();
+        let pdf = 1.0 / self.area();
         let pos = self.position + (normal * self.radius);
-        let cos_theta = normal.dot(&view_dir).abs();
-        let pdf = cos_theta / ((PI as Coord) * self.radius * self.radius);
-        
 
         (SurfacePoint {
-            position: pos + normal * consts::POSITION_EPSILON,
+            position: pos,
             normal: normal,
             material: self.material(),
             surface: self,
@@ -100,11 +99,8 @@ impl Surface for Sphere {
     }
 
     fn pdf(&self, view_point: &Point3f, point_at_surface: &Point3f) -> Coord {
-        //1.0 / self.area()
-        let view_dir = (*view_point - self.position).normalize();
-        let normal = self.normal_to(point_at_surface);
-        let cos_theta = normal.dot(&view_dir);
-        cos_theta / (PI as Coord * self.radius * self.radius)
+        //2.0 / self.area()        
+        1.0 / self.area()
     }
 
 }

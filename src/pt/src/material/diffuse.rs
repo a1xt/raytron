@@ -45,15 +45,15 @@ impl Material for Diffuse {
     //     )
     // }
 
-    fn reflectance(
-        &self, 
-        surface_normal: &Vector3f, 
-        out_dir: &Vector3f,
-        in_dir: &Vector3f
-    ) -> Color {
+    // fn reflectance(
+    //     &self, 
+    //     surface_normal: &Vector3f, 
+    //     out_dir: &Vector3f,
+    //     in_dir: &Vector3f
+    // ) -> Color {
 
-        color::mul_s(&self.color, 1.0 / PI)           
-    }
+    //     color::mul_s(&self.color, 1.0 / PI)           
+    // }
 
     fn sample_bsdf(
         &self, 
@@ -62,7 +62,7 @@ impl Material for Diffuse {
     ) -> (Vector3f, Color, Coord) {
 
         let out_dir = math::hs_cosine_sampling(surface_normal);
-        let cos_theta = surface_normal.dot(&(-in_dir));
+        let cos_theta = surface_normal.dot(&out_dir);
         (out_dir, color::mul_s(&self.color, cos_theta as f32), 1.0)
     }
 
@@ -70,32 +70,59 @@ impl Material for Diffuse {
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord) {
-
+    ) -> (Vector3f, Color, Coord)
+    {
         let out_dir = math::hs_cosine_sampling(surface_normal);
-        let cos_theta = surface_normal.dot(&(-in_dir));
+        let cos_theta = surface_normal.dot(&out_dir);
         (out_dir, self.color, 1.0)
     }
 
-    fn pdf(
-        &self,
-        surface_normal: &Vector3f, 
-        in_dir: &Vector3f, 
-        out_dir: &Vector3f
-    ) -> Coord {
+    fn eval_bsdf(
+        &self, 
+        surface_normal: &Vector3f,
+        in_dir: &Vector3f,
+        out_dir: &Vector3f,        
+    ) -> (Color, Coord)
+    {
+        let cos_theta = surface_normal.dot(&(-out_dir));
+        let reflectance = color::mul_s(&self.color, 1.0 / PI);
+        let pdf = cos_theta / PI as Coord;
 
-        let cos_theta = surface_normal.dot(&(-in_dir));
-        cos_theta / PI as Coord
+        (reflectance, pdf)
     }
 
-    /// pdf = pdf_proj * cos_theta
-    fn pdf_proj(
-        &self,
-        surface_normal: &Vector3f, 
+    fn eval_bsdf_proj(
+        &self, 
+        surface_normal: &Vector3f,
         in_dir: &Vector3f, 
-        out_dir: &Vector3f
-    ) -> Coord {
+        out_dir: &Vector3f,        
+    ) -> (Color, Coord)
+    {
+        let reflectance = color::mul_s(&self.color, 1.0 / PI);
+        let pdf = 1.0 / PI as Coord;
 
-        1.0 / PI as Coord
+        (reflectance, pdf)
     }
+
+    // fn pdf(
+    //     &self,
+    //     surface_normal: &Vector3f, 
+    //     in_dir: &Vector3f, 
+    //     out_dir: &Vector3f
+    // ) -> Coord {
+
+    //     let cos_theta = surface_normal.dot(&(-in_dir));
+    //     cos_theta / PI as Coord
+    // }
+
+    // /// pdf = pdf_proj * cos_theta
+    // fn pdf_proj(
+    //     &self,
+    //     surface_normal: &Vector3f, 
+    //     in_dir: &Vector3f, 
+    //     out_dir: &Vector3f
+    // ) -> Coord {
+
+    //     1.0 / PI as Coord
+    // }
 }

@@ -1,4 +1,4 @@
-use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord};
+use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord, Dot};
 use math::{Norm};
 use math;
 use super::{SurfacePoint, Color, RenderSettings, Image};
@@ -41,6 +41,11 @@ pub trait Surface : Sync {
     // return (random point, pdf)
     fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Coord);
     fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
+    // fn sample_surface_p(&self, view_point: &Point3f) -> (SurfacePoint, Coord);
+    // fn sample_surface_d(&self, view_point: &Point3f) -> (SurfacePoint Coord);
+
+    // fn pdf_p(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
+    // fn pdf_d(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
 }
 
 pub trait Material : Sync {
@@ -52,12 +57,12 @@ pub trait Material : Sync {
     /// return (reflected ray, reflectance)
     //fn brdf(&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> (Ray3f, Color);
 
-    fn reflectance(
+    fn eval_bsdf(
         &self, 
-        surface_normal: &Vector3f, 
-        out_dir: &Vector3f,
-        in_dir: &Vector3f) 
-        -> Color;
+        surface_normal: &Vector3f,
+        in_dir: &Vector3f,
+        out_dir: &Vector3f,        
+    ) -> (Color, Coord);
 
     fn sample_bsdf(
         &self, 
@@ -65,25 +70,26 @@ pub trait Material : Sync {
         in_dir: &Vector3f
     ) -> (Vector3f, Color, Coord);
 
+    fn eval_bsdf_proj(
+        &self, 
+        surface_normal: &Vector3f, 
+        in_dir: &Vector3f,
+        out_dir: &Vector3f,
+    ) -> (Color, Coord) {
+        let (fr, pdf) = self.eval_bsdf(surface_normal, in_dir, out_dir);
+        let cos_theta = surface_normal.dot(&out_dir);
+        (fr, pdf / cos_theta)
+    }  
+
     fn sample_bsdf_proj(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord);
+    ) -> (Vector3f, Color, Coord) {
+        let (ray, fr, pdf) = self.sample_bsdf(surface_normal, in_dir);
+        let cos_theta = surface_normal.dot(&ray);
 
-    fn pdf(
-        &self,
-        surface_normal: &Vector3f, 
-        in_dir: &Vector3f, 
-        out_dir: &Vector3f) 
-        -> Coord;
-
-    /// pdf = pdf_proj * cos_theta
-    fn pdf_proj(
-        &self,
-        surface_normal: &Vector3f, 
-        in_dir: &Vector3f, 
-        out_dir: &Vector3f) 
-        -> Coord;   
+        (ray, fr, pdf / cos_theta)
+    }
 
 }

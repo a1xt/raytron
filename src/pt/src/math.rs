@@ -11,6 +11,9 @@ pub type Vector4f = Vector4<Coord>;
 pub type Point3f = Point3<Coord>;
 pub type Point4f = Point4<Coord>;
 
+use std::f32::EPSILON;
+pub const FLOAT_EPSILON: Coord = EPSILON as Coord;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F> where F: Copy + Clone {
     pub origin: Point3<F>,
@@ -55,8 +58,30 @@ pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Coord, ray:
 }
 
 /// return (t, (u, v))
-pub fn barycetric_coords<T: BaseFloat>(v0: &Point3<T>, v1: &Point3<T>, v2: &Point3<T>, ray: &Ray3<T>) -> (T, (T, T)) {
-    (zero(), (zero(), zero()))
+pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f) -> Option<(Coord, (Coord, Coord))> {
+
+    let e1 = *v1 - *v0;
+    let e2 = *v2 - *v0;    
+    let p = ray.dir.cross(&e2);
+    let det = p.dot(&e1);
+
+    if det.abs() < FLOAT_EPSILON {
+        return None;
+    }
+
+    let t0 = p - *v0.as_vector();
+    let q = t0.cross(&e1);
+    let det_inv = 1.0 / det.abs();
+
+    let t = det_inv * q.dot(&e2);
+    let u = det_inv * p.dot(&t0);
+    let v = det_inv * q.dot(&ray.dir);
+
+    if t < 0.0 || u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 {
+        return None;
+    }
+
+    Some((t, (u, v)))
 }
 
 use rand;
