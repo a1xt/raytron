@@ -19,6 +19,7 @@ image = "*"
 nalgebra = "0.10.*"
 obj-rs = "*"
 pathtracer = {path = "src/pt", version = "*"}
+time = "0.1.*"
 
 
 

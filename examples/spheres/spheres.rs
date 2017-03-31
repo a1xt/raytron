@@ -2,6 +2,7 @@ extern crate pt_app;
 extern crate gfx;
 extern crate gfx_device_gl as gfx_gl;
 extern crate glutin;
+extern crate time;
 
 
 use gfx::Factory;
@@ -101,16 +102,23 @@ fn main () {
     let mut save_image_pressed = false;
 
     let mut pass_num = 0;
+    let mut start_time = time::precise_time_ns();
+    let mut total_time = 0u64;
     while app.run() {
         if dbg {
             dbg_rdr.render_scene_threaded(&scene, app.cam_ctrl().camera(), &dbg_setup, &mut img);
         } else {
+            start_time = time::precise_time_ns();
             if pass_num == 0 {
                 rdr.pre_render(&scene, app.cam_ctrl().camera(), &setup);
+                total_time = 0;
             }
             rdr.render_pass_threaded(&scene, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
             pass_num += 1;
-            println!("pass_num: {}", pass_num);
+            let frame_time = time::precise_time_ns() - start_time;
+            total_time = total_time + frame_time;
+            println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
+                pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
         }
 
         for event in app.events().iter() {
