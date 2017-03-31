@@ -6,15 +6,16 @@ use utils::consts;
 use color::{self, Color};
 use rand;
 
-//#[derive(Clone)]
-pub struct Sphere {
+#[derive(Clone, Copy, Debug)]
+pub struct Sphere<B: Bsdf + Clone> {
     pub position: Point3f,
     pub radius: Coord,
-    bsdf: Box<Bsdf>,
+    //bsdf: Box<Bsdf>,
+    pub bsdf: B,
 }
 
-impl Sphere {
-    pub fn new(position: Point3f, radius: Coord, mat: Box<Bsdf>) -> Sphere {
+impl<B: Bsdf + Clone> Sphere<B> {
+    pub fn new(position: Point3f, radius: Coord, mat: B) -> Sphere<B> {
         Sphere {
             position: position,
             radius: radius,
@@ -22,8 +23,8 @@ impl Sphere {
         }
     }
 
-    pub fn bsdf(&self) -> &Bsdf {
-        self.bsdf.as_ref()
+    pub fn bsdf<'s>(&'s self) -> Box<Bsdf + 's> {
+        Box::new(self.bsdf.clone())
     }
 
     fn normal_to(&self, point: &Point3f) -> Vector3f {
@@ -32,7 +33,7 @@ impl Sphere {
     }
 }
 
-impl Surface for Sphere {
+impl<B: Bsdf + Clone> Surface for Sphere<B> {
 
     fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)> {
         if let Some(t) = intersection_with_sphere(&self.position, self.radius, ray) {

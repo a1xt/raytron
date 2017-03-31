@@ -3,6 +3,7 @@ use math::{self, Vector3f, Point3f, Ray3f, Coord, Dot};
 use color::{self, Color};
 use std::f32::consts::PI;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Diffuse {
     color: Color,
     emittance: Option<Color>,

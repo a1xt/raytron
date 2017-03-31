@@ -8,6 +8,8 @@ use rand::{random, Closed01};
 use rand::distributions::{Range, IndependentSample};
 use math::{Cross, Norm, Dot};
 
+
+#[derive(Clone, Copy, Debug)]
 pub struct Phong {
     color: Color,
     kd: f32,

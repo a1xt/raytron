@@ -57,7 +57,7 @@ impl PathTracer {
         // };
 
         if let Some(sp) = scene.intersection_with_scene(ray) {
-            let mat = sp.bsdf;
+            let mat = sp.bsdf.as_ref();
 
             let Le = if let Some(c) = mat.emittance() {
                 if depth > 0 && self.di_enable {

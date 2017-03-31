@@ -36,8 +36,8 @@ use self::math::{Point3f, Vector3f, Vector3, Vector4};
 pub struct SurfacePoint<'a> {
     pub position: Point3f,
     pub normal: Vector3f,
-    pub bsdf: &'a Bsdf,
-    //pub bsdf: Box<Bsdf>,
+    //pub bsdf: &'a Bsdf,
+    pub bsdf: Box<Bsdf + 'a>,
     pub surface: &'a Surface,
 }
 
