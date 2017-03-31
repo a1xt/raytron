@@ -1,4 +1,4 @@
-use ::{Material, Color};
+use ::{Bsdf, Color};
 use math::{self, Vector3f, Point3f, Ray3f, Coord};
 
 use color;
@@ -65,7 +65,7 @@ impl Phong {
     }
 }
 
-impl Material for Phong {
+impl Bsdf for Phong {
     fn emittance(&self) -> Option<Color> {
         None
     }
@@ -122,7 +122,7 @@ impl Material for Phong {
 
     // }
 
-    fn eval_bsdf(
+    fn eval(
         &self, 
         surface_normal: &Vector3f,
         in_dir: &Vector3f,
@@ -159,7 +159,7 @@ impl Material for Phong {
     }      
 
 
-    fn sample_bsdf(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Coord) {
+    fn sample(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Coord) {
         let Closed01(e) = rand::random::<Closed01<f32>>();
         if e < self.kd {
             let out_dir = math::hs_cosine_sampling(&surface_normal);

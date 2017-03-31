@@ -1,5 +1,5 @@
 use math::{Ray3f, Coord};
-use traits::{Surface, SceneHolder, Material};
+use traits::{Surface, SceneHolder, Bsdf};
 use ::{SurfacePoint};
 use std::ops::Deref;
 use std::convert::AsRef;

@@ -57,7 +57,7 @@ impl PathTracer {
         // };
 
         if let Some(sp) = scene.intersection_with_scene(ray) {
-            let mat = sp.material;
+            let mat = sp.bsdf;
 
             let Le = if let Some(c) = mat.emittance() {
                 if depth > 0 && self.di_enable {
@@ -85,10 +85,10 @@ impl PathTracer {
 
                                 let r2 = (sp.position - lp.position).norm_squared();
                                 let g = cos_theta * cos_theta_l / r2;
-                                let (fr, pdf_brdf) = sp.material.eval_bsdf_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
+                                let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                                 let pdf_sum_inv = 1.0 / (pdf_brdf * g + pdf_ls);
 
-                                let le = lp.material.emittance().unwrap();
+                                let le = lp.bsdf.emittance().unwrap();
                                 
                                 di = color::mul_s(&color::mul_v(&fr, &le), (g * pdf_sum_inv) as f32);
                             }
@@ -98,11 +98,11 @@ impl PathTracer {
 
                 // brdf sampling
                 {
-                    let (brdf_ray_dir, _, _) = sp.material.sample_bsdf_proj(&sp.normal, &ray.dir);
+                    let (brdf_ray_dir, _, _) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
                     let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
 
                     if let Some(ip) = scene.intersection_with_scene(&shadow_ray) {
-                        if let Some(le) = ip.material.emittance() {
+                        if let Some(le) = ip.bsdf.emittance() {
 
                             let r2 = (sp.position - ip.position).norm_squared();
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
@@ -111,7 +111,7 @@ impl PathTracer {
 
                             //let pdf_ls = 0.5 * ip.surface.pdf(&ip.position, &sp.position) * g_inv;/////// should use pdf of all surfaces
                             let pdf_ls = g_inv * utils::sample_surfaces::by_area_pdf(ip.surface, scene.light_sources(), &ip.position, &sp.position);
-                            let (fr, pdf_brdf) = sp.material.eval_bsdf_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
+                            let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                             let pdf_sum_inv = 1.0 / (pdf_brdf + pdf_ls);
 
                             let res = color::mul_s(&color::mul_v(&fr, &le), pdf_sum_inv as f32);
@@ -126,7 +126,7 @@ impl PathTracer {
                 color::BLACK
             };
 
-            let (new_ray_dir, fr, pdf_p) = sp.material.sample_bsdf_proj(&sp.normal, &ray.dir);
+            let (new_ray_dir, fr, pdf_p) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
             let new_ray = Ray3f::new(&sp.position, &new_ray_dir);
             let Li = self.trace_path_rec::<S, C>(scene, &new_ray, depth + 1);
             let indirect_illumination = color::mul_s(&color::mul_v(&fr, &Li), (1.0 / pdf_p) as f32);

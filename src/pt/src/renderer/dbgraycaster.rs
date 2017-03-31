@@ -26,7 +26,7 @@ impl DbgRayCaster {
     {
 
         if let Some(sp) = scene.intersection_with_scene(ray) {
-            let mat = sp.material;
+            let mat = sp.bsdf;
             if let Some(c) = mat.emittance() {
                 return c;
             } else {
@@ -42,7 +42,7 @@ impl DbgRayCaster {
 
                     if let Some(lp) = scene.intersection_with_scene(&shadow_ray){
                         
-                        if let Some(_) = lp.material.emittance() {
+                        if let Some(_) = lp.bsdf.emittance() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
                             return color::mul_s(&color, cos_theta as f32);

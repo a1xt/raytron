@@ -1,5 +1,5 @@
 use math::{self, intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f, Coord, Dot};
-use super::{Surface, SurfacePoint, Material};
+use super::{Surface, SurfacePoint, Bsdf};
 use std::boxed::Box;
 use std::f32::consts::PI;
 use utils::consts;
@@ -10,20 +10,20 @@ use rand;
 pub struct Sphere {
     pub position: Point3f,
     pub radius: Coord,
-    material: Box<Material>,
+    bsdf: Box<Bsdf>,
 }
 
 impl Sphere {
-    pub fn new(position: Point3f, radius: Coord, mat: Box<Material>) -> Sphere {
+    pub fn new(position: Point3f, radius: Coord, mat: Box<Bsdf>) -> Sphere {
         Sphere {
             position: position,
             radius: radius,
-            material: mat,
+            bsdf: mat,
         }
     }
 
-    pub fn material(&self) -> &Material {
-        self.material.as_ref()
+    pub fn bsdf(&self) -> &Bsdf {
+        self.bsdf.as_ref()
     }
 
     fn normal_to(&self, point: &Point3f) -> Vector3f {
@@ -43,7 +43,7 @@ impl Surface for Sphere {
                 SurfacePoint {
                     position: pos + norm * consts::POSITION_EPSILON,
                     normal: norm,
-                    material: self.material(),
+                    bsdf: self.bsdf(),
                     surface: self,
                 }
             ))
@@ -60,7 +60,7 @@ impl Surface for Sphere {
     //         position: pos,
     //         //position: self.position,
     //         normal: norm,
-    //         material: self.material(),
+    //         bsdf: self.bsdf(),
     //     }
     // }
 
@@ -70,7 +70,7 @@ impl Surface for Sphere {
     }
 
     fn total_emittance(&self) -> Option<Color> {
-        if let Some(e) = self.material.emittance() {
+        if let Some(e) = self.bsdf.emittance() {
             Some(color::mul_s(&e, self.area() as f32))
         } else {
             None
@@ -92,7 +92,7 @@ impl Surface for Sphere {
         (SurfacePoint {
             position: pos,
             normal: normal,
-            material: self.material(),
+            bsdf: self.bsdf(),
             surface: self,
         },
         pdf)

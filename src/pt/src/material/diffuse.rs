@@ -1,4 +1,4 @@
-use {Material};
+use {Bsdf};
 use math::{self, Vector3f, Point3f, Ray3f, Coord, Dot};
 use color::{self, Color};
 use std::f32::consts::PI;
@@ -17,7 +17,7 @@ impl Diffuse {
     }
 }
 
-impl Material for Diffuse {
+impl Bsdf for Diffuse {
 
     fn emittance(&self) -> Option<Color> {
         self.emittance
@@ -55,7 +55,7 @@ impl Material for Diffuse {
     //     color::mul_s(&self.color, 1.0 / PI)           
     // }
 
-    fn sample_bsdf(
+    fn sample(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
@@ -66,7 +66,7 @@ impl Material for Diffuse {
         (out_dir, color::mul_s(&self.color, cos_theta as f32), 1.0)
     }
 
-    fn sample_bsdf_proj(
+    fn sample_proj(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
@@ -77,7 +77,7 @@ impl Material for Diffuse {
         (out_dir, self.color, 1.0)
     }
 
-    fn eval_bsdf(
+    fn eval(
         &self, 
         surface_normal: &Vector3f,
         in_dir: &Vector3f,
@@ -91,7 +91,7 @@ impl Material for Diffuse {
         (reflectance, pdf)
     }
 
-    fn eval_bsdf_proj(
+    fn eval_proj(
         &self, 
         surface_normal: &Vector3f,
         in_dir: &Vector3f, 

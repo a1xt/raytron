@@ -48,7 +48,7 @@ pub trait Surface : Sync {
     // fn pdf_d(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
 }
 
-pub trait Material : Sync {
+pub trait Bsdf : Sync {
 
     fn emittance(&self) -> Option<Color>;
     //fn reflectance(&self, ray: &Vector3f, reflected_ray: &Vector3f, normal: &Vector3f) -> Color;
@@ -57,36 +57,36 @@ pub trait Material : Sync {
     /// return (reflected ray, reflectance)
     //fn brdf(&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> (Ray3f, Color);
 
-    fn eval_bsdf(
+    fn eval(
         &self, 
         surface_normal: &Vector3f,
         in_dir: &Vector3f,
         out_dir: &Vector3f,        
     ) -> (Color, Coord);
 
-    fn sample_bsdf(
+    fn sample(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
     ) -> (Vector3f, Color, Coord);
 
-    fn eval_bsdf_proj(
+    fn eval_proj(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f,
         out_dir: &Vector3f,
     ) -> (Color, Coord) {
-        let (fr, pdf) = self.eval_bsdf(surface_normal, in_dir, out_dir);
+        let (fr, pdf) = self.eval(surface_normal, in_dir, out_dir);
         let cos_theta = surface_normal.dot(&out_dir);
         (fr, pdf / cos_theta)
     }  
 
-    fn sample_bsdf_proj(
+    fn sample_proj(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
     ) -> (Vector3f, Color, Coord) {
-        let (ray, fr, pdf) = self.sample_bsdf(surface_normal, in_dir);
+        let (ray, fr, pdf) = self.sample(surface_normal, in_dir);
         let cos_theta = surface_normal.dot(&ray);
 
         (ray, fr, pdf / cos_theta)

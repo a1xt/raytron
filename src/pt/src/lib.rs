@@ -9,6 +9,7 @@ pub mod math;
 pub mod traits;
 pub mod utils;
 pub mod sphere;
+//pub mod polygon;
 pub mod sceneholder;
 pub mod material;
 pub mod renderer;
@@ -16,7 +17,7 @@ pub mod color;
 
 
 pub use self::traits::{
-    Material,
+    Bsdf,
     Surface,
     SceneHolder,
     Renderer,
@@ -35,7 +36,8 @@ use self::math::{Point3f, Vector3f, Vector3, Vector4};
 pub struct SurfacePoint<'a> {
     pub position: Point3f,
     pub normal: Vector3f,
-    pub material: &'a Material,
+    pub bsdf: &'a Bsdf,
+    //pub bsdf: Box<Bsdf>,
     pub surface: &'a Surface,
 }
 
