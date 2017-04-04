@@ -31,10 +31,10 @@ fn main () {
     let width = 400u32;
     let height = 300u32;
 
-    //let pt_render_block = (64, 64);
-    //let dbg_render_block = (128, 128);
-    let pt_render_block = (80, 60);
-    let dbg_render_block = (100, 75);
+    //let pt_render_chunk = (64, 64);
+    //let dbg_render_chunk = (128, 128);
+    let pt_render_chunk = (80, 60);
+    let dbg_render_chunk = (100, 75);
 
     let tex_w = width as u16;
     let tex_h = height as u16;
@@ -65,8 +65,8 @@ fn main () {
 
 
     // RenderSettings::new(samples, depth);
-    let setup = RenderSettings::new(128, 4).with_threads(4, pt_render_block);    
-    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_block);
+    let setup = RenderSettings::new(128, 4).with_threads(4, pt_render_chunk);    
+    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
     let scene = spheres::create_scene();
     spheres::setup_camera(app.cam_ctrl_mut());

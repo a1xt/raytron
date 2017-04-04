@@ -165,12 +165,12 @@ pub trait Renderer<S: SceneHolder + Sync, C: RenderCamera + Sync> : RendererHelp
             pass_num as f32
         }; 
         
-        let (block_w, block_h) = setup.render_block;
-        let blocks_num = (camera.width() / block_w) * (camera.height() / block_h);
-        // let mut res_blocks: Vec<Vec<Color>> = Vec::with_capacity(blocks_num as usize);
+        let (chunk_w, chunk_h) = setup.render_chunk;
+        let chunks_num = (camera.width() / chunk_w) * (camera.height() / chunk_h);
+        // let mut res_chunks: Vec<Vec<Color>> = Vec::with_capacity(chunks_num as usize);
 
-        // for _ in 0..blocks_num {
-        //     res_blocks.push(Vec::new());
+        // for _ in 0..chunks_num {
+        //     res_chunks.push(Vec::new());
         // }
 
         let out_img = Arc::new(Mutex::new(out_image));
@@ -181,27 +181,27 @@ pub trait Renderer<S: SceneHolder + Sync, C: RenderCamera + Sync> : RendererHelp
             let mut offset_x = 0;
             let mut offset_y = 0;
 
-            //for b in &mut res_blocks {
-            for _ in 0..blocks_num {
+            //for b in &mut res_chunks {
+            for _ in 0..chunks_num {
 
                 let tmp_out_img = out_img.clone();
 
                 scope.execute(move || {
-                    let block = self.render_job(scene, camera, setup, ((offset_x, offset_y),(block_w, block_h)));
-                    //*b = block;
+                    let chunk = self.render_job(scene, camera, setup, ((offset_x, offset_y),(chunk_w, chunk_h)));
+                    //*b = chunk;
                     let mut img = tmp_out_img.lock().unwrap();
-                    for j in 0..block_h {
-                        for i in 0..block_w {
-                            let c = block[(j * block_w + i) as usize];
+                    for j in 0..chunk_h {
+                        for i in 0..chunk_w {
+                            let c = chunk[(j * chunk_w + i) as usize];
                             self.add_to_pixel(&c, pnum, offset_x + i, offset_y + j, img.deref_mut());
                         }
                     }
                 });
 
-                offset_x += block_w;
+                offset_x += chunk_w;
                 if offset_x >= camera.width() {
                     offset_x = 0;
-                    offset_y += block_h;
+                    offset_y += chunk_h;
                 }
             }
 
@@ -209,18 +209,18 @@ pub trait Renderer<S: SceneHolder + Sync, C: RenderCamera + Sync> : RendererHelp
 
         });
 
-        // let mut block_ix = 0;
-        // for offset_y in (0..camera.height()).step_by(block_h) {
-        //     for offset_x in (0..camera.width()).step_by(block_w) {    
+        // let mut chunk_ix = 0;
+        // for offset_y in (0..camera.height()).step_by(chunk_h) {
+        //     for offset_x in (0..camera.width()).step_by(chunk_w) {    
                 
-        //         for j in 0..block_h {
-        //             for i in 0..block_w {
-        //                 let res = &res_blocks[block_ix];
-        //                 let c = res[(j * block_w + i) as usize];
+        //         for j in 0..chunk_h {
+        //             for i in 0..chunk_w {
+        //                 let res = &res_chunks[chunk_ix];
+        //                 let c = res[(j * chunk_w + i) as usize];
         //                 self.add_to_pixel(&c, pnum, offset_x + i, offset_y + j, out_image);                        
         //             }
         //         }
-        //         block_ix += 1;
+        //         chunk_ix += 1;
         //     }
         // }        
  

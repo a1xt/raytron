@@ -46,7 +46,7 @@ pub struct RenderSettings {
     path_depth: u32,
     fog_density: f32,
 
-    render_block: (u32, u32),
+    render_chunk: (u32, u32),
     threads_num: u32,
 }
 
@@ -57,14 +57,14 @@ impl RenderSettings {
             path_depth: path_max_depth,
             fog_density: 0.0,
 
-            render_block: (1, 1),
+            render_chunk: (1, 1),
             threads_num: 1,
         }
     }
 
-    pub fn with_threads(&mut self, threads_num: u32, block_size: (u32, u32)) -> RenderSettings {
+    pub fn with_threads(&mut self, threads_num: u32, chunk_size: (u32, u32)) -> RenderSettings {
         self.threads_num = threads_num;
-        self.render_block = block_size;
+        self.render_chunk = chunk_size;
 
         *self
     }
