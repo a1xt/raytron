@@ -1,6 +1,5 @@
-use image::{Rgb, Rgba, Pixel};
+use image::{Rgb, Rgba};
 use image;
-use math::{Vector3, Vector4};
 use std::f32;
 
 pub type Rgba32f = Rgba<f32>;
@@ -8,14 +7,6 @@ pub type Rgb32f = Rgb<f32>;
 pub type Rgba8 = Rgba<u8>;
 pub type Rgb8 = Rgb<u8>;
 pub type Color = Rgba32f;
-
-// pub type Rgba32f = Vector4<f32>;
-// pub type Rgb32f = Vector3<f32>;
-// pub type Rgba8 = Vector4<u8>;
-// pub type Rgb8 = Vector3<u8>;
-// pub type Color = Rgba32f;
-
-//struct Color (pub data: Rgba32f);
 
 pub type Image = image::ImageBuffer<Color, Vec<f32>>;
 

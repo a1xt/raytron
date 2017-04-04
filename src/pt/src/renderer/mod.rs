@@ -5,16 +5,8 @@ pub use self::pathtracer::PathTracer;
 pub use self::dbgraycaster::DbgRayCaster;
 
 use traits::{RenderCamera, SceneHolder};
-use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord};
-use math::{self, Norm};
-use {SurfacePoint, Color, RenderSettings, Image};
-use image::ImageBuffer;
-use color;
-use rand::{self, Closed01};
-
-use std::{self, thread};
+use {RenderSettings, Image};
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::ops::DerefMut;
 
 use scoped_threadpool::{Pool};
@@ -23,7 +15,7 @@ use self::inner::RendererHelper;
 
 mod inner {
     use traits::{RenderCamera, SceneHolder};
-    use math::{self, Ray3f, Point3f, Vector3f, Coord, Norm};
+    use math::{self, Ray3f, Point3f, Vector3f, Real, Norm};
     use {Image, RenderSettings, Color};
     use rand::{self, Closed01};
     use color;
@@ -65,10 +57,10 @@ mod inner {
         forward: Vector3f,
         right: Vector3f,
 
-        x0: Coord,
-        y0: Coord,
-        dx: Coord,
-        dy: Coord,
+        x0: Real,
+        y0: Real,
+        dx: Real,
+        dy: Real,
     }
 
     impl CameraRayGenerator {
@@ -92,10 +84,10 @@ mod inner {
             let forward = camera.forward_vec().normalize();
             let right = camera.right_vec().normalize();
 
-            let ratio = camera.height() as Coord / camera.width() as Coord;
+            let ratio = camera.height() as Real / camera.width() as Real;
             let x = 2.0 * (0.5 * camera.fovx()).tan();
             let y = ratio * x;
-            let dx = x / (camera.width() as Coord);
+            let dx = x / (camera.width() as Real);
             let dy = dx;
 
             let x0 = (-0.5) * x + dx * 0.5;
@@ -117,11 +109,11 @@ mod inner {
 
         pub fn get_ray(&self, x: u32, y: u32) -> Ray3f {
 
-            let Closed01(rnd_x) = rand::random::<Closed01<Coord>>();
-            let Closed01(rnd_y) = rand::random::<Closed01<Coord>>();      
+            let Closed01(rnd_x) = rand::random::<Closed01<Real>>();
+            let Closed01(rnd_y) = rand::random::<Closed01<Real>>();      
 
-            let rx = self.x0 + self.dx * (x as Coord) + self.dx * (rnd_x - 0.5);
-            let ry = self.y0 - self.dy * (y as Coord) + self.dy * (rnd_y - 0.5);
+            let rx = self.x0 + self.dx * (x as Real) + self.dx * (rnd_x - 0.5);
+            let ry = self.y0 - self.dy * (y as Real) + self.dy * (rnd_y - 0.5);
 
             let ray_dir = self.forward + self.right * rx + self.up * ry;
             let ray = Ray3f::new(&self.origin, &ray_dir.normalize());

@@ -1,4 +1,3 @@
-#![feature(step_by)]
 #![feature(conservative_impl_trait)]
 
 pub extern crate image;
@@ -31,7 +30,7 @@ pub use self::color::{Color, Image};
 
 
 
-use self::math::{Point3f, Vector3f, Vector3, Vector4};
+use self::math::{Point3f, Vector3f};
 
 pub struct SurfacePoint<'a> {
     pub position: Point3f,

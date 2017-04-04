@@ -1,5 +1,5 @@
 use {Bsdf};
-use math::{self, Vector3f, Point3f, Ray3f, Coord, Dot};
+use math::{self, Vector3f, Real, Dot};
 use color::{self, Color};
 use std::f32::consts::PI;
 
@@ -59,8 +59,8 @@ impl Bsdf for Diffuse {
     fn sample(
         &self, 
         surface_normal: &Vector3f, 
-        in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord) {
+        _: &Vector3f
+    ) -> (Vector3f, Color, Real) {
 
         let out_dir = math::hs_cosine_sampling(surface_normal);
         let cos_theta = surface_normal.dot(&out_dir);
@@ -70,37 +70,37 @@ impl Bsdf for Diffuse {
     fn sample_proj(
         &self, 
         surface_normal: &Vector3f, 
-        in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord)
+        _: &Vector3f
+    ) -> (Vector3f, Color, Real)
     {
         let out_dir = math::hs_cosine_sampling(surface_normal);
-        let cos_theta = surface_normal.dot(&out_dir);
+        //let cos_theta = surface_normal.dot(&out_dir);
         (out_dir, self.color, 1.0)
     }
 
     fn eval(
         &self, 
         surface_normal: &Vector3f,
-        in_dir: &Vector3f,
+        _: &Vector3f,
         out_dir: &Vector3f,        
-    ) -> (Color, Coord)
+    ) -> (Color, Real)
     {
         let cos_theta = surface_normal.dot(&(-out_dir));
         let reflectance = color::mul_s(&self.color, 1.0 / PI);
-        let pdf = cos_theta / PI as Coord;
+        let pdf = cos_theta / PI as Real;
 
         (reflectance, pdf)
     }
 
     fn eval_proj(
         &self, 
-        surface_normal: &Vector3f,
-        in_dir: &Vector3f, 
-        out_dir: &Vector3f,        
-    ) -> (Color, Coord)
+        _: &Vector3f,
+        _: &Vector3f, 
+        _: &Vector3f,        
+    ) -> (Color, Real)
     {
         let reflectance = color::mul_s(&self.color, 1.0 / PI);
-        let pdf = 1.0 / PI as Coord;
+        let pdf = 1.0 / PI as Real;
 
         (reflectance, pdf)
     }
@@ -110,10 +110,10 @@ impl Bsdf for Diffuse {
     //     surface_normal: &Vector3f, 
     //     in_dir: &Vector3f, 
     //     out_dir: &Vector3f
-    // ) -> Coord {
+    // ) -> Real {
 
     //     let cos_theta = surface_normal.dot(&(-in_dir));
-    //     cos_theta / PI as Coord
+    //     cos_theta / PI as Real
     // }
 
     // /// pdf = pdf_proj * cos_theta
@@ -122,8 +122,8 @@ impl Bsdf for Diffuse {
     //     surface_normal: &Vector3f, 
     //     in_dir: &Vector3f, 
     //     out_dir: &Vector3f
-    // ) -> Coord {
+    // ) -> Real {
 
-    //     1.0 / PI as Coord
+    //     1.0 / PI as Real
     // }
 }

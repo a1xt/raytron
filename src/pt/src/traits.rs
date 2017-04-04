@@ -1,12 +1,5 @@
-use math::{Ray3f, Matrix4f, Vector3f, Point3f, Coord, Dot};
-use math::{Norm};
-use math;
-use super::{SurfacePoint, Color, RenderSettings, Image};
-use std::f32;
-use image::ImageBuffer;
-use color;
-use rand::{Closed01};
-use rand;
+use math::{Ray3f, Matrix4f, Vector3f, Point3f, Real, Dot};
+use super::{SurfacePoint, Color};
 
 pub use renderer::Renderer;
 pub use sceneholder::SceneHolder;
@@ -17,10 +10,10 @@ pub trait RenderCamera {
 
     fn height(&self) -> u32;
     fn width(&self) -> u32;
-    fn aspect(&self) -> Coord;
-    fn znear(&self) -> Coord;
-    fn zfar(&self) -> Coord;
-    fn fovx(&self) -> Coord;
+    fn aspect(&self) -> Real;
+    fn znear(&self) -> Real;
+    fn zfar(&self) -> Real;
+    fn fovx(&self) -> Real;
 
     fn pos(&self) -> Point3f;
     fn up_vec(&self) -> Vector3f;
@@ -30,22 +23,22 @@ pub trait RenderCamera {
 
 pub trait Surface : Sync {
     /// return (t, sp)
-    fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)>;
+    fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)>;
 
     /// ∫ Le dA
     fn total_emittance(&self) -> Option<Color>;
 
-    fn area (&self) -> Coord;
+    fn area (&self) -> Real;
     fn normal_at(&self, pos: &Point3f) -> Vector3f;
 
     // return (random point, pdf)
-    fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Coord);
-    fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
-    // fn sample_surface_p(&self, view_point: &Point3f) -> (SurfacePoint, Coord);
-    // fn sample_surface_d(&self, view_point: &Point3f) -> (SurfacePoint Coord);
+    fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Real);
+    fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Real;
+    // fn sample_surface_p(&self, view_point: &Point3f) -> (SurfacePoint, Real);
+    // fn sample_surface_d(&self, view_point: &Point3f) -> (SurfacePoint Real);
 
-    // fn pdf_p(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
-    // fn pdf_d(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Coord;
+    // fn pdf_p(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Real;
+    // fn pdf_d(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Real;
 }
 
 pub trait Bsdf : Sync {
@@ -62,20 +55,20 @@ pub trait Bsdf : Sync {
         surface_normal: &Vector3f,
         in_dir: &Vector3f,
         out_dir: &Vector3f,        
-    ) -> (Color, Coord);
+    ) -> (Color, Real);
 
     fn sample(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord);
+    ) -> (Vector3f, Color, Real);
 
     fn eval_proj(
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f,
         out_dir: &Vector3f,
-    ) -> (Color, Coord) {
+    ) -> (Color, Real) {
         let (fr, pdf) = self.eval(surface_normal, in_dir, out_dir);
         let cos_theta = surface_normal.dot(&out_dir);
         (fr, pdf / cos_theta)
@@ -85,7 +78,7 @@ pub trait Bsdf : Sync {
         &self, 
         surface_normal: &Vector3f, 
         in_dir: &Vector3f
-    ) -> (Vector3f, Color, Coord) {
+    ) -> (Vector3f, Color, Real) {
         let (ray, fr, pdf) = self.sample(surface_normal, in_dir);
         let cos_theta = surface_normal.dot(&ray);
 

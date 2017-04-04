@@ -1,21 +1,20 @@
-use math::{self, intersection_with_sphere, BaseFloat, Norm, Point3f, Vector3f, Ray3f, Coord, Dot};
+use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
+//use math::{Dot};
 use super::{Surface, SurfacePoint, Bsdf};
 use std::boxed::Box;
-use std::f32::consts::PI;
-use utils::consts;
+//use std::f32::consts::PI;
 use color::{self, Color};
-use rand;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Sphere<B: Bsdf + Clone> {
     pub position: Point3f,
-    pub radius: Coord,
+    pub radius: Real,
     //bsdf: Box<Bsdf>,
     pub bsdf: B,
 }
 
 impl<B: Bsdf + Clone> Sphere<B> {
-    pub fn new(position: Point3f, radius: Coord, mat: B) -> Sphere<B> {
+    pub fn new(position: Point3f, radius: Real, mat: B) -> Sphere<B> {
         Sphere {
             position: position,
             radius: radius,
@@ -35,14 +34,14 @@ impl<B: Bsdf + Clone> Sphere<B> {
 
 impl<B: Bsdf + Clone> Surface for Sphere<B> {
 
-    fn intersection (&self, ray: &Ray3f) -> Option<(Coord, SurfacePoint)> {
-        if let Some(t) = intersection_with_sphere(&self.position, self.radius, ray) {
+    fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
+        if let Some(t) = math::intersection_with_sphere(&self.position, self.radius, ray) {
             let pos = ray.origin + ray.dir * t;
             let norm = self.normal_to(&pos);
             Some((
                 t,
                 SurfacePoint {
-                    position: pos + norm * consts::POSITION_EPSILON,
+                    position: pos,
                     normal: norm,
                     bsdf: self.bsdf(),
                     surface: self,
@@ -53,21 +52,9 @@ impl<B: Bsdf + Clone> Surface for Sphere<B> {
         }
     }
 
-    // fn random_point (&self) -> SurfacePoint {
-    //     let norm = math::sph_uniform_sampling();
-    //     let pos: Point3f = self.position +  (norm * self.radius);
-        
-    //     SurfacePoint {
-    //         position: pos,
-    //         //position: self.position,
-    //         normal: norm,
-    //         bsdf: self.bsdf(),
-    //     }
-    // }
-
-    fn area (&self) -> Coord {
+    fn area (&self) -> Real {
         use std::f32::consts::PI;
-        4.0 * (PI as Coord) * self.radius * self.radius
+        4.0 * (PI as Real) * self.radius * self.radius
     }
 
     fn total_emittance(&self) -> Option<Color> {
@@ -82,8 +69,8 @@ impl<B: Bsdf + Clone> Surface for Sphere<B> {
         self.normal_to(pos)
     }
 
-    fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Coord) {
-        let view_dir = (*view_point - self.position).normalize();
+    fn sample_surface(&self, _: &Point3f) -> (SurfacePoint, Real) {
+        // let view_dir = (*view_point - self.position).normalize();
         // let normal = math::hs_uniform_sampling(&view_dir);
         // let pdf = 2.0 / self.area();
         let normal = math::sph_uniform_sampling();
@@ -99,7 +86,7 @@ impl<B: Bsdf + Clone> Surface for Sphere<B> {
         pdf)
     }
 
-    fn pdf(&self, view_point: &Point3f, point_at_surface: &Point3f) -> Coord {
+    fn pdf(&self, _: &Point3f, _ : &Point3f) -> Real {
         //2.0 / self.area()        
         1.0 / self.area()
     }

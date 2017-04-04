@@ -2,17 +2,17 @@ pub extern crate nalgebra as na;
 pub use self::na::*;
 
 
-pub type Coord = f64;
+pub type Real = f64;
 
-pub type Ray3f = Ray3<Coord>;
-pub type Matrix4f = Matrix4<Coord>;
-pub type Vector3f = Vector3<Coord>;
-pub type Vector4f = Vector4<Coord>;
-pub type Point3f = Point3<Coord>;
-pub type Point4f = Point4<Coord>;
+pub type Ray3f = Ray3<Real>;
+pub type Matrix4f = Matrix4<Real>;
+pub type Vector3f = Vector3<Real>;
+pub type Vector4f = Vector4<Real>;
+pub type Point3f = Point3<Real>;
+pub type Point4f = Point4<Real>;
 
 use std::f32::EPSILON;
-pub const FLOAT_EPSILON: Coord = EPSILON as Coord;
+pub const FLOAT_EPSILON: Real = EPSILON as Real;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F> where F: Copy + Clone {
@@ -29,9 +29,8 @@ impl<F> Ray3<F> where F: Copy + Clone {
     }
 }
 
-pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Coord, ray: &Ray3f) -> Option<Coord> {
-    debug_assert!(ray.dir.norm().abs_sub(1.0) <= 1.0e-6);
-    use std;
+pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: &Ray3f) -> Option<Real> {
+    debug_assert!((ray.dir.norm() - 1.0).abs() <= 1.0e-6);
 
     let l = ray.origin - *sphere_pos;
     let b = dot(&l, &ray.dir);
@@ -58,7 +57,7 @@ pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Coord, ray:
 }
 
 /// return (t, (u, v))
-pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f) -> Option<(Coord, (Coord, Coord))> {
+pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f) -> Option<(Real, (Real, Real))> {
 
     let e1 = *v1 - *v0;
     let e2 = *v2 - *v0;    
@@ -105,12 +104,12 @@ pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
     use std::f64::consts::{PI};
 
     let mut rng = rand::thread_rng();
-    let r01 = Range::new(0.0, 1.0 as Coord);
+    let r01 = Range::new(0.0, 1.0 as Real);
     let u1 = r01.ind_sample(&mut rng);
     let u2 = r01.ind_sample(&mut rng);
 
     let theta = (1.0 - u1).sqrt().acos();
-    let phi = 2.0 * (PI as Coord) * u2;
+    let phi = 2.0 * (PI as Real) * u2;
 
     let xs = theta.sin() * phi.cos();
     let ys = theta.cos();
@@ -138,11 +137,11 @@ pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
 
 
 pub fn sph_uniform_sampling() -> Vector3f {
-    let mut vec = zero();
+    let vec;
     loop {
-        let Closed01(mut x) = random::<Closed01<Coord>>();
-        let Closed01(mut y) = random::<Closed01<Coord>>();
-        let Closed01(mut z) = random::<Closed01<Coord>>();
+        let Closed01(mut x) = random::<Closed01<Real>>();
+        let Closed01(mut y) = random::<Closed01<Real>>();
+        let Closed01(mut z) = random::<Closed01<Real>>();
         x -= 0.5;
         y -= 0.5;
         z -= 0.5;

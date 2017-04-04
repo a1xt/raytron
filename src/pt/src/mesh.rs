@@ -5,12 +5,12 @@ pub struct Polygon<'a, T: BaseTypes> {
 }
 
 pub struct Vertex<T: BaseTypes> {
-    position: Point3<T::Coord>,
+    position: Point3<T::Real>,
     bsdf: Box<Bsdf<T::LightIntensity>>,
 }
 
 impl<T: BaseTypes> Polygon<T> {
-    pub fn bsdf(&self, uv: (T::Coord, T::Coord, T::Coord)) -> Box<Bsdf<T::LightIntensity>>;
+    pub fn bsdf(&self, uv: (T::Real, T::Real, T::Real)) -> Box<Bsdf<T::LightIntensity>>;
 }
 
 //impl Surface for Polygon {}

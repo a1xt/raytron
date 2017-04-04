@@ -19,12 +19,10 @@ use gfx::{Device, Factory};
 use gfx::memory::Usage;
 use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
 use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
-use gfx::pso::{DataLink};
-use gfx::pso::resource::TextureSampler;
 use gfx::Bundle;
 use glutin::{CursorState};
 
-use pt::math::{Coord};
+use pt::math::{Real};
 
 pub use camera_controller::{CameraController, FPSCameraController};
 pub use fpscamera::{FPSCamera};
@@ -119,7 +117,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
                 FPSCamera::new(
                     screen_width,
                     screen_height,
-                    (90.0 as Coord).to_radians(),
+                    (90.0 as Real).to_radians(),
                     1.0,
                     10_000.0),
                 0.5,

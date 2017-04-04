@@ -1,22 +1,22 @@
 use pt::{RenderCamera};
 use pt::utils::consts;
 use pt::math;
-use pt::math::{Matrix4, Point3, Vector3, Isometry3, Rotation3, PerspectiveMatrix3};
-use pt::math::{Vector3f, Point3f, Coord};
+use pt::math::{Matrix4, Vector3, Isometry3, Rotation3, PerspectiveMatrix3};
+use pt::math::{Vector3f, Point3f, Real};
 use pt::math::{ToHomogeneous, Rotation, Rotate, Inverse};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FPSCamera {
     width: u32,
     height: u32,
-    fovx: Coord,
-    znear: Coord,
-    zfar: Coord,
-    trfm: Isometry3<Coord>,
+    fovx: Real,
+    znear: Real,
+    zfar: Real,
+    trfm: Isometry3<Real>,
 }
 
 impl FPSCamera {
-    pub fn new(width: u32, height: u32, fovx: Coord, znear: Coord, zfar: Coord) -> FPSCamera {
+    pub fn new(width: u32, height: u32, fovx: Real, znear: Real, zfar: Real) -> FPSCamera {
         FPSCamera {
             width: width,
             height: height,
@@ -33,7 +33,7 @@ impl FPSCamera {
                                           &math::Vector3::from(&consts::UP_VEC));
     }
 
-    pub fn transform(&self) -> &Isometry3<Coord> {
+    pub fn transform(&self) -> &Isometry3<Real> {
         &self.trfm
     }
 
@@ -63,33 +63,33 @@ impl FPSCamera {
         self
     }
 
-    pub fn yaw_add(&mut self, angle: Coord) -> &mut FPSCamera {
+    pub fn yaw_add(&mut self, angle: Real) -> &mut FPSCamera {
         let cam_right = self.right();
         self.trfm.rotation.append_rotation_mut(&(cam_right * angle));
         self
     }
 
-    pub fn pitch_add(&mut self, angle: Coord) -> &mut FPSCamera {
+    pub fn pitch_add(&mut self, angle: Real) -> &mut FPSCamera {
         let up = Vector3::from(&consts::UP_VEC);
         self.trfm.rotation.append_rotation_mut(&(up * angle));
         self
     }
 
-    pub fn set_rotation(&mut self, yaw: Coord, pitch: Coord) -> &mut FPSCamera {
+    pub fn set_rotation(&mut self, yaw: Real, pitch: Real) -> &mut FPSCamera {
         self.trfm.rotation = Rotation3::from_euler_angles(0.0, yaw, pitch);
         self
     }
 }
 
 impl RenderCamera for FPSCamera {
-    fn view_matrix(&self) -> Matrix4<Coord> {
+    fn view_matrix(&self) -> Matrix4<Real> {
         self.trfm
             .inverse()
             .unwrap_or(math::one())
             .to_homogeneous()
     }
-    fn proj_matrix(&self) -> Matrix4<Coord> {
-        PerspectiveMatrix3::new(self.width as Coord / self.height as Coord,
+    fn proj_matrix(&self) -> Matrix4<Real> {
+        PerspectiveMatrix3::new(self.width as Real / self.height as Real,
                                 self.fovx,
                                 self.znear,
                                 self.zfar)
@@ -102,16 +102,16 @@ impl RenderCamera for FPSCamera {
     fn width(&self) -> u32 {
         self.width
     }
-    fn aspect(&self) -> Coord {
-        self.width as Coord / self.height as Coord
+    fn aspect(&self) -> Real {
+        self.width as Real / self.height as Real
     }
-    fn znear(&self) -> Coord {
+    fn znear(&self) -> Real {
         self.znear
     }
-    fn zfar(&self) -> Coord {
+    fn zfar(&self) -> Real {
         self.zfar
     }
-    fn fovx(&self) -> Coord {
+    fn fovx(&self) -> Real {
         self.fovx
     }
 

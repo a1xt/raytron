@@ -1,9 +1,7 @@
 use pt::sceneholder::{ShapeList};
 use pt::material::{Diffuse, Phong};
 use pt::{Sphere, Color};
-use pt::math;
 use pt::math::{Vector3f, Point3f};
-use pt::color::WHITE;
 use camera_controller::{FPSCameraController};
 
 

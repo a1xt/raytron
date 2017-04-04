@@ -10,15 +10,12 @@ use gfx::Factory;
 //use pt_app::camera_controller::{CameraController, FPSCameraController};
 //use pt_app::utils::camera::{FPSCamera, RenderCamera};
 use pt_app::{App};
-use glutin::CursorState;
-use pt_app::utils;
 use pt_app::scenes::spheres;
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::{Image, RenderSettings, Color};
+use pt_app::pt::{Image, RenderSettings};
 use pt_app::pt::traits::{Renderer};
 
 use std::mem;
-use std::ops::Deref;
 
 use gfx::format::R32_G32_B32_A32;
 use gfx::format::Float;
@@ -28,7 +25,7 @@ use pt_app::pt::rand;
 use pt_app::pt::color;
 use std::string::{String, ToString};
 
-use glutin::{Event, ElementState, VirtualKeyCode, MouseButton};
+use glutin::{Event, ElementState, VirtualKeyCode};
 
 fn main () {
     let width = 400u32;
@@ -98,11 +95,8 @@ fn main () {
     //println!("image saved!");
 
     let mut dbg = true;
-
-    let mut save_image_pressed = false;
-
     let mut pass_num = 0;
-    let mut start_time = time::precise_time_ns();
+    let mut start_time;
     let mut total_time = 0u64;
     while app.run() {
         if dbg {
@@ -164,7 +158,7 @@ fn main () {
 
         app.clear_frame();
 
-        app.encoder_mut().update_texture::<R32_G32_B32_A32, (R32_G32_B32_A32, Float) >(
+        let _ = app.encoder_mut().update_texture::<R32_G32_B32_A32, (R32_G32_B32_A32, Float) >(
             &tex,
             None,
             gfx::texture::NewImageInfo {
@@ -179,7 +173,7 @@ fn main () {
             },
             cast_slice(&img),
       
-        );
+        ).unwrap();
         
 
         app.draw_fullscreen_quad(tex_view.clone());

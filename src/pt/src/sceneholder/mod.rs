@@ -3,7 +3,7 @@ pub mod shapelist;
 pub use self::shapelist::ShapeList;
 
 use traits::Surface;
-use math::{self, Ray3f, Coord};
+use math::{Ray3f};
 use {SurfacePoint};
 
 pub trait SceneHolder {
