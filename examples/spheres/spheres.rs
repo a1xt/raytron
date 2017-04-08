@@ -70,7 +70,13 @@ fn main () {
 
     let scene = spheres::create_scene();
     spheres::setup_camera(app.cam_ctrl_mut());
-    let mut rdr = PathTracer::new(&setup).with_direct_illumination();
+    let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.2, 0.8);
+    let x = app.cam_ctrl().camera().pos().x;
+        let y = app.cam_ctrl().camera().pos().y;
+        let z = app.cam_ctrl().camera().pos().z;
+        println!("camera pos: ({:.1}, {:.1}, {:.1})", x, y, z);
+
+
     let mut dbg_rdr = DbgRayCaster::new();
     
     let mut img: Image = Image::new(width, height);

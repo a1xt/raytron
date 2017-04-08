@@ -27,7 +27,7 @@ impl DbgRayCaster {
                 return c;
             } else {
                 if let Some(light) = scene.light_sources().into_iter().next() {
-                    let (light_point, _) = light.sample_surface(&sp.position);
+                    let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
                     let shadow_ray = Ray3f::new(&sp.position, &(light_point.position - sp.position).normalize());                    
 
                     let color = Color{data: [sp.normal.x.abs() as f32, sp.normal.y.abs() as f32, sp.normal.z.abs() as f32, 1.0]};

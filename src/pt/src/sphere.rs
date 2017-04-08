@@ -1,8 +1,8 @@
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
-//use math::{Dot};
+use math::{Dot};
 use super::{Surface, SurfacePoint, Bsdf};
 use std::boxed::Box;
-//use std::f32::consts::PI;
+use std::f64::consts::PI;
 use color::{self, Color};
 
 #[derive(Clone, Copy, Debug)]
@@ -28,7 +28,6 @@ impl<B: Bsdf + Clone> Sphere<B> {
 
     fn normal_to(&self, point: &Point3f) -> Vector3f {
         (*point - self.position).normalize()
-        //(self.position - *point).normalize()
     }
 }
 
@@ -69,12 +68,11 @@ impl<B: Bsdf + Clone> Surface for Sphere<B> {
         self.normal_to(pos)
     }
 
-    fn sample_surface(&self, _: &Point3f) -> (SurfacePoint, Real) {
-        // let view_dir = (*view_point - self.position).normalize();
-        // let normal = math::hs_uniform_sampling(&view_dir);
-        // let pdf = 2.0 / self.area();
-        let normal = math::sph_uniform_sampling();
-        let pdf = 1.0 / self.area();
+    fn sample_surface_p(&self, view_point: (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
+        let view_dir = (*view_point.0 - self.position).normalize();
+        let normal = math::hs_uniform_sampling(&view_dir);
+        // let normal = math::sph_uniform_sampling();
+        let pdf = 2.0 / self.area();
         let pos = self.position + (normal * self.radius);
 
         (SurfacePoint {
@@ -86,9 +84,32 @@ impl<B: Bsdf + Clone> Surface for Sphere<B> {
         pdf)
     }
 
-    fn pdf(&self, _: &Point3f, _ : &Point3f) -> Real {
-        //2.0 / self.area()        
-        1.0 / self.area()
+    fn pdf_p(&self, _: (&Point3f, &Vector3f), _ : (&Point3f, &Vector3f)) -> Real {      
+        2.0 / self.area()
     }
 
+    // fn sample_surface_d(&self, view_point: (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
+    //     let view_dir = (*view_point.0 - self.position);
+    //     let d = view_dir.norm();
+    //     let r = self.radius;
+    //     let normal = math::hs_uniform_sampling(&view_dir.normalize());    
+    //     let pdf = 1.0 / (2.0 * (PI as Real) * (1.0 - d / (d*d + r*r).sqrt()));
+    //     let pos = self.position + (normal * self.radius);
+
+    //     (SurfacePoint {
+    //         position: pos,
+    //         normal: normal,
+    //         bsdf: self.bsdf(),
+    //         surface: self,
+    //     },
+    //     pdf)
+    // }
+
+    // fn pdf_d(&self, point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
+    //     let view_dir = (*view_point.0 - *point_at_surface.0);
+    //     let d = view_dir.norm();
+    //     let r = self.radius;
+    //     let pdf = 1.0 / (2.0 * (PI as Real) * (1.0 - d / (d*d + r*r).sqrt()));
+    //     pdf
+    // }
 }

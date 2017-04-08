@@ -28,9 +28,7 @@ impl FPSCamera {
     }
 
     pub fn look_at(&mut self, target: &Point3f) {
-        self.trfm = Isometry3::look_at_rh(self.trfm.translation.as_point(),
-                                          target,
-                                          &math::Vector3::from(&consts::UP_VEC));
+        self.trfm.rotation = Rotation3::look_at_lh(&(*target - *self.pos()), &Vector3f::from(&consts::UP_VEC));
     }
 
     pub fn transform(&self) -> &Isometry3<Real> {
@@ -64,14 +62,14 @@ impl FPSCamera {
     }
 
     pub fn yaw_add(&mut self, angle: Real) -> &mut FPSCamera {
-        let cam_right = self.right();
-        self.trfm.rotation.append_rotation_mut(&(cam_right * angle));
-        self
+        let up = Vector3::from(&consts::UP_VEC);
+        self.trfm.rotation.append_rotation_mut(&(up * angle));
+        self        
     }
 
     pub fn pitch_add(&mut self, angle: Real) -> &mut FPSCamera {
-        let up = Vector3::from(&consts::UP_VEC);
-        self.trfm.rotation.append_rotation_mut(&(up * angle));
+        let cam_right = self.right();
+        self.trfm.rotation.append_rotation_mut(&(cam_right * angle));
         self
     }
 
