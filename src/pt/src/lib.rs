@@ -8,9 +8,9 @@ pub mod math;
 pub mod traits;
 pub mod utils;
 pub mod sphere;
-//pub mod polygon;
+pub mod polygon;
 pub mod sceneholder;
-pub mod material;
+pub mod bsdf;
 pub mod renderer;
 pub mod color;
 
@@ -25,18 +25,16 @@ pub use self::traits::{
 
 pub use self::sphere::{Sphere};
 pub use self::sceneholder::{ShapeList};
-
 pub use self::color::{Color, Image};
-
-
+pub use self::bsdf::BsdfRef;
 
 use self::math::{Point3f, Vector3f};
+
 
 pub struct SurfacePoint<'a> {
     pub position: Point3f,
     pub normal: Vector3f,
-    //pub bsdf: &'a Bsdf,
-    pub bsdf: Box<Bsdf + 'a>,
+    pub bsdf: BsdfRef<'a>,
     pub surface: &'a Surface,
 }
 

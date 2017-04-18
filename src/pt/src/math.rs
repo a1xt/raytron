@@ -29,7 +29,7 @@ impl<F> Ray3<F> where F: Copy + Clone {
     }
 }
 
-pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: &Ray3f) -> Option<Real> {
+pub fn intersection_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: &Ray3f) -> Option<Real> {
     debug_assert!((ray.dir.norm() - 1.0).abs() <= 1.0e-6);
 
     let l = ray.origin - *sphere_pos;
@@ -57,26 +57,27 @@ pub fn intersection_with_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: 
 }
 
 /// return (t, (u, v))
-pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f) -> Option<(Real, (Real, Real))> {
+pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f, culling: bool) -> Option<(Real, (Real, Real))> {
 
-    let e1 = *v1 - *v0;
-    let e2 = *v2 - *v0;    
+    let e1 = *v2 - *v0;
+    let e2 = *v1 - *v0;    
     let p = ray.dir.cross(&e2);
     let det = p.dot(&e1);
 
-    if det.abs() < FLOAT_EPSILON {
+    let d = if culling { det } else { det.abs() };
+    if d < FLOAT_EPSILON {
         return None;
     }
 
-    let t0 = p - *v0.as_vector();
+    let t0 = ray.origin - *v0;
     let q = t0.cross(&e1);
-    let det_inv = 1.0 / det.abs();
+    let det_inv = 1.0 / det;
 
     let t = det_inv * q.dot(&e2);
     let u = det_inv * p.dot(&t0);
     let v = det_inv * q.dot(&ray.dir);
 
-    if t < 0.0 || u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 {
+    if t < 0.0 || u < 0.0 || v < 0.0 || u + v > 1.0 {
         return None;
     }
 

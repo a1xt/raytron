@@ -1,20 +1,20 @@
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
 use math::{Dot};
-use super::{Surface, SurfacePoint, Bsdf};
-use std::boxed::Box;
+use {Surface, SurfacePoint, Bsdf};
+use bsdf::BsdfRef;
 use std::f64::consts::PI;
 use color::{self, Color};
+use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug)]
-pub struct Sphere<B: Bsdf + Clone> {
+#[derive(Clone)]
+pub struct Sphere {
     pub position: Point3f,
     pub radius: Real,
-    //bsdf: Box<Bsdf>,
-    pub bsdf: B,
+    pub bsdf: Arc<Bsdf>,
 }
 
-impl<B: Bsdf + Clone> Sphere<B> {
-    pub fn new(position: Point3f, radius: Real, mat: B) -> Sphere<B> {
+impl Sphere {
+    pub fn new(position: Point3f, radius: Real, mat: Arc<Bsdf>) -> Sphere {
         Sphere {
             position: position,
             radius: radius,
@@ -22,8 +22,8 @@ impl<B: Bsdf + Clone> Sphere<B> {
         }
     }
 
-    pub fn bsdf<'s>(&'s self) -> Box<Bsdf + 's> {
-        Box::new(self.bsdf.clone())
+    pub fn bsdf<'s>(&'s self) -> BsdfRef<'s> {
+        BsdfRef::Ref(self.bsdf.as_ref())
     }
 
     fn normal_to(&self, point: &Point3f) -> Vector3f {
@@ -31,10 +31,18 @@ impl<B: Bsdf + Clone> Sphere<B> {
     }
 }
 
-impl<B: Bsdf + Clone> Surface for Sphere<B> {
+impl Surface for Sphere {
+
+    fn is_emitter(&self) -> bool {
+        if let Some(_) = self.bsdf.emittance() {
+            true
+        } else {
+            false
+        }
+    }
 
     fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
-        if let Some(t) = math::intersection_with_sphere(&self.position, self.radius, ray) {
+        if let Some(t) = math::intersection_sphere(&self.position, self.radius, ray) {
             let pos = ray.origin + ray.dir * t;
             let norm = self.normal_to(&pos);
             Some((

@@ -30,7 +30,10 @@ impl DbgRayCaster {
                     let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
                     let shadow_ray = Ray3f::new(&sp.position, &(light_point.position - sp.position).normalize());                    
 
-                    let color = Color{data: [sp.normal.x.abs() as f32, sp.normal.y.abs() as f32, sp.normal.z.abs() as f32, 1.0]};
+                    let color = Color{data: [(0.5 + sp.normal.x * 0.5) as f32,
+                                             (0.5 + sp.normal.y * 0.5) as f32,
+                                             (0.5 + sp.normal.z * 0.5) as f32,
+                                             1.0]};
 
                     if let Some(lp) = scene.intersection_with_scene(&shadow_ray){
                         

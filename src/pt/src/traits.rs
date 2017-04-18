@@ -3,6 +3,7 @@ use super::{SurfacePoint, Color};
 
 pub use renderer::Renderer;
 pub use sceneholder::SceneHolder;
+pub use bsdf::Bsdf;
 
 pub trait RenderCamera {
     fn view_matrix(&self) -> Matrix4f;
@@ -24,6 +25,8 @@ pub trait RenderCamera {
 pub trait Surface : Sync {
     /// return (t, sp)
     fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)>;
+
+    fn is_emitter(&self) -> bool;
 
     /// ∫ Le dA
     fn total_emittance(&self) -> Option<Color>;
@@ -86,43 +89,4 @@ pub trait Surface : Sync {
         let pdf_d_proj = pdf_d / cos_theta;
         pdf_d_proj
     }
-}
-
-pub trait Bsdf : Sync {
-
-    fn emittance(&self) -> Option<Color>;
-
-    fn eval(&self, 
-            surface_normal: &Vector3f,
-            in_dir: &Vector3f,
-            out_dir: &Vector3f)
-            -> (Color, Real);
-
-    fn sample(&self, 
-              surface_normal: &Vector3f, 
-              in_dir: &Vector3f)
-              -> (Vector3f, Color, Real);
-
-    fn eval_proj(&self, 
-                 surface_normal: &Vector3f, 
-                 in_dir: &Vector3f,
-                 out_dir: &Vector3f)
-                 -> (Color, Real) {
-
-        let (fr, pdf) = self.eval(surface_normal, in_dir, out_dir);
-        let cos_theta = surface_normal.dot(&out_dir);
-        (fr, pdf / cos_theta)
-    }  
-
-    fn sample_proj(&self, 
-                   surface_normal: &Vector3f, 
-                   in_dir: &Vector3f)
-                   -> (Vector3f, Color, Real) {
-
-        let (ray, fr, pdf) = self.sample(surface_normal, in_dir);
-        let cos_theta = surface_normal.dot(&ray);
-
-        (ray, fr, pdf / cos_theta)
-    }
-
 }

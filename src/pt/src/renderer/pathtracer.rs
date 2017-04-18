@@ -68,7 +68,7 @@ impl PathTracer {
             let direct_illumination = if let Some((brdf_w, ls_w)) = self.di_samples_weight {
                 let mut di = color::BLACK;
 
-                let Closed01(e) = rand::random::<Closed01<Real>>();
+                let Closed01(e) = rand::random::<Closed01<Real>>();    
                 if e > brdf_w {
                     // light source sampling
                     if let Some((lp, pdf_ls)) = utils::sample_surfaces::by_area(scene.light_sources(),
@@ -92,7 +92,6 @@ impl PathTracer {
                         }
                     }
                 } else {
-
                     // brdf sampling
                     let (brdf_ray_dir, _, _) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
                     let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
@@ -132,7 +131,7 @@ impl PathTracer {
             return color::BLACK;
         }
     }
-    
+
 }
 
 impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for PathTracer {

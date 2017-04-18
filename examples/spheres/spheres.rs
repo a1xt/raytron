@@ -68,9 +68,38 @@ fn main () {
     let setup = RenderSettings::new(128, 4).with_threads(4, pt_render_chunk);    
     let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
-    let scene = spheres::create_scene();
+
+
+    use pt_app::pt::polygon::*;
+    use std::sync::Arc;
+    use pt_app::pt::color;
+    use pt_app::pt::math::{Point3f};
+    let v: Vec<BaseVertex> = vec![
+        BaseVertex::new(&Point3f::new(-15.0, -25.0, -40.0)),
+        BaseVertex::new(&Point3f::new(-15.0, 5.0, -40.0)),
+        BaseVertex::new(&Point3f::new(15.0, 5.0, -40.0)),
+        BaseVertex::new(&Point3f::new(15.0, -25.0, -40.0)),
+    ];
+
+    
+    let pol0 = Polygon::new(
+        &v[0], &v[1], &v[2],
+        Arc::new(DiffuseMat::new(color::GREEN, None)),
+    );
+    let pol1 = Polygon::new(
+        &v[0], &v[2], &v[3],
+        Arc::new(DiffuseMat::new(color::GREEN, None)),
+    );
+
+    //let (scene, _) = spheres::create_scene();
+    let s = spheres::CornellBox::new();
+    let mut scene = s.shape_list();
+
+    scene.add_shape(&pol0);
+    scene.add_shape(&pol1);
+
     spheres::setup_camera(app.cam_ctrl_mut());
-    let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.2, 0.8);
+    let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.75, 0.25);
     let x = app.cam_ctrl().camera().pos().x;
         let y = app.cam_ctrl().camera().pos().y;
         let z = app.cam_ctrl().camera().pos().z;

@@ -1,13 +1,14 @@
 use math::{Ray3f, Real};
 use traits::{Surface, SceneHolder};
 use ::{SurfacePoint};
-use std::convert::AsRef;
 use std;
 use utils::consts;
 
 pub struct ShapeList<'a> {
-    shapes: Vec<Box<Surface + 'a>>,
-    light_sources: Vec<Box<Surface + 'a>>,
+    //shapes: Vec<Box<Surface + 'a>>,
+    //light_sources: Vec<Box<Surface + 'a>>,
+    shapes: Vec<&'a Surface>,
+    light_sources: Vec<&'a Surface>,
 }
 
 impl<'a> ShapeList<'a> {
@@ -18,11 +19,11 @@ impl<'a> ShapeList<'a> {
         }
     }
 
-    pub fn add_shape<S: Surface + 'a> (&mut self, shape: S, light_source: bool) {
-        if light_source {
-            self.light_sources.push(Box::new(shape));
+    pub fn add_shape(&mut self, surface: &'a Surface) {
+        if surface.is_emitter() {
+            self.light_sources.push(surface);
         } else {
-            self.shapes.push(Box::new(shape));
+            self.shapes.push(surface);
         }
     }
 }
@@ -58,6 +59,6 @@ impl<'a> SceneHolder for ShapeList<'a> {
     }
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's> {
-        Box::new(self.light_sources.iter().map(|s| s.as_ref()))
+        Box::new(self.light_sources.iter().map(|&s| s))
     }
 }

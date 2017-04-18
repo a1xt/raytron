@@ -5,8 +5,8 @@ use std::f32::consts::PI;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Diffuse {
-    color: Color,
-    emittance: Option<Color>,
+    pub color: Color,
+    pub emittance: Option<Color>,
 }
 
 impl Diffuse {
