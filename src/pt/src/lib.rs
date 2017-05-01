@@ -1,4 +1,5 @@
 #![feature(conservative_impl_trait)]
+#![feature(slice_patterns)]
 
 pub extern crate image;
 pub extern crate rand;
@@ -13,6 +14,8 @@ pub mod sceneholder;
 pub mod bsdf;
 pub mod renderer;
 pub mod color;
+pub mod aabb;
+pub mod mesh;
 
 
 pub use self::traits::{

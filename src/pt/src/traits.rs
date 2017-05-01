@@ -4,6 +4,8 @@ use super::{SurfacePoint, Color};
 pub use renderer::Renderer;
 pub use sceneholder::SceneHolder;
 pub use bsdf::Bsdf;
+pub use polygon::{Vertex, Material};
+pub use aabb::{HasBounds};
 
 pub trait RenderCamera {
     fn view_matrix(&self) -> Matrix4f;
@@ -90,3 +92,6 @@ pub trait Surface : Sync {
         pdf_d_proj
     }
 }
+
+pub trait BoundedSurface: Surface + HasBounds { }
+impl<T> BoundedSurface for T where T: Surface + HasBounds { }

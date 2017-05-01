@@ -1,10 +1,9 @@
 pub use self::vertex::{Vertex, BaseVertex};
 pub use self::material::{Material, DiffuseMat};
 
-use std::f32::consts::PI;
 use std::sync::Arc;
-use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Dot, Cross};
-use {Surface, SurfacePoint, Bsdf, BsdfRef};
+use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
+use {Surface, SurfacePoint, BsdfRef};
 
 use color::{self, Color};
 use rand::{self, Closed01};
@@ -113,7 +112,7 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
 }
 
 pub mod material {
-    use bsdf::{Diffuse, Phong, Bsdf, BsdfRef};
+    use bsdf::{Diffuse, Phong, BsdfRef};
     use super::vertex::{Vertex, BaseVertex};
     use color::Color;
 
@@ -134,7 +133,25 @@ pub mod material {
     }
 
     impl Material<BaseVertex> for DiffuseMat {
-        fn bsdf<'s>(&'s self, v: &BaseVertex) -> BsdfRef<'s> {
+        fn bsdf<'s>(&'s self, _: &BaseVertex) -> BsdfRef<'s> {
+            BsdfRef::Ref(&self.bsdf)
+        }
+    }
+
+    pub struct PhongMat {
+        pub bsdf: Phong,
+    }
+
+    impl PhongMat {
+        pub fn new(color: Color, kd: f32, ks: f32, n: f32) -> PhongMat {
+            PhongMat {
+                bsdf: Phong::new(color, kd, ks, n),
+            }
+        }
+    }
+
+    impl Material<BaseVertex> for PhongMat {
+        fn bsdf<'s>(&'s self, _: &BaseVertex) -> BsdfRef<'s> {
             BsdfRef::Ref(&self.bsdf)
         }
     }

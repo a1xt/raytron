@@ -10,11 +10,11 @@ use std::sync::Arc;
     //use pt::polygon::*;
     use pt::color;
 
-pub struct CornellBox {
+pub struct Room {
     pub spheres: BTreeMap<&'static str, Sphere>,  
 }
 
-impl CornellBox {
+impl Room {
     pub fn new() -> Self {
         
         let mut btmap = BTreeMap::new();
@@ -79,7 +79,7 @@ impl CornellBox {
             ),
         );
         //Sphere 1
-        let k = 10.0;
+        //let k = 10.0;
         btmap.insert(
             "sphere1",
             Sphere::new(
@@ -111,7 +111,7 @@ impl CornellBox {
             ),
         );
         
-        CornellBox{spheres: btmap}
+        Room{spheres: btmap}
     }
 
     pub fn shape_list<'s> (&'s self) -> ShapeList<'s> {
@@ -124,7 +124,6 @@ impl CornellBox {
 }
 
 pub fn setup_camera (ctrl: &mut FPSCameraController) {
-    use pt::math::Norm;
     //cam(Vec(50,52,295.6), Vec(0,-0.042612,-1).norm()); // cam pos, dir
     ctrl.camera_mut().set_pos(&Point3f::new(-25.0, -25.0, 49.0));
     ctrl.camera_mut().yaw_add((-30.0 as Real).to_radians());
