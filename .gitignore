@@ -2,3 +2,4 @@ target
 Cargo.lock
 res_img
 /data
+rls.toml
