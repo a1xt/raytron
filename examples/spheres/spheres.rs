@@ -13,7 +13,7 @@ use pt_app::{App};
 use pt_app::scenes::spheres;
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
 use pt_app::pt::{Image, RenderSettings};
-use pt_app::pt::traits::{Renderer};
+use pt_app::pt::traits::{Renderer, BoundedSurface};
 
 use std::mem;
 
@@ -73,27 +73,7 @@ fn main () {
     let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
 
-
-    // use pt_app::pt::polygon::*;
-    // use std::sync::Arc;
-    // use pt_app::pt::color;
     use pt_app::pt::math::{Point3f};
-    // let v: Vec<BaseVertex> = vec![
-    //     BaseVertex::new(&Point3f::new(-15.0, -25.0, -40.0)),
-    //     BaseVertex::new(&Point3f::new(-15.0, 5.0, -40.0)),
-    //     BaseVertex::new(&Point3f::new(15.0, 5.0, -40.0)),
-    //     BaseVertex::new(&Point3f::new(15.0, -25.0, -40.0)),
-    // ];
-
-    
-    // let pol0 = Polygon::new(
-    //     &v[0], &v[1], &v[2],
-    //     Arc::new(DiffuseMat::new(color::GREEN, None)),
-    // );
-    // let pol1 = Polygon::new(
-    //     &v[0], &v[2], &v[3],
-    //     Arc::new(DiffuseMat::new(color::GREEN, None)),
-    // );
 
     let cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
     let cube_mesh = cube.build_bv(false);
@@ -107,8 +87,19 @@ fn main () {
         scene.add_shape(p);
     }
 
-    // scene.add_shape(&pol0);
-    // scene.add_shape(&pol1);
+    use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
+    let obj_iter = s.shape_iter()
+        .map(move |s| s as &BoundedSurface)
+        .chain(
+            polygons.iter()
+                    .map(move |p| p as &BoundedSurface)
+        );
+    println!("start building kdtree...");
+    let kdtree_build_start = time::precise_time_ns();
+    let kdtree_setup = KdTreeSetup::new(32, 8, Sah::new(1.0, 1.0));
+    let scene = KdTreeS::new(obj_iter, kdtree_setup);
+    let kdtree_build_time = time::precise_time_ns() - kdtree_build_start;
+    println!("kdtree builded, time: {:.2}", (kdtree_build_time as f64) * 1.0e-9);
 
     spheres::setup_camera(app.cam_ctrl_mut());
     let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.75, 0.25);

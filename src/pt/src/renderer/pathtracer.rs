@@ -52,7 +52,7 @@ impl PathTracer {
             false
         };
 
-        if let Some(sp) = scene.intersection_with_scene(ray) {
+        if let Some(sp) = scene.intersection(ray) {
             let mat = sp.bsdf.as_ref();
 
             let le = if let Some(c) = mat.emittance() {
@@ -79,7 +79,7 @@ impl PathTracer {
                         let cos_theta_l = lp.normal.dot(&(-shadow_ray.dir));
 
                         if cos_theta > 0.0 && cos_theta_l > 0.0 {
-                            if let Some(ip) = scene.intersection_with_scene(&shadow_ray) {
+                            if let Some(ip) = scene.intersection(&shadow_ray) {
                                 if ip.position.approx_eq_eps(&lp.position, &(consts::POSITION_EPSILON * 2.0)) {
 
                                     let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
@@ -96,7 +96,7 @@ impl PathTracer {
                     let (brdf_ray_dir, _, _) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
                     let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
 
-                    if let Some(ip) = scene.intersection_with_scene(&shadow_ray) {
+                    if let Some(ip) = scene.intersection(&shadow_ray) {
                         if let Some(le) = ip.bsdf.emittance() {
 
                             let pdf_ls = utils::sample_surfaces::by_area_pdf(ip.surface,

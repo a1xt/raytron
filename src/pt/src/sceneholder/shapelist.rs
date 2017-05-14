@@ -29,7 +29,7 @@ impl<'a> ShapeList<'a> {
 }
 
 impl<'a> SceneHolder for ShapeList<'a> {
-    fn intersection_with_scene(&self, ray: &Ray3f) -> Option<SurfacePoint> {
+    fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint> {
         let mut t_min: Real = std::f32::MAX as Real;
         let mut sp = None;
 

@@ -5,6 +5,7 @@ use bsdf::BsdfRef;
 use std::f64::consts::PI;
 use color::{self, Color};
 use std::sync::Arc;
+use aabb::{Aabb3, HasBounds};
 
 #[derive(Clone)]
 pub struct Sphere {
@@ -120,4 +121,14 @@ impl Surface for Sphere {
     //     let pdf = 1.0 / (2.0 * (PI as Real) * (1.0 - d / (d*d + r*r).sqrt()));
     //     pdf
     // }
+}
+
+impl HasBounds for Sphere {
+    fn aabb(&self) -> Aabb3 {
+        let dpos = Vector3f::new(self.radius, self.radius, self.radius);
+        Aabb3::new(
+            self.position - dpos,
+            self.position + dpos,
+        )
+    }
 }

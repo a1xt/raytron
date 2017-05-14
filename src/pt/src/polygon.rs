@@ -4,9 +4,11 @@ pub use self::material::{Material, DiffuseMat};
 use std::sync::Arc;
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
 use {Surface, SurfacePoint, BsdfRef};
+use aabb::{Aabb3, HasBounds};
 
 use color::{self, Color};
 use rand::{self, Closed01};
+use num::Float;
 
 #[derive(Clone)]
 pub struct Polygon<'a, V: Vertex + 'a> {
@@ -108,6 +110,28 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
         } else {
             false
         }
+    }
+}
+
+impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {  
+    fn aabb(&self) -> Aabb3 {
+        use utils::consts::POSITION_EPSILON;
+        let p0 = self.v0.position();
+        let p1 = self.v1.position();
+        let p2 = self.v2.position();
+        let pmin = Point3f::new(
+            p0.x.min(p1.x.min(p2.x)),
+            p0.y.min(p1.y.min(p2.y)),
+            p0.z.min(p1.z.min(p2.z)),
+        );
+        let pmax = Point3f::new(
+            p0.x.max(p1.x.max(p2.x)),
+            p0.y.max(p1.y.max(p2.y)),
+            p0.z.max(p1.z.max(p2.z)),
+        );
+        println!("pmin: x = {:.}, y = {:.}, z = {:.}", pmin.x, pmin.y, pmin.z);
+        println!("pmax: x = {:.}, y = {:.}, z = {:.}", pmax.x, pmax.y, pmax.z);
+        Aabb3::new(pmin, pmax)
     }
 }
 

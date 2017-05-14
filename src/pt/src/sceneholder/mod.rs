@@ -1,4 +1,5 @@
 pub mod shapelist;
+pub mod kdtree;
 
 pub use self::shapelist::ShapeList;
 
@@ -7,7 +8,7 @@ use math::{Ray3f};
 use {SurfacePoint};
 
 pub trait SceneHolder {
-    fn intersection_with_scene(&self, ray: &Ray3f) -> Option<SurfacePoint>;
+    fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint>;
 
     // delete
     //fn random_light_source<'s>(&'s self) -> Option<&'s Surface>;

@@ -21,7 +21,7 @@ impl DbgRayCaster {
         where S: SceneHolder, C: RenderCamera
     {
 
-        if let Some(sp) = scene.intersection_with_scene(ray) {
+        if let Some(sp) = scene.intersection(ray) {
             let mat = sp.bsdf;
             if let Some(c) = mat.emittance() {
                 return c;
@@ -34,13 +34,14 @@ impl DbgRayCaster {
                                              (0.5 + sp.normal.y * 0.5) as f32,
                                              (0.5 + sp.normal.z * 0.5) as f32,
                                              1.0]};
-
-                    if let Some(lp) = scene.intersection_with_scene(&shadow_ray){
+                    //return color;
+                    if let Some(lp) = scene.intersection(&shadow_ray){
                         
                         if let Some(_) = lp.bsdf.emittance() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
                             return color::mul_s(&color, cos_theta as f32);
+
                         }                      
                     } 
                 }

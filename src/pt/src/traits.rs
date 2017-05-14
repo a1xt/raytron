@@ -93,5 +93,11 @@ pub trait Surface : Sync {
     }
 }
 
-pub trait BoundedSurface: Surface + HasBounds { }
-impl<T> BoundedSurface for T where T: Surface + HasBounds { }
+pub trait BoundedSurface: Surface + HasBounds {
+    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where Self: 'a;
+}
+impl<T> BoundedSurface for T where T: Surface + HasBounds {
+    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where T: 'a {
+        self as &Surface
+    }
+}

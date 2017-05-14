@@ -1,6 +1,8 @@
 #![feature(conservative_impl_trait)]
 #![feature(slice_patterns)]
+ #![feature(box_syntax)]
 
+pub extern crate num;
 pub extern crate image;
 pub extern crate rand;
 pub extern crate scoped_threadpool;

@@ -14,7 +14,7 @@ gfx_window_glutin = { git = 'https://github.com/gfx-rs/gfx' }
 gfx = { git = 'https://github.com/gfx-rs/gfx' }
 
 glutin = "*"
-genmesh = "*"
+#genmesh = "*"
 image = "*"
 nalgebra = "0.10.*"
 obj-rs = "*"
@@ -22,14 +22,9 @@ pathtracer = {path = "src/pt", version = "*"}
 time = "0.1.*"
 
 
-
-[[example]]
-name = "test"
-path = "examples/test/main.rs"
-
-[[example]]
-name = "apptest"
-path = "examples/apptest/apptest.rs"
+#[[example]]
+#name = "apptest"
+#path = "examples/apptest/apptest.rs"
 
 [[example]]
 name = "spheres"

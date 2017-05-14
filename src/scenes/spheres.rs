@@ -6,6 +6,7 @@ use pt::math::{Vector3f, Point3f, Real};
 use camera_controller::{FPSCameraController};
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::boxed::Box;
 
     //use pt::polygon::*;
     use pt::color;
@@ -120,6 +121,10 @@ impl Room {
             l.add_shape(s as &Surface);
         }
         l
+    }
+
+    pub fn shape_iter<'s>(&'s self) -> impl Iterator<Item = &'s Sphere> + 's {
+        self.spheres.iter().map(move |(_, s)| s)
     }
 }
 
