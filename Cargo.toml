@@ -18,7 +18,7 @@ glutin = "*"
 image = "*"
 nalgebra = "0.10.*"
 obj-rs = "*"
-pathtracer = {path = "src/pt", version = "*"}
+pathtracer = {path = "pt", version = "*"}
 time = "0.1.*"
 
 
@@ -29,4 +29,6 @@ time = "0.1.*"
 [[example]]
 name = "spheres"
 path = "examples/spheres/spheres.rs"
+
+[workspace]
 

@@ -1,2 +1,2 @@
 reorder_imports = true
-format_strings = false
+write_mode = "diff"
