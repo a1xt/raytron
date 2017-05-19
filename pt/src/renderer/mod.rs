@@ -42,11 +42,11 @@ mod inner {
         }
 
         fn add_to_pixel(&self, c: &Color, pnum: f32, x: u32, y: u32, out_image: &mut Image) {
-            let mut pixel = out_image.get_pixel(x, y).clone();
-            pixel = color::mul_s(&pixel, pnum - 1.0);
-            pixel = color::sum(&pixel, &c);
-            pixel = color::mul_s(&pixel, 1.0 / pnum);
-            out_image.put_pixel(x, y, pixel);
+            let mut pixel = out_image.pixel(x as usize, y as usize);
+            pixel = pixel * (pnum - 1.0);
+            pixel = pixel + *c;
+            pixel = pixel * (1.0 / pnum);
+            out_image.set_pixel(x as usize, y as usize, pixel);
         }
         
     }

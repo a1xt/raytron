@@ -30,17 +30,16 @@ impl DbgRayCaster {
                     let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
                     let shadow_ray = Ray3f::new(&sp.position, &(light_point.position - sp.position).normalize());                    
 
-                    let color = Color{data: [(0.5 + sp.normal.x * 0.5) as f32,
-                                             (0.5 + sp.normal.y * 0.5) as f32,
-                                             (0.5 + sp.normal.z * 0.5) as f32,
-                                             1.0]};
+                    let color = Color::new((0.5 + sp.normal.x * 0.5) as f32,
+                                           (0.5 + sp.normal.y * 0.5) as f32,
+                                           (0.5 + sp.normal.z * 0.5) as f32);
                     //return color;
                     if let Some(lp) = scene.intersection(&shadow_ray){
                         
                         if let Some(_) = lp.bsdf.emittance() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
-                            return color::mul_s(&color, cos_theta as f32);
+                            return color * (cos_theta as f32);
 
                         }                      
                     } 

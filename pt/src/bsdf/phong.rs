@@ -135,7 +135,7 @@ impl Bsdf for Phong {
         if e < self.kd {
             let pdf = out_dir.dot(&surface_normal) / PI as Real;
 
-            (color::mul_s(&self.color, 1.0 / PI), pdf)
+            (self.color * (1.0 / PI), pdf)
 
         } else if e < self.kd + self.ks {
             let n = self.n as Real;
@@ -148,7 +148,7 @@ impl Bsdf for Phong {
                 let pdf = (n + 1.0) * cos_alpha.powf(n) / (2.0 * PI as Real);
 
                 let f = ((n + 2.0) / (2.0 * PI as Real)) * cos_alpha.powf(n);
-                let fr = color::mul_s(&self.color, f as f32);
+                let fr = self.color * (f as f32);
 
                 (fr, pdf)
             } else {
@@ -177,7 +177,7 @@ impl Bsdf for Phong {
             let out_dir = self.random_vector(&in_dir_refl);
             
             let f = (n + 2.0) / (n + 1.0);
-            let fr = color::mul_s(&self.color, f as f32);
+            let fr = self.color * (f as f32);
 
             (out_dir, fr, 1.0)
 

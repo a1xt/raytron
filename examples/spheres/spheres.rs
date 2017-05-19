@@ -3,6 +3,8 @@ extern crate gfx;
 extern crate gfx_device_gl as gfx_gl;
 extern crate glutin;
 extern crate time;
+extern crate image;
+extern crate rand;
 
 
 use gfx::Factory;
@@ -20,8 +22,8 @@ use std::mem;
 use gfx::format::R32_G32_B32_A32;
 use gfx::format::Float;
 
-use pt_app::pt::image;
-use pt_app::pt::rand;
+
+//use pt_app::pt::rand;
 use pt_app::pt::color;
 use std::string::{String, ToString};
 
@@ -94,12 +96,12 @@ fn main () {
             polygons.iter()
                     .map(move |p| p as &BoundedSurface)
         );
-    println!("start building kdtree...");
-    let kdtree_build_start = time::precise_time_ns();
-    let kdtree_setup = KdTreeSetup::new(32, 8, Sah::new(1.0, 1.0));
-    let scene = KdTreeS::new(obj_iter, kdtree_setup);
-    let kdtree_build_time = time::precise_time_ns() - kdtree_build_start;
-    println!("kdtree builded, time: {:.2}", (kdtree_build_time as f64) * 1.0e-9);
+    // println!("start building kdtree...");
+    // let kdtree_build_start = time::precise_time_ns();
+    // let kdtree_setup = KdTreeSetup::new(32, 8, Sah::new(1.0, 1.0));
+    // let scene = KdTreeS::new(obj_iter, kdtree_setup);
+    // let kdtree_build_time = time::precise_time_ns() - kdtree_build_start;
+    // println!("kdtree builded, time: {:.2}", (kdtree_build_time as f64) * 1.0e-9);
 
     spheres::setup_camera(app.cam_ctrl_mut());
     let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.75, 0.25);
@@ -111,7 +113,7 @@ fn main () {
 
     let mut dbg_rdr = DbgRayCaster::new();
     
-    let mut img: Image = Image::new(width, height);
+    let mut img: Image = Image::new(width as usize, height as usize);
     
     
     //rdr.render_scene(&scene, app.cam_ctrl().camera(), &setup, &mut img);
@@ -119,15 +121,15 @@ fn main () {
 
     //let image_name: String = "res_img/".to_string() + rand::random::<u32>().to_string().as_ref() + ".png";
     //println!("img_name: {}", image_name);
-    let mut buf: Vec<u8> = Vec::new();
-    for c in img.pixels() {
-        //let cc = color::clamp_rgba(c);
-        let cc = color::round_rgba(c);
-        buf.push((cc[0] * 255.0) as u8);
-        buf.push((cc[1] * 255.0) as u8);
-        buf.push((cc[2] * 255.0) as u8);
-        //buf.push((cc[3] * 256.0) as u8);
-    }
+    // let mut buf: Vec<u8> = Vec::new();
+    // for c in img.pixels() {
+    //     //let cc = color::clamp_rgba(c);
+    //     let cc = color::round_rgba(c);
+    //     buf.push((cc[0] * 255.0) as u8);
+    //     buf.push((cc[1] * 255.0) as u8);
+    //     buf.push((cc[2] * 255.0) as u8);
+    //     //buf.push((cc[3] * 256.0) as u8);
+    // }
 
     //image::save_buffer(&std::path::Path::new(&image_name), buf.as_ref(), width, height, image::RGB(8)).unwrap();
     //println!("image saved!");
@@ -174,11 +176,15 @@ fn main () {
                             let mut buf: Vec<u8> = Vec::new();
                             for c in img.pixels() {
                                 //let cc = color::clamp_rgba(c);
-                                let cc = color::round_rgba(c);
-                                buf.push((cc[0] * 255.0) as u8);
-                                buf.push((cc[1] * 255.0) as u8);
-                                buf.push((cc[2] * 255.0) as u8);
+                                // let cc = color::round_rgba(c);
+                                // buf.push((cc[0] * 255.0) as u8);
+                                // buf.push((cc[1] * 255.0) as u8);
+                                // buf.push((cc[2] * 255.0) as u8);
                                 //buf.push((cc[3] * 256.0) as u8);
+                                let cc: color::Rgb<u8> = c.into();
+                                buf.push(cc.r);
+                                buf.push(cc.g);
+                                buf.push(cc.b);
                             }
 
                             image::save_buffer(&std::path::Path::new(&image_name), buf.as_ref(), width, height, image::RGB(8)).unwrap();
@@ -209,7 +215,7 @@ fn main () {
                 format: (),
                 mipmap: 0,
             },
-            cast_slice(&img),
+            cast_slice(img.as_slice()),
       
         ).unwrap();
         

@@ -145,8 +145,8 @@ impl<'a, T> Node<'a, T>
             let pos_max = self_bbox.maxs()[i];
             let pos_step = (pos_max - pos_min) / ((splits_num + 1) as Real);
             for &(ref aabb, _) in objs.iter() {
-                let ix_l = ((aabb.mins()[i] - pos_min) / pos_step);
-                let ix_h = (splits_num as Real - ((pos_max - aabb.maxs()[i]) / pos_step));
+                let ix_l = (aabb.mins()[i] - pos_min) / pos_step;
+                let ix_h = splits_num as Real - ((pos_max - aabb.maxs()[i]) / pos_step);
 
                 let il = if ix_l < 0.0 {
                     0usize

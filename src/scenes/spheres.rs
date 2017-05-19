@@ -26,7 +26,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(-1.0e5 - 50.0, 0.0, 0.0),
                 1.0e5,
-                Arc::new(Diffuse::new(Color{data: [0.75, 0.25, 0.25f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.75, 0.25, 0.25f32), None)),
             ),
         );
         //Right
@@ -35,7 +35,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(1.0e5 + 50.0, 0.0, 0.0),
                 1.0e5, ////
-                Arc::new(Diffuse::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.25, 0.25, 0.75f32), None)),
                 //Arc::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 200.0)),
             ),            
         );
@@ -45,7 +45,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, 0.0, 1.0e5 + 50.0),
                 1.0e5,
-                Arc::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
                 //Arc::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.1, 0.900, 100000.0))
             )
         );
@@ -55,7 +55,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, 0.0, -1.0e5 - 50.0),
                 1.0e5,///////
-                Arc::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
                 //Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.1, 0.9, 100000.0))
             ),
         );
@@ -65,7 +65,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, -1.0e5 - 50.0, 0.0),
                 1.0e5,
-                Arc::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), None)),
                 //Arc::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.2, 0.8, 3.0)),
             ),
         );
@@ -75,7 +75,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0., 1.0e5 + 50.0, 0.),
                 1.0e5,
-                Arc::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
                 //Box::new(Diffuse::new(Color{data: [0.75, 0.75, 0.75f32, 1.0]}, Some(Color{data: [1.5, 1.5, 1.5, 1.0]}))),
             ),
         );
@@ -86,7 +86,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(-20., -35.0, -20.),
                 7.0,
-                Arc::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
                 //Arc::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.2 * k, 0.5 * k, 0.2 * k, 1.0]}))),
                 //Box::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [15.0, 15.0, 15.0f32, 1.0]}))),
             ),
@@ -97,7 +97,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(15.0, -35.0, 5.0),
                 15.,
-                Arc::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
+                Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
                 //Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.3, 0.7, 100000)),
             ),
         );
@@ -107,7 +107,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, 39.0, 0.0),
                 10.0,
-                Arc::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [15.0, 15.0, 15.0f32, 1.0]}))),
+                Arc::new(Diffuse::new(Color::new(1.0, 1.0, 1.0f32), Some(Color::new(15.0, 15.0, 15.0f32)))),
                 //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
             ),
         );

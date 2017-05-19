@@ -64,7 +64,7 @@ impl Bsdf for Diffuse {
 
         let out_dir = math::hs_cosine_sampling(surface_normal);
         let cos_theta = surface_normal.dot(&out_dir);
-        (out_dir, color::mul_s(&self.color, cos_theta as f32), 1.0)
+        (out_dir, self.color * (cos_theta as f32), 1.0)
     }
 
     fn sample_proj(
@@ -86,7 +86,7 @@ impl Bsdf for Diffuse {
     ) -> (Color, Real)
     {
         let cos_theta = surface_normal.dot(&(-out_dir));
-        let reflectance = color::mul_s(&self.color, 1.0 / PI);
+        let reflectance = self.color * (1.0 / PI);
         let pdf = cos_theta / PI as Real;
 
         (reflectance, pdf)
@@ -99,7 +99,7 @@ impl Bsdf for Diffuse {
         _: &Vector3f,        
     ) -> (Color, Real)
     {
-        let reflectance = color::mul_s(&self.color, 1.0 / PI);
+        let reflectance = self.color * (1.0 / PI);
         let pdf = 1.0 / PI as Real;
 
         (reflectance, pdf)

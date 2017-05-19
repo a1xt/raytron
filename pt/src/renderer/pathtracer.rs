@@ -86,7 +86,7 @@ impl PathTracer {
                                     let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
                                     let le = lp.bsdf.emittance().unwrap();
                                     
-                                    di = color::mul_s(&color::mul_v(&fr, &le), pdf_sum_inv as f32);
+                                    di = (fr * le) * (pdf_sum_inv as f32);
                                 }
                             }
                         }
@@ -107,8 +107,8 @@ impl PathTracer {
                             let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                             let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
 
-                            let res = color::mul_s(&color::mul_v(&fr, &le), pdf_sum_inv as f32);
-                            di = color::sum(&di, &res);
+                            let res = (fr * le) * (pdf_sum_inv as f32);
+                            di = di + res;
                         }
                     }
                 } 
@@ -122,10 +122,10 @@ impl PathTracer {
             let (new_ray_dir, fr, pdf_p) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
             let new_ray = Ray3f::new(&sp.position, &new_ray_dir);
             let li = self.trace_path_rec::<S, C>(scene, &new_ray, depth + 1);
-            let indirect_illumination = color::mul_s(&color::mul_v(&fr, &li), (1.0 / pdf_p) as f32);
+            let indirect_illumination = (fr * li) * (1.0 / pdf_p) as f32;
 
-            return color::sum(&le, &color::sum(&direct_illumination, &indirect_illumination));
-            // return color::sum(&le, &direct_illumination);
+            return le + (direct_illumination + indirect_illumination);
+            // return le + direct_illumination;
 
         } else {
             return color::BLACK;

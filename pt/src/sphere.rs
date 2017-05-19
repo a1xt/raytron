@@ -67,7 +67,7 @@ impl Surface for Sphere {
 
     fn total_emittance(&self) -> Option<Color> {
         if let Some(e) = self.bsdf.emittance() {
-            Some(color::mul_s(&e, self.area() as f32))
+            Some(e * self.area() as f32)
         } else {
             None
         }

@@ -61,7 +61,7 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
 
     fn total_emittance(&self) -> Option<Color> {
         if let Some(e) = self.mat.bsdf(self.v0).emittance() {
-            Some(color::mul_s(&e, self.area() as f32))
+            Some(e * (self.area() as f32))
         } else {
             None
         }
@@ -129,8 +129,7 @@ impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {
             p0.y.max(p1.y.max(p2.y)),
             p0.z.max(p1.z.max(p2.z)),
         );
-        println!("pmin: x = {:.}, y = {:.}, z = {:.}", pmin.x, pmin.y, pmin.z);
-        println!("pmax: x = {:.}, y = {:.}, z = {:.}", pmax.x, pmax.y, pmax.z);
+
         Aabb3::new(pmin, pmax)
     }
 }

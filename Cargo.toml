@@ -20,6 +20,7 @@ nalgebra = "0.10.*"
 obj-rs = "*"
 pathtracer = {path = "pt", version = "*"}
 time = "0.1.*"
+rand = "*"
 
 
 #[[example]]

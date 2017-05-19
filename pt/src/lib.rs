@@ -1,11 +1,16 @@
-#![feature(conservative_impl_trait)]
 #![feature(slice_patterns)]
- #![feature(box_syntax)]
+#![feature(box_syntax)]
+#![feature(const_fn)]
+#![feature(associated_consts)]
+#![feature(fixed_size_array)]
+#![feature(conservative_impl_trait)]
 
+extern crate core;
+extern crate scoped_threadpool;
+extern crate rand;
 pub extern crate num;
-pub extern crate image;
-pub extern crate rand;
-pub extern crate scoped_threadpool;
+
+
 
 pub mod math;
 pub mod traits;
@@ -18,6 +23,7 @@ pub mod renderer;
 pub mod color;
 pub mod aabb;
 pub mod mesh;
+pub mod texture;
 
 
 pub use self::traits::{
