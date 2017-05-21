@@ -9,6 +9,7 @@ pub type Rgb8 = Rgb<u8>;
 pub type Color = Rgba32f;
 
 pub type Image = image::ImageBuffer<Color, Vec<f32>>;
+pub type Texture = image::ImageBuffer<Color, Vec<u8>>:
 
 pub const BLACK: Color = Color {data: [0.0, 0.0, 0.0, 1.0]};
 pub const WHITE: Color = Color {data: [1.0, 1.0, 1.0, 1.0]};
