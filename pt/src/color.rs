@@ -2,184 +2,212 @@ use core::array::FixedSizeArray;
 
 use texture;
 use num::{One, Zero, FromPrimitive, ToPrimitive, Bounded};
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
 use std::u8;
 use utils::{clamp};
 
 pub use self::consts::*;
 
 pub type Color = Rgb;
-pub type Image = texture::Texture<f32, [f32; 4], Rgb>;
+pub type Image = texture::Texture<Rgb, [f32; 4]>;
 
 mod consts {
     use super::Color;
-    pub const ALICEBLUE: Color =        Color::new(240 as f32, 248 as f32, 255 as f32);
-    pub const ANTIQUEWHITE: Color =     Color::new(250 as f32, 235 as f32, 215 as f32);
-    pub const AQUA: Color =             Color::new(0 as f32, 255 as f32, 255 as f32);
-    pub const AQUAMARINE: Color =       Color::new(127 as f32, 255 as f32, 212 as f32);
-    pub const AZURE: Color =            Color::new(240 as f32, 255 as f32, 255 as f32);
-    pub const BEIGE: Color =            Color::new(245 as f32, 245 as f32, 220 as f32);
-    pub const BISQUE: Color =           Color::new(255 as f32, 228 as f32, 196 as f32);
-    pub const BLACK: Color =            Color::new(0 as f32, 0 as f32, 0 as f32);
-    pub const BLANCHEDALMOND: Color =   Color::new(255 as f32, 235 as f32, 205 as f32);
-    pub const BLUE: Color =             Color::new(0 as f32, 0 as f32, 255 as f32);
-    pub const BLUEVIOLET: Color =       Color::new(138 as f32, 43 as f32, 226 as f32);
-    pub const BROWN: Color =            Color::new(165 as f32, 42 as f32, 42 as f32);
-    pub const BURLYWOOD: Color =        Color::new(222 as f32, 184 as f32, 135 as f32);
-    pub const CADETBLUE: Color =        Color::new(95 as f32, 158 as f32, 160 as f32);
-    pub const CHARTREUSE: Color =       Color::new(127 as f32, 255 as f32, 0 as f32);
-    pub const CHOCOLATE: Color =        Color::new(210 as f32, 105 as f32, 30 as f32);
-    pub const CORAL: Color =            Color::new(255 as f32, 127 as f32, 80 as f32);
-    pub const CORNFLOWERBLUE: Color =   Color::new(100 as f32, 149 as f32, 237 as f32);
-    pub const CORNSILK: Color =         Color::new(255 as f32, 248 as f32, 220 as f32);
-    pub const CRIMSON: Color =          Color::new(220 as f32, 20 as f32, 60 as f32);
-    pub const CYAN: Color =             Color::new(0 as f32, 255 as f32, 255 as f32);
-    pub const DARKBLUE: Color =         Color::new(0 as f32, 0 as f32, 139 as f32);
-    pub const DARKCYAN: Color =         Color::new(0 as f32, 139 as f32, 139 as f32);
-    pub const DARKGOLDENROD: Color =    Color::new(184 as f32, 134 as f32, 11 as f32);
-    pub const DARKGRAY: Color =         Color::new(169 as f32, 169 as f32, 169 as f32);
-    pub const DARKGREEN: Color =        Color::new(0 as f32, 100 as f32, 0 as f32);
-    pub const DARKGREY: Color =         Color::new(169 as f32, 169 as f32, 169 as f32);
-    pub const DARKKHAKI: Color =        Color::new(189 as f32, 183 as f32, 107 as f32);
-    pub const DARKMAGENTA: Color =      Color::new(139 as f32, 0 as f32, 139 as f32);
-    pub const DARKOLIVEGREEN: Color =   olor::new(85 as f32, 107 as f32, 47 as f32);
-    pub const DARKORANGE: Color =       Color::new(255 as f32, 140 as f32, 0 as f32);
-    pub const DARKORCHID: Color =       Color::new(153 as f32, 50 as f32, 204 as f32);
-    pub const DARKRED: Color =          Color::new(139 as f32, 0 as f32, 0 as f32);
-    pub const DARKSALMON: Color =       Color::new(233 as f32, 150 as f32, 122 as f32);
-    pub const DARKSEAGREEN: Color =     Color::new(143 as f32, 188 as f32, 143 as f32);
-    pub const DARKSLATEBLUE: Color =    Color::new(72 as f32, 61 as f32, 139 as f32);
-    pub const DARKSLATEGRAY: Color =    Color::new(47 as f32, 79 as f32, 79 as f32);
-    pub const DARKSLATEGREY: Color =    Color::new(47 as f32, 79 as f32, 79 as f32);
-    pub const DARKTURQUOISE: Color =    Color::new(0 as f32, 206 as f32, 209 as f32);
-    pub const DARKVIOLET: Color =       Color::new(148 as f32, 0 as f32, 211 as f32);
-    pub const DEEPPINK: Color =         Color::new(255 as f32, 20 as f32, 147 as f32);
-    pub const DEEPSKYBLUE: Color =      Color::new(0 as f32, 191 as f32, 255 as f32);
-    pub const DIMGRAY: Color =          Color::new(105 as f32, 105 as f32, 105 as f32);
-    pub const DIMGREY: Color =          Color::new(105 as f32, 105 as f32, 105 as f32);
-    pub const DODGERBLUE: Color =       Color::new(30 as f32, 144 as f32, 255 as f32);
-    pub const FIREBRICK: Color =        Color::new(178 as f32, 34 as f32, 34 as f32);
-    pub const FLORALWHITE: Color =      Color::new(255 as f32, 250 as f32, 240 as f32);
-    pub const FORESTGREEN: Color =      Color::new(34 as f32, 139 as f32, 34 as f32);
-    pub const FUCHSIA: Color =          Color::new(255 as f32, 0 as f32, 255 as f32);
-    pub const GAINSBORO: Color =        Color::new(220 as f32, 220 as f32, 220 as f32);
-    pub const GHOSTWHITE: Color =       Color::new(248 as f32, 248 as f32, 255 as f32);
-    pub const GOLD: Color =             Color::new(255 as f32, 215 as f32, 0 as f32);
-    pub const GOLDENROD: Color =        Color::new(218 as f32, 165 as f32, 32 as f32);
-    pub const GRAY: Color =             Color::new(128 as f32, 128 as f32, 128 as f32);
-    pub const GREY: Color =             Color::new(128 as f32, 128 as f32, 128 as f32);
-    pub const GREEN: Color =            Color::new(0 as f32, 128 as f32, 0 as f32);
-    pub const GREENYELLOW: Color =      Color::new(173 as f32, 255 as f32, 47 as f32);
-    pub const HONEYDEW: Color =         Color::new(240 as f32, 255 as f32, 240 as f32);
-    pub const HOTPINK: Color =          Color::new(255 as f32, 105 as f32, 180 as f32);
-    pub const INDIANRED: Color =        Color::new(205 as f32, 92 as f32, 92 as f32);
-    pub const INDIGO: Color =           Color::new(75 as f32, 0 as f32, 130 as f32);
-    pub const IVORY: Color =            Color::new(255 as f32, 255 as f32, 240 as f32);
-    pub const KHAKI: Color =            Color::new(240 as f32, 230 as f32, 140 as f32);
-    pub const LAVENDER: Color =         Color::new(230 as f32, 230 as f32, 250 as f32);
-    pub const LAVENDERBLUSH: Color =    Color::new(255 as f32, 240 as f32, 245 as f32);
-    pub const LAWNGREEN: Color =        Color::new(124 as f32, 252 as f32, 0 as f32);
-    pub const LEMONCHIFFON: Color =     Color::new(255 as f32, 250 as f32, 205 as f32);
-    pub const LIGHTBLUE: Color =        Color::new(173 as f32, 216 as f32, 230 as f32);
-    pub const LIGHTCORAL: Color =       Color::new(240 as f32, 128 as f32, 128 as f32);
-    pub const LIGHTCYAN: Color =        Color::new(224 as f32, 255 as f32, 255 as f32);
-    pub const LIGHTGOLDENRODYELLOW: Color = Color::new(250 as f32, 250 as f32, 210 as f32);
-    pub const LIGHTGRAY: Color =        Color::new(211 as f32, 211 as f32, 211 as f32);
-    pub const LIGHTGREEN: Color =       Color::new(144 as f32, 238 as f32, 144 as f32);
-    pub const LIGHTGREY: Color =        Color::new(211 as f32, 211 as f32, 211 as f32);
-    pub const LIGHTPINK: Color =        Color::new(255 as f32, 182 as f32, 193 as f32);
-    pub const LIGHTSALMON: Color =      Color::new(255 as f32, 160 as f32, 122 as f32);
-    pub const LIGHTSEAGREEN: Color =    Color::new(32 as f32, 178 as f32, 170 as f32);
-    pub const LIGHTSKYBLUE: Color =     Color::new(135 as f32, 206 as f32, 250 as f32);
-    pub const LIGHTSLATEGRAY: Color =   Color::new(119 as f32, 136 as f32, 153 as f32);
-    pub const LIGHTSLATEGREY: Color =   Color::new(119 as f32, 136 as f32, 153 as f32);
-    pub const LIGHTSTEELBLUE: Color =   Color::new(176 as f32, 196 as f32, 222 as f32);
-    pub const LIGHTYELLOW: Color =      Color::new(255 as f32, 255 as f32, 224 as f32);
-    pub const LIME: Color =             Color::new(0 as f32, 255 as f32, 0 as f32);
-    pub const LIMEGREEN: Color =        Color::new(50 as f32, 205 as f32, 50 as f32);
-    pub const LINEN: Color =            Color::new(250 as f32, 240 as f32, 230 as f32);
-    pub const MAGENTA: Color =          Color::new(255 as f32, 0 as f32, 255 as f32);
-    pub const MAROON: Color =           Color::new(128 as f32, 0 as f32, 0 as f32);
-    pub const MEDIUMAQUAMARINE: Color = Color::new(102 as f32, 205 as f32, 170 as f32);
-    pub const MEDIUMBLUE: Color =       Color::new(0 as f32, 0 as f32, 205 as f32);
-    pub const MEDIUMORCHID: Color =     Color::new(186 as f32, 85 as f32, 211 as f32);
-    pub const MEDIUMPURPLE: Color =     Color::new(147 as f32, 112 as f32, 219 as f32);
-    pub const MEDIUMSEAGREEN: Color =   Color::new(60 as f32, 179 as f32, 113 as f32);
-    pub const MEDIUMSLATEBLUE: Color =  Color::new(123 as f32, 104 as f32, 238 as f32);
-    pub const MEDIUMSPRINGGREEN: Color = Color::new(0 as f32, 250 as f32, 154 as f32);
-    pub const MEDIUMTURQUOISE: Color =  Color::new(72 as f32, 209 as f32, 204 as f32);
-    pub const MEDIUMVIOLETRED: Color =  Color::new(199 as f32, 21 as f32, 133 as f32);
-    pub const MIDNIGHTBLUE: Color =     Color::new(25 as f32, 25 as f32, 112 as f32);
-    pub const MINTCREAM: Color =        Color::new(245 as f32, 255 as f32, 250 as f32);
-    pub const MISTYROSE: Color =        Color::new(255 as f32, 228 as f32, 225 as f32);
-    pub const MOCCASIN: Color =         Color::new(255 as f32, 228 as f32, 181 as f32);
-    pub const NAVAJOWHITE: Color =      Color::new(255 as f32, 222 as f32, 173 as f32);
-    pub const NAVY: Color =             Color::new(0 as f32, 0 as f32, 128 as f32);
-    pub const OLDLACE: Color =          Color::new(253 as f32, 245 as f32, 230 as f32);
-    pub const OLIVE: Color =            Color::new(128 as f32, 128 as f32, 0 as f32);
-    pub const OLIVEDRAB: Color =        Color::new(107 as f32, 142 as f32, 35 as f32);
-    pub const ORANGE: Color =           Color::new(255 as f32, 165 as f32, 0 as f32);
-    pub const ORANGERED: Color =        Color::new(255 as f32, 69 as f32, 0 as f32);
-    pub const ORCHID: Color =           Color::new(218 as f32, 112 as f32, 214 as f32);
-    pub const PALEGOLDENROD: Color =    Color::new(238 as f32, 232 as f32, 170 as f32);
-    pub const PALEGREEN: Color =        Color::new(152 as f32, 251 as f32, 152 as f32);
-    pub const PALETURQUOISE: Color =    Color::new(175 as f32, 238 as f32, 238 as f32);
-    pub const PALEVIOLETRED: Color =    Color::new(219 as f32, 112 as f32, 147 as f32);
-    pub const PAPAYAWHIP: Color =       Color::new(255 as f32, 239 as f32, 213 as f32);
-    pub const PEACHPUFF: Color =        Color::new(255 as f32, 218 as f32, 185 as f32);
-    pub const PERU: Color =             Color::new(205 as f32, 133 as f32, 63 as f32);
-    pub const PINK: Color =             Color::new(255 as f32, 192 as f32, 203 as f32);
-    pub const PLUM: Color =             Color::new(221 as f32, 160 as f32, 221 as f32);
-    pub const POWDERBLUE: Color =       Color::new(176 as f32, 224 as f32, 230 as f32);
-    pub const PURPLE: Color =           Color::new(128 as f32, 0 as f32, 128 as f32);
-    pub const REBECCAPURPLE: Color =    Color::new(102 as f32, 51 as f32, 153 as f32);
-    pub const RED: Color =              Color::new(255 as f32, 0 as f32, 0 as f32);
-    pub const ROSYBROWN: Color =        Color::new(188 as f32, 143 as f32, 143 as f32);
-    pub const ROYALBLUE: Color =        Color::new(65 as f32, 105 as f32, 225 as f32);
-    pub const SADDLEBROWN: Color =      Color::new(139 as f32, 69 as f32, 19 as f32);
-    pub const SALMON: Color =           Color::new(250 as f32, 128 as f32, 114 as f32);
-    pub const SANDYBROWN: Color =       Color::new(244 as f32, 164 as f32, 96 as f32);
-    pub const SEAGREEN: Color =         Color::new(46 as f32, 139 as f32, 87 as f32);
-    pub const SEASHELL: Color =         Color::new(255 as f32, 245 as f32, 238 as f32);
-    pub const SIENNA: Color =           Color::new(160 as f32, 82 as f32, 45 as f32);
-    pub const SILVER: Color =           Color::new(192 as f32, 192 as f32, 192 as f32);
-    pub const SKYBLUE: Color =          Color::new(135 as f32, 206 as f32, 235 as f32);
-    pub const SLATEBLUE: Color =        Color::new(106 as f32, 90 as f32, 205 as f32);
-    pub const SLATEGRAY: Color =        Color::new(112 as f32, 128 as f32, 144 as f32);
-    pub const SLATEGREY: Color =        Color::new(112 as f32, 128 as f32, 144 as f32);
-    pub const SNOW: Color =             Color::new(255 as f32, 250 as f32, 250 as f32);
-    pub const SPRINGGREEN: Color =      Color::new(0 as f32, 255 as f32, 127 as f32);
-    pub const STEELBLUE: Color =        Color::new(70 as f32, 130 as f32, 180 as f32);
-    pub const TAN: Color =              Color::new(210 as f32, 180 as f32, 140 as f32);
-    pub const TEAL: Color =             Color::new(0 as f32, 128 as f32, 128 as f32);
-    pub const THISTLE: Color =          Color::new(216 as f32, 191 as f32, 216 as f32);
-    pub const TOMATO: Color =           Color::new(255 as f32, 99 as f32, 71 as f32);
-    pub const TURQUOISE: Color =        Color::new(64 as f32, 224 as f32, 208 as f32);
-    pub const VIOLET: Color =           Color::new(238 as f32, 130 as f32, 238 as f32);
-    pub const WHEAT: Color =            Color::new(245 as f32, 222 as f32, 179 as f32);
-    pub const WHITE: Color =            Color::new(255 as f32, 255 as f32, 255 as f32);
-    pub const WHITESMOKE: Color =       Color::new(245 as f32, 245 as f32, 245 as f32);
-    pub const YELLOW: Color =           Color::new(255 as f32, 255 as f32, 0 as f32);
-    pub const YELLOWGREEN: Color =      Color::new(154 as f32, 205 as f32, 50 as f32);
+
+    macro_rules! color {
+        ($c:ident, $($x:expr),+) => {
+            pub const $c: Color = Color::new(
+                $(
+                    ($x as f32) / 255.0,
+                )*
+            );
+        }
+    }
+    color!(ALICEBLUE, 240, 248, 255);
+    color!(ANTIQUEWHITE, 250, 235, 215);
+    color!(AQUA, 0, 255, 255);
+    color!(AQUAMARINE, 127, 255, 212);
+    color!(AZURE, 240, 255, 255);
+    color!(BEIGE, 245, 245, 220);
+    color!(BISQUE, 255, 228, 196);
+    color!(BLACK, 0, 0, 0);
+    color!(BLANCHEDALMOND, 255, 235, 205);
+    color!(BLUE, 0, 0, 255);
+    color!(BLUEVIOLET, 138, 43, 226);
+    color!(BROWN, 165, 42, 42);
+    color!(BURLYWOOD, 222, 184, 135);
+    color!(CADETBLUE, 95, 158, 160);
+    color!(CHARTREUSE, 127, 255, 0);
+    color!(CHOCOLATE, 210, 105, 30);
+    color!(CORAL, 255, 127, 80);
+    color!(CORNFLOWERBLUE, 100, 149, 237);
+    color!(CORNSILK, 255, 248, 220);
+    color!(CRIMSON, 220, 20, 60);
+    color!(CYAN, 0, 255, 255);
+    color!(DARKBLUE, 0, 0, 139);
+    color!(DARKCYAN, 0, 139, 139);
+    color!(DARKGOLDENROD, 184, 134, 11);
+    color!(DARKGRAY, 169, 169, 169);
+    color!(DARKGREEN, 0, 100, 0);
+    color!(DARKGREY, 169, 169, 169);
+    color!(DARKKHAKI, 189, 183, 107);
+    color!(DARKMAGENTA, 139, 0, 139);
+    color!(DARKOLIVEGREEN, 85, 107, 47);
+    color!(DARKORANGE, 255, 140, 0);
+    color!(DARKORCHID, 153, 50, 204);
+    color!(DARKRED, 139, 0, 0);
+    color!(DARKSALMON, 233, 150, 122);
+    color!(DARKSEAGREEN, 143, 188, 143);
+    color!(DARKSLATEBLUE, 72, 61, 139);
+    color!(DARKSLATEGRAY, 47, 79, 79);
+    color!(DARKSLATEGREY, 47, 79, 79);
+    color!(DARKTURQUOISE, 0, 206, 209);
+    color!(DARKVIOLET, 148, 0, 211);
+    color!(DEEPPINK, 255, 20, 147);
+    color!(DEEPSKYBLUE, 0, 191, 255);
+    color!(DIMGRAY, 105, 105, 105);
+    color!(DIMGREY, 105, 105, 105);
+    color!(DODGERBLUE, 30, 144, 255);
+    color!(FIREBRICK, 178, 34, 34);
+    color!(FLORALWHITE, 255, 250, 240);
+    color!(FORESTGREEN, 34, 139, 34);
+    color!(FUCHSIA, 255, 0, 255);
+    color!(GAINSBORO, 220, 220, 220);
+    color!(GHOSTWHITE, 248, 248, 255);
+    color!(GOLD, 255, 215, 0);
+    color!(GOLDENROD, 218, 165, 32);
+    color!(GRAY, 128, 128, 128);
+    color!(GREY, 128, 128, 128);
+    color!(GREEN, 0, 128, 0);
+    color!(GREENYELLOW, 173, 255, 47);
+    color!(HONEYDEW, 240, 255, 240);
+    color!(HOTPINK, 255, 105, 180);
+    color!(INDIANRED, 205, 92, 92);
+    color!(INDIGO, 75, 0, 130);
+    color!(IVORY, 255, 255, 240);
+    color!(KHAKI, 240, 230, 140);
+    color!(LAVENDER, 230, 230, 250);
+    color!(LAVENDERBLUSH, 255, 240, 245);
+    color!(LAWNGREEN, 124, 252, 0);
+    color!(LEMONCHIFFON, 255, 250, 205);
+    color!(LIGHTBLUE, 173, 216, 230);
+    color!(LIGHTCORAL, 240, 128, 128);
+    color!(LIGHTCYAN, 224, 255, 255);
+    color!(LIGHTGOLDENRODYELLOW, 250, 250, 210);
+    color!(LIGHTGRAY, 211, 211, 211);
+    color!(LIGHTGREEN, 144, 238, 144);
+    color!(LIGHTGREY, 211, 211, 211);
+    color!(LIGHTPINK, 255, 182, 193);
+    color!(LIGHTSALMON, 255, 160, 122);
+    color!(LIGHTSEAGREEN, 32, 178, 170);
+    color!(LIGHTSKYBLUE, 135, 206, 250);
+    color!(LIGHTSLATEGRAY, 119, 136, 153);
+    color!(LIGHTSLATEGREY, 119, 136, 153);
+    color!(LIGHTSTEELBLUE, 176, 196, 222);
+    color!(LIGHTYELLOW, 255, 255, 224);
+    color!(LIME, 0, 255, 0);
+    color!(LIMEGREEN, 50, 205, 50);
+    color!(LINEN, 250, 240, 230);
+    color!(MAGENTA, 255, 0, 255);
+    color!(MAROON, 128, 0, 0);
+    color!(MEDIUMAQUAMARINE, 102, 205, 170);
+    color!(MEDIUMBLUE, 0, 0, 205);
+    color!(MEDIUMORCHID, 186, 85, 211);
+    color!(MEDIUMPURPLE, 147, 112, 219);
+    color!(MEDIUMSEAGREEN, 60, 179, 113);
+    color!(MEDIUMSLATEBLUE, 123, 104, 238);
+    color!(MEDIUMSPRINGGREEN, 0, 250, 154);
+    color!(MEDIUMTURQUOISE, 72, 209, 204);
+    color!(MEDIUMVIOLETRED, 199, 21, 133);
+    color!(MIDNIGHTBLUE, 25, 25, 112);
+    color!(MINTCREAM, 245, 255, 250);
+    color!(MISTYROSE, 255, 228, 225);
+    color!(MOCCASIN, 255, 228, 181);
+    color!(NAVAJOWHITE, 255, 222, 173);
+    color!(NAVY, 0, 0, 128);
+    color!(OLDLACE, 253, 245, 230);
+    color!(OLIVE, 128, 128, 0);
+    color!(OLIVEDRAB, 107, 142, 35);
+    color!(ORANGE, 255, 165, 0);
+    color!(ORANGERED, 255, 69, 0);
+    color!(ORCHID, 218, 112, 214);
+    color!(PALEGOLDENROD, 238, 232, 170);
+    color!(PALEGREEN, 152, 251, 152);
+    color!(PALETURQUOISE, 175, 238, 238);
+    color!(PALEVIOLETRED, 219, 112, 147);
+    color!(PAPAYAWHIP, 255, 239, 213);
+    color!(PEACHPUFF, 255, 218, 185);
+    color!(PERU, 205, 133, 63);
+    color!(PINK, 255, 192, 203);
+    color!(PLUM, 221, 160, 221);
+    color!(POWDERBLUE, 176, 224, 230);
+    color!(PURPLE, 128, 0, 128);
+    color!(REBECCAPURPLE, 102, 51, 153);
+    color!(RED, 255, 0, 0);
+    color!(ROSYBROWN, 188, 143, 143);
+    color!(ROYALBLUE, 65, 105, 225);
+    color!(SADDLEBROWN, 139, 69, 19);
+    color!(SALMON, 250, 128, 114);
+    color!(SANDYBROWN, 244, 164, 96);
+    color!(SEAGREEN, 46, 139, 87);
+    color!(SEASHELL, 255, 245, 238);
+    color!(SIENNA, 160, 82, 45);
+    color!(SILVER, 192, 192, 192);
+    color!(SKYBLUE, 135, 206, 235);
+    color!(SLATEBLUE, 106, 90, 205);
+    color!(SLATEGRAY, 112, 128, 144);
+    color!(SLATEGREY, 112, 128, 144);
+    color!(SNOW, 255, 250, 250);
+    color!(SPRINGGREEN, 0, 255, 127);
+    color!(STEELBLUE, 70, 130, 180);
+    color!(TAN, 210, 180, 140);
+    color!(TEAL, 0, 128, 128);
+    color!(THISTLE, 216, 191, 216);
+    color!(TOMATO, 255, 99, 71);
+    color!(TURQUOISE, 64, 224, 208);
+    color!(VIOLET, 238, 130, 238);
+    color!(WHEAT, 245, 222, 179);
+    color!(WHITE, 255, 255, 255);
+    color!(WHITESMOKE, 245, 245, 245);
+    color!(YELLOW, 255, 255, 0);
+    color!(YELLOWGREEN, 154, 205, 50);
 
 }
 
-pub trait ColorChannel: Copy + PartialEq + PartialOrd + One + Zero + ColorBounds + FromPrimitive + ToPrimitive + Bounded + Default {}
+pub trait ColorChannel: Copy + PartialEq + PartialOrd + One + Zero + ChannelBounds + ChannelBlend + 
+                        FromPrimitive + ToPrimitive + Bounded + Default {}
 impl ColorChannel for u8 {}
 impl ColorChannel for f32 {}
 
-pub trait ColorBounds {
+pub trait ChannelBounds {
     const MIN_CHVAL: Self;
     const MAX_CHVAL: Self;
 }
 
-impl ColorBounds for u8 {
+impl ChannelBounds for u8 {
     const MIN_CHVAL: u8 = 0;
     const MAX_CHVAL: u8 = u8::MAX;
 }
-impl ColorBounds for f32 {
+impl ChannelBounds for f32 {
     const MIN_CHVAL: f32 = 0.0;
     const MAX_CHVAL: f32 = 1.0;
+}
+
+pub trait ChannelBlend {
+    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
+}
+
+impl ChannelBlend for f32 {
+    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
+        c0 * w0 + c1 * w1
+    }
+}
+
+impl ChannelBlend for u8 {
+    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
+        let t = w0 * (c0 as f32) + w1 * (c1 as f32);
+        clamp(t, 0.0, u8::MAX_CHVAL as f32) as u8
+    }
 }
 
 pub trait ColorClamp {
@@ -190,14 +218,17 @@ pub trait ColorBlend<T: ColorChannel> {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
 }
 
-pub trait Pixel<T: ColorChannel, R: FixedSizeArray<T>> : Copy + ColorBlend<T> + From<R> + Into<R> { } 
+pub trait Pixel<R> where R: FixedSizeArray<Self::Channel> + Copy {
+    type Channel: ColorChannel;
+    type Color: Copy + ColorBlend<Self::Channel> + From<R> + Into<R> + Default;
+}
 
-impl<C, T, R> Pixel<T, R> for C
-    where T: ColorChannel,
-          R: FixedSizeArray<T>,
-          C: Copy + ColorBlend<T> + Into<R> + From<R> {}
+pub trait ChannelCast<T: ColorChannel>: ColorChannel {
+    fn cast_from(other: T) -> Self;
+    fn cast_into(self) -> T;
+}
 
-          impl<T: ColorChannel> ChannelCast<T> for T {
+impl<T: ColorChannel> ChannelCast<T> for T {
     #[inline]
     fn cast_from(other: T) -> T {
         other
@@ -207,11 +238,6 @@ impl<C, T, R> Pixel<T, R> for C
     fn cast_into(self) -> T {
         self
     }
-}
-
-pub trait ChannelCast<T: ColorChannel>: ColorChannel {
-    fn cast_from(other: T) -> Self;
-    fn cast_into(self) -> T;
 }
 
 impl ChannelCast<f32> for u8 {
@@ -238,256 +264,334 @@ impl ChannelCast<u8> for f32 {
     }
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
-pub struct Rgb<T = f32> where T: ColorChannel {
-    pub r: T,
-    pub g: T,
-    pub b: T,
-}
 
-impl<T: ColorChannel> Rgb<T> {
-    pub const fn new(r: T, g: T, b: T) -> Self {
-        Rgb {r, g, b}
+macro_rules! impl_color {
+    ($c:ident, $($x:ident),+) => {
+        #[repr(C)]
+        #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
+        pub struct $c<T = f32> where T: ColorChannel {
+            $(
+                pub $x: T,
+            )*
+        }
+
+        impl<T: ColorChannel> $c<T> {
+            pub const fn new($( $x: T, )* ) -> Self {
+                Self {
+                    $( $x, )*
+                }
+            }
+        }
     }
 }
 
-impl ColorBlend<f32> for Rgb<f32> {
-    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
-        c0 * w0 + c1 * w1
+macro_rules! impl_pixel {
+    ($c:ident, [$t:ident; $n:expr]) => {
+        impl<$t: ColorChannel> Pixel<[$t; $n]> for $c<$t> {
+            type Channel = T;
+            type Color = Self;
+        }
     }
 }
 
-impl ColorBlend<u8> for Rgb<u8> {
-    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
-        let r = w0 * (c0.r as f32) + w1 * (c1.r as f32);
-        let g = w0 * (c0.g as f32) + w1 * (c1.g as f32);
-        let b = w0 * (c0.b as f32) + w1 * (c1.b as f32);
-
-        Self::new(
-            clamp(r, 0.0, u8::MAX as f32) as u8,
-            clamp(g, 0.0, u8::MAX as f32) as u8,
-            clamp(b, 0.0, u8::MAX as f32) as u8,
-        )
+macro_rules! impl_from_self {
+    ($c:ident, $t:ident, $u:ident, $( $x:ident ),+) => {
+        impl From<$c<$t>> for $c<$u> {
+            fn from(other: $c<$t>) -> Self {
+                Self::new(
+                    $(
+                        other.$x.cast_into(),
+                    )*
+                )
+            }
+        }
     }
 }
 
-impl<T> ColorClamp for Rgb<T> where T: ColorChannel {
-    fn clamp(self) -> Self {
-        Self::new(
-            clamp(self.r, T::MIN_CHVAL, T::MAX_CHVAL),
-            clamp(self.r, T::MIN_CHVAL, T::MAX_CHVAL),
-            clamp(self.r, T::MIN_CHVAL, T::MAX_CHVAL),
-        )
-    }
-}
-
-impl<T> From<[T; 3]> for Rgb<T> where T: ColorChannel {
-    fn from(v: [T; 3]) -> Self {
-        Self::new(v[0], v[1], v[2])
-    }
-}
-
-impl<T> From<[T; 4]> for Rgb<T> where T: ColorChannel {
-    fn from(v: [T; 4]) -> Self {
-        Self::new(v[0], v[1], v[2])
-    }
-}
-
-impl<T> Into<[T; 4]> for Rgb<T> where T: ColorChannel {
-    fn into(self) -> [T; 4] {
-        [self.r, self.g, self.b, T::MAX_CHVAL]
+macro_rules! impl_colorblend {
+    ($c:ident, $($x:ident),+) => {
+        impl<T> ColorBlend<T> for $c<T> where T: ColorChannel {
+            fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
+                Self::new(
+                    $(
+                        ChannelBlend::blend(c0.$x, w0, c1.$x, w1),
+                    )*
+                )
+            }            
+        }
     }
 >>>>>>> Added Texture type.
 }
 
-impl<T> Into<[T; 3]> for Rgb<T> where T: ColorChannel {
-    fn into(self) -> [T; 3] {
-        [self.r, self.g, self.b]
-    }
-}
-
-impl From<Rgb<u8>> for Rgb<f32> {
-    fn from(rgb: Rgb<u8>) -> Self {
-        Self::new(
-            rgb.r.cast_into(),
-            rgb.g.cast_into(),
-            rgb.b.cast_into())
-    }
-}
-
-impl From<Rgb<f32>> for Rgb<u8> {
-    fn from(rgb: Rgb<f32>) -> Self {
-        Self::new(
-            rgb.r.cast_into(),
-            rgb.g.cast_into(),
-            rgb.b.cast_into())
-    }
-}
-
-// waiting for 'complementary traits' feature...
-// impl<T, U> From<Rgb<T>> for Rgb<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
-//     fn from(rgb: Rgb<T>) -> Self {
-//         Self::new(
-//             rgb.r.cast_into(),
-//             rgb.g.cast_into(),
-//             rgb.b.cast_into())
-//     }
-// }
-
-impl<T, U> From<Rgba<T>> for Rgb<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
-    fn from(rgba: Rgba<T>) -> Self {
-        Self::new(
-            rgba.r.cast_into(),
-            rgba.g.cast_into(),
-            rgba.b.cast_into())
-    }
-}
-
-impl<T, U> From<Luma<T>> for Rgb<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
-    fn from(luma: Luma<T>) -> Self {
-        Self::new(
-            luma.luma.cast_into(),
-            luma.luma.cast_into(),
-            luma.luma.cast_into())
-    }
-}
-
-impl<T, U> From<LumaA<T>> for Rgb<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
-    fn from(luma: LumaA<T>) -> Self {
-        Self::new(
-            luma.luma.cast_into(),
-            luma.luma.cast_into(),
-            luma.luma.cast_into())
-    }
-}
-
-impl<T> From<T> for Rgb<T> where T: ColorChannel {
-    fn from(val: T) -> Self {
-        Self::new(val, val, val)
-    }
-}
-
-impl<T> AsRef<[T; 3]> for Rgb<T> where T: ColorChannel {
-    fn as_ref(&self) -> &[T; 3] {
-        unsafe {
-            ::std::mem::transmute::<&Self, &[T; 3]>(self) 
+macro_rules! impl_colorclamp {
+    ($c:ident, $( $x:ident ),+) => {
+        impl<T> ColorClamp for $c<T> where T: ColorChannel {
+            fn clamp(self) -> Self {
+                Self::new(
+                    $(
+                        clamp(self.$x, T::MIN_CHVAL, T::MAX_CHVAL),
+                    )*
+                )
+            }
         }
     }
 }
 
-impl<T> AsMut<[T; 3]> for Rgb<T> where T: ColorChannel {
-    fn as_mut(&mut self) -> &mut [T; 3] {
-        unsafe {
-            ::std::mem::transmute::<&mut Self, &mut [T; 3]>(self) 
+macro_rules! impl_from_arr {
+    ($c:ident, [$t:ident; $n:expr], $v:ident, $($x:expr),+) => {
+        impl<$t> From<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            fn from($v: [$t; $n]) -> Self {
+                Self::new(
+                    $(
+                        $x,
+                    )*
+                )
+            }
         }
     }
 }
 
-impl<T, R> Add<R> for Rgb<T> where T: ColorChannel, R: Into<Rgb<T>> {
-    type Output = Rgb<T>;
-    fn add(self, other: R) -> Rgb<T> {
-        let rhs = other.into();
-        Self::new(
-            self.r + rhs.r,
-            self.g + rhs.g,
-            self.b + rhs.b)
+
+macro_rules! impl_into_arr_a {
+    ($c:ident, [$t:ident; $n:expr], $($x:ident),+) => {
+        impl<$t> Into<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            fn into(self) -> [$t; $n] {
+                [$(
+                    self.$x,
+                )*
+                $t::MAX_CHVAL
+                ]
+            }
+        }
+    };
+}
+macro_rules! impl_into_arr {
+    ($c:ident, [$t:ident; $n:expr], $($x:ident),+ ) => {
+        impl<$t> Into<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            fn into(self) -> [$t; $n] {
+                [$(
+                    self.$x,
+                )*
+                ]
+            }
+        }
+    };
+    
+}
+
+
+macro_rules! impl_from_other {
+    ($c:ident, $r:ident, $($x:ident),+) => {
+        impl<T, U> From<$r<T>> for $c<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
+            fn from(other: $r<T>) -> Self {
+                Self::new(
+                    $(
+                        other.$x.cast_into(),
+                    )*
+                )
+            }
+        }
     }
 }
 
-impl<T, R> Mul<R> for Rgb<T> where T: ColorChannel, R: Into<Rgb<T>> {
-    type Output = Rgb<T>;
-    fn mul(self, other: R) -> Rgb<T> {
-        let rhs = other.into();
-        Self::new(
-            self.r * rhs.r,
-            self.g * rhs.g,
-            self.b * rhs.b)
+macro_rules! impl_from_other_a {
+    ($c:ident, $r:ident, $($x:ident),+) => {
+        impl<T, U> From<$r<T>> for $c<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
+            fn from(other: $r<T>) -> Self {
+                Self::new(
+                    $(
+                        other.$x.cast_into(),
+                    )*
+                    U::MAX_CHVAL
+                )
+            }
+        }
+    }
+}
+
+macro_rules! impl_from_scalar {
+    ($c:ident, $($x:ident),+) => {
+        impl<T> From<T> for $c<T> where T: ColorChannel {
+            fn from(val: T) -> Self {
+                Self {
+                    $($x: val, )*
+                }
+            }
+        }
+    }
+}
+
+macro_rules! impl_from_scalar_a{
+    ($c:ident, $($x:ident),+) => {
+        impl<T> From<T> for $c<T> where T: ColorChannel {
+            fn from(val: T) -> Self {
+                Self {
+                    $($x: val, )*
+                    a: T::MAX_CHVAL
+                }
+            }
+        }
+    }
+}
+
+macro_rules! impl_asref {
+    ($c:ident, [$t:ident; $n:expr]) => {
+        impl<$t> AsRef<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            fn as_ref(&self) -> &[$t; $n] {
+                unsafe {
+                    ::std::mem::transmute::<&Self, &[$t; $n]>(self) 
+                }
+            }
+        }
+    }
+}
+
+macro_rules! impl_asmut {
+    ($c:ident, [$t:ident; $n:expr]) => {
+        impl<$t> AsMut<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            fn as_mut(&mut self) -> &mut [$t; $n] {
+                unsafe {
+                    ::std::mem::transmute::<&mut Self, &mut [$t; $n]>(self) 
+                }
+            }
+        }
     }
 }
 
 
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
-pub struct Rgba<T = f32> where T: ColorChannel {
-    pub r: T,
-    pub g: T,
-    pub b: T,
-    pub a: T,
-}
-
-impl<T> Rgba<T> where T: ColorChannel {
-    pub const fn new(r: T, g: T, b: T, a: T) -> Self {
-        Rgba {r, g, b, a}
+macro_rules! impl_add {
+    ($c:ident, $($x:ident),+) => {
+        impl<T, R> Add<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            type Output = $c<T>;
+            fn add(self, other: R) -> Self::Output {
+                let rhs = other.into();
+                Self::new(
+                    $(
+                        self.$x + rhs.$x,
+                    )*
+                )
+            }
+        }
+        impl<T, R> AddAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            fn add_assign(&mut self, other: R) {
+                let rhs = other.into();
+                *self = Self::new(
+                    $(
+                        self.$x + rhs.$x,
+                    )*
+                )
+            }
+        }
     }
 }
 
-//impl<T> ColorBlend for Rgba<T>
-//impl<T> ColorClamp for Rgba<T>
-//impl<T> Into<[T; 4] for Rgba<T>
-//impl<T> Into<[T; 3] for Rgba<T>
-//impl<T> From[T; 4] for Rgba<T>
-//impl<T> From[T; 3] for Rgba<T>
-//impl<T, U> From<Rgba<T>> for Rgba<U>
-//impl<T, U> From<Rgb<T>> for Rgba<U>
-//impl<T, U> From<Luma<T>> for Rgba<U>
-//impl<T, U> From<LumaA<T>> for Rgba<U>
-//impl<T> From<T> for Rgba<T>
-//impl<T> AsRef<[T; 4]> for Rgba<T>
-//impl<T> AsMut<T; 4] for Rgba<T>
-//impl<T, U> Add<U> for Rgba<T>
-//impl<T, U> Mul<U> for Rgba<T>
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
-pub struct Luma<T = f32> where T: ColorChannel {
-    pub luma: T,
-}
-
-impl<T> Luma<T> where T: ColorChannel {
-    pub const fn new(luma: T) -> Self {
-        Luma {luma}
+macro_rules! impl_mul {
+    ($c:ident, $($x:ident),+) => {
+        impl<T, R> Mul<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            type Output = $c<T>;
+            fn mul(self, other: R) -> Self::Output {
+                let rhs = other.into();
+                Self::new(
+                    $(
+                        self.$x * rhs.$x,
+                    )*
+                )
+            }
+        }
+        impl<T, R> MulAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            fn mul_assign(&mut self, other: R) {
+                let rhs = other.into();
+                *self = Self::new(
+                    $(
+                        self.$x * rhs.$x,
+                    )*
+                )
+            }
+        }
     }
 }
 
-//impl<T> ColorBlend for Luma<T>
-//impl<T> ColorClamp for Luma<T>
-//impl<T> Into<[T; 1]> for Luma<T>
-//impl<T> Into<[T; 2]> for Luma<T>
-//impl<T> From<[T; 1]> for Luma<T>
-//impl<T> From<[T; 2]> for Luma<T>
-//impl<T, U> From<Luma<T>> for Luma<U>
-//impl<T, U> From<LumaA<T>> for Luma<U>
-//impl<T> From<T> for Luma<T>
-//impl<T> AsRef<[T; 1]> for Luma<T>
-//impl<T> AsMUt<[T; 1]> for Luma<T>
-//impl<T, U> Add<U> for Luma<T>
-//impl<T, U> Mul<U> for Luma<T>
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
-pub struct LumaA<T = f32> where T: ColorChannel {
-    pub luma: T,
-    pub a: T,
-}
+impl_color!(Rgb, r, g, b);
 
-impl<T> LumaA<T> where T: ColorChannel {
-    pub const fn new(luma: T, a: T) -> Self {
-        LumaA {luma, a}
-    }
-}
+impl_pixel!(Rgb, [T; 4]);
+impl_pixel!(Rgb, [T; 3]);
+impl_colorblend!(Rgb, r, g, b);
+impl_colorclamp!(Rgb, r, g, b);
+impl_from_arr!(Rgb, [T; 3], v, v[0], v[1], v[2]);
+impl_from_arr!(Rgb, [T; 4], v, v[0], v[1], v[2]);
+impl_into_arr!(Rgb, [T; 3], r, g, b);
+impl_into_arr_a!(Rgb, [T; 4], r, g, b);
+impl_from_self!(Rgb, u8, f32, r, g, b);
+impl_from_self!(Rgb, f32, u8, r, g, b);
+impl_from_other!(Rgb, Rgba, r, g, b);
+impl_from_other!(Rgb, Luma, luma, luma, luma);
+impl_from_other!(Rgb, LumaA, luma, luma, luma);
+impl_from_scalar!(Rgb, r, g, b);
+impl_asref!(Rgb, [T; 3]);
+impl_asmut!(Rgb, [T; 3]);
+impl_add!(Rgb, r, g, b);
+impl_mul!(Rgb, r, g, b);
 
-//impl<T> ColorBlend for LumaA<T>
-//impl<T> ColorClamp for LumaA<T>
-//impl<T> Into<[T; 1]> for LumaA<T>
-//impl<T> Into<[T; 2]> for LumaA<T>
-//impl<T> From<[T; 1]> for LumaA<T>
-//impl<T> From<[T; 2]> for LumaA<T>
-//impl<T, U> From<Luma<T>> for LumaA<U>
-//impl<T, U> From<LumaA<T>> for LumaA<U>
-//impl<T> From<T> for LumaA<T>
-//impl<T> AsRef<[T; 2]> for LumaA<T>
-//impl<T> AsMUt<[T; 2]> for LumaA<T>
-//impl<T, U> Add<U> for LumaA<T>
-//impl<T, U> Mul<U> for LumaA<T>
+
+impl_color!(Rgba, r, g, b, a);
+
+impl_pixel!(Rgba, [T; 4]);
+impl_pixel!(Rgba, [T; 3]);
+impl_colorblend!(Rgba, r, g, b, a);
+impl_colorclamp!(Rgba, r, g, b, a);
+impl_from_arr!(Rgba, [T; 3], v, v[0], v[1], v[2], T::MAX_CHVAL);
+impl_from_arr!(Rgba, [T; 4], v, v[0], v[1], v[2], v[3]);
+impl_into_arr!(Rgba, [T; 3], r, g, b);
+impl_into_arr!(Rgba, [T; 4], r, g, b, a);
+impl_from_self!(Rgba, u8, f32, r, g, b, a);
+impl_from_self!(Rgba, f32, u8, r, g, b, a);
+impl_from_other_a!(Rgba, Rgb, r, g, b);
+impl_from_other_a!(Rgba, Luma, luma, luma, luma);
+impl_from_other!(Rgba, LumaA, luma, luma, luma, a);
+impl_from_scalar_a!(Rgba, r, g, b);
+impl_asref!(Rgba, [T; 4]);
+impl_asmut!(Rgba, [T; 4]);
+impl_add!(Rgba, r, g, b, a);
+impl_mul!(Rgba, r, g, b, a);
+
+
+impl_color!(Luma, luma);
+
+impl_pixel!(Luma, [T; 1]);
+impl_pixel!(Luma, [T; 2]);
+impl_colorblend!(Luma, luma);
+impl_colorclamp!(Luma, luma);
+impl_from_arr!(Luma, [T; 1], v, v[0]);
+impl_from_arr!(Luma, [T; 2], v, v[0]);
+impl_into_arr!(Luma, [T; 1], luma);
+impl_into_arr_a!(Luma, [T; 2], luma);
+impl_from_self!(Luma, u8, f32, luma);
+impl_from_self!(Luma, f32, u8, luma);
+impl_from_other!(Luma, LumaA, luma);
+impl_from_scalar!(Luma, luma);
+impl_asref!(Luma, [T; 1]);
+impl_asmut!(Luma, [T; 1]);
+impl_add!(Luma, luma);
+impl_mul!(Luma, luma);
+
+
+
+impl_color!(LumaA, luma, a);
+
+impl_pixel!(LumaA, [T; 1]);
+impl_pixel!(LumaA, [T; 2]);
+impl_colorblend!(LumaA, luma, a);
+impl_colorclamp!(LumaA, luma, a);
+impl_from_arr!(LumaA, [T; 1], v, v[0], T::MAX_CHVAL);
+impl_from_arr!(LumaA, [T; 2], v, v[0], v[1]);
+impl_into_arr!(LumaA, [T; 1], luma);
+impl_into_arr!(LumaA, [T; 2], luma, a);
+impl_from_self!(LumaA, u8, f32, luma, a);
+impl_from_self!(LumaA, f32, u8, luma, a);
+impl_from_other_a!(LumaA, Luma, luma);
+impl_from_scalar_a!(LumaA, luma);
+impl_asref!(LumaA, [T; 2]);
+impl_asmut!(LumaA, [T; 2]);
+impl_add!(LumaA, luma, a);
+impl_mul!(LumaA, luma, a);

@@ -4,6 +4,8 @@
 #![feature(associated_consts)]
 #![feature(fixed_size_array)]
 #![feature(conservative_impl_trait)]
+#![feature(associated_type_defaults)]
+#![feature(specialization)]
 
 extern crate core;
 extern crate scoped_threadpool;

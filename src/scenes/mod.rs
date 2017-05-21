@@ -53,14 +53,14 @@ pub mod meshes {
                 (x * 0.5, y * 0.5, z * 0.5)
             };
             let vertices = vec! [
-                BaseVertex::new(&Point3f::new(center.x - dx, center.y - dy, center.z + dz)),
-                BaseVertex::new(&Point3f::new(center.x - dx, center.y - dy, center.z - dz)),
-                BaseVertex::new(&Point3f::new(center.x + dx, center.y - dy, center.z - dz)),
-                BaseVertex::new(&Point3f::new(center.x + dx, center.y - dy, center.z + dz)),
-                BaseVertex::new(&Point3f::new(center.x - dx, center.y + dy, center.z + dz)),
-                BaseVertex::new(&Point3f::new(center.x - dx, center.y + dy, center.z - dz)),
-                BaseVertex::new(&Point3f::new(center.x + dx, center.y + dy, center.z - dz)),
-                BaseVertex::new(&Point3f::new(center.x + dx, center.y + dy, center.z + dz)),
+                BaseVertex::new(Point3f::new(center.x - dx, center.y - dy, center.z + dz)),
+                BaseVertex::new(Point3f::new(center.x - dx, center.y - dy, center.z - dz)),
+                BaseVertex::new(Point3f::new(center.x + dx, center.y - dy, center.z - dz)),
+                BaseVertex::new(Point3f::new(center.x + dx, center.y - dy, center.z + dz)),
+                BaseVertex::new(Point3f::new(center.x - dx, center.y + dy, center.z + dz)),
+                BaseVertex::new(Point3f::new(center.x - dx, center.y + dy, center.z - dz)),
+                BaseVertex::new(Point3f::new(center.x + dx, center.y + dy, center.z - dz)),
+                BaseVertex::new(Point3f::new(center.x + dx, center.y + dy, center.z + dz)),
 
             ];
             

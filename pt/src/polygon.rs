@@ -136,8 +136,10 @@ impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {
 
 pub mod material {
     use bsdf::{Diffuse, Phong, BsdfRef};
-    use super::vertex::{Vertex, BaseVertex};
-    use color::Color;
+    use super::vertex::{Vertex, BaseVertex, TexturedVertex};
+    use color::{Color, Rgb, ColorChannel};
+    use texture::Texture;
+    use std::sync::Arc;
 
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
@@ -178,10 +180,28 @@ pub mod material {
             BsdfRef::Ref(&self.bsdf)
         }
     }
+
+    pub struct DiffuseTex<T: ColorChannel = f32> {
+        pub albedo: Texture<Rgb<T>, [T; 4]>,
+    }
+
+    impl<T: ColorChannel> DiffuseTex<T> {
+        pub fn new(albedo_texture: Texture<Rgb<T>, [T; 4]>) -> Self {
+            Self {albedo: albedo_texture}
+        }
+    }
+
+    impl Material<TexturedVertex> for DiffuseTex {
+        fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
+            let uv = v.uv;
+            let albedo = self.albedo.sample(uv[0], uv[1]);
+            BsdfRef::Shared(Arc::new(Diffuse::new(albedo, None)))
+        }
+    }
 }
 
 pub mod vertex {
-    use math::{Vector3f, Point3f, Real};
+    use math::{Vector3f, Point2, Point3f, Real};
 
     pub trait Vertex: Sync + Send {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self;
@@ -189,23 +209,58 @@ pub mod vertex {
         fn position(&self) -> Point3f;
     }
 
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    #[repr(C)]
     pub struct BaseVertex {
         pub position: Point3f,
     }
 
     impl BaseVertex {
-        pub fn new (pos: &Point3f) -> BaseVertex {
+        pub fn new (pos: Point3f) -> BaseVertex {
             BaseVertex {
-                position: *pos,
+                position: pos,
             }
         }
     }
 
     impl Vertex for BaseVertex {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self {
-            let pos = v0.position.to_vector() * w + v1.position.to_vector() * u + v2.position.to_vector() * v;
-            BaseVertex::new(pos.as_point())
+            let pos = v0.position.to_vector() * w + 
+                      v1.position.to_vector() * u + 
+                      v2.position.to_vector() * v;
+            BaseVertex::new(pos.to_point())
+        }
+
+        fn position(&self) -> Point3f {
+            self.position
+        }
+    }
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    #[repr(C)]
+    pub struct TexturedVertex {
+        pub position: Point3f,
+        pub uv: Point2<f32>,
+    }
+
+    impl TexturedVertex {
+        pub fn new(pos: Point3f, uv: Point2<f32>) -> Self {
+            Self {
+                position: pos,
+                uv: uv,
+            }
+        }
+    }
+
+    impl Vertex for TexturedVertex {
+        fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self {
+            let pos = v0.position.to_vector() * w + 
+                      v1.position.to_vector() * u + 
+                      v2.position.to_vector() * v;
+            let tex_uv = v0.uv.to_vector() * (w as f32) + 
+                         v1.uv.to_vector() * (u as f32) +
+                         v2.uv.to_vector() * (v as f32);
+            TexturedVertex::new(pos.to_point(), tex_uv.to_point())
         }
 
         fn position(&self) -> Point3f {
