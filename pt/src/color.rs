@@ -320,7 +320,6 @@ macro_rules! impl_colorblend {
             }            
         }
     }
->>>>>>> Added Texture type.
 }
 
 macro_rules! impl_colorclamp {
