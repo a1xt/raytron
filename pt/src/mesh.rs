@@ -2,15 +2,15 @@ use traits::{Vertex, Material};
 use polygon::Polygon;
 use std::sync::Arc;
 
-pub struct Mesh<V>
+pub struct Mesh<'a, V>
     where V: Vertex
 {
     vertices: Vec<V>,
     indices: Vec<[u32; 3]>,
-    materials: Vec<Arc<Material<V>>>,
+    materials: Vec<Arc<Material<V> + 'a>>,
 }
 
-impl<V> Mesh<V>
+impl<'a, V> Mesh<'a, V>
     where V: Vertex
 {
     pub fn new() -> Self {
@@ -23,7 +23,7 @@ impl<V> Mesh<V>
 
     pub fn from_data(vertices: Vec<V>,
                      indices: Vec<[u32; 3]>,
-                     materials: Vec<Arc<Material<V>>>)
+                     materials: Vec<Arc<Material<V> + 'a>>)
                      -> Result<Self, ()> {
         let vnum = vertices.len() as u32;
         let bounded = indices
@@ -55,7 +55,7 @@ impl<V> Mesh<V>
         }
     }
 
-    pub fn add_face(&mut self, indices: [u32; 3], material: Arc<Material<V>>) -> Result<(), ()> {
+    pub fn add_face(&mut self, indices: [u32; 3], material: Arc<Material<V> + 'a>) -> Result<(), ()> {
         let vnum = self.vertices.len() as u32;
         if indices[0] < vnum && indices[1] < vnum && indices[2] < vnum {
             self.indices.push(indices);

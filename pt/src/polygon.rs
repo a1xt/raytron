@@ -204,7 +204,7 @@ pub mod material {
 pub mod vertex {
     use math::{Vector3f, Point2, Point3f, Real};
 
-    pub trait Vertex: Sync + Send {
+    pub trait Vertex: Copy + Sync + Send {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self;
         //fn normal(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Vector3f;
         fn position(&self) -> Point3f;
