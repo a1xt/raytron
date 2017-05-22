@@ -75,27 +75,63 @@ fn main () {
     let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
 
-    use pt_app::pt::math::{Point3f};
+    use pt_app::pt::math::{Point3f, Point2};
+    use pt_app::pt::texture::Texture;
+    use pt_app::pt::color::{self, Rgb, ColorBlend};
+    use pt_app::pt::polygon::vertex::{TexturedVertex };
+    use pt_app::pt::polygon::material::{DiffuseTex};
+    use std::sync::Arc;
 
-    let cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
-    let cube_mesh = cube.build_bv(false);
-    let polygons = cube_mesh.polygons();
+    let diftex_w = 128usize;
+    let diftex_h = 128usize;
+    let mut dif_tex: Texture<Rgb, [f32; 4]> = Texture::new(diftex_w, diftex_h);
+    for j in 0..dif_tex.height() {
+        for i in 0..dif_tex.width() {
+            let u0v0 = color::YELLOW;
+            let u0v1 = color::RED;
+            let u1v1 = color::BLUE;
+            let u1v0 = color::GREEN;
+            let u = (i as f32) / (diftex_w - 1) as f32;
+            let v = (j as f32) / (diftex_h - 1) as f32;
+            let c = (u0v0 * (1.0 - u) + u1v0 * u) * (1.0 - v) + (u0v1 * (1.0 - u) + u1v1 * u) * v;
+            dif_tex.set_pixel(i, j, c);
+        }
+    }
+
+    let verts = [
+        TexturedVertex::new(Point3f::new(-30.0, -30.0, -30.0), Point2::new(0.0, 0.0)),
+        TexturedVertex::new(Point3f::new(-30.0, 30.0, -30.0), Point2::new(0.0, 1.0)),
+        TexturedVertex::new(Point3f::new(30.0, 30.0, -30.0), Point2::new(1.0, 1.0)),
+        TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
+    ];
+
+    let mat = Arc::new(DiffuseTex::new(&dif_tex));
+
+    let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
+    let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
+
+    // let cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
+    // let cube_mesh = cube.build_bv(false);
+    // let polygons = cube_mesh.polygons();
 
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
     let mut scene = s.shape_list();
 
-    for p in polygons.iter() {
-        scene.add_shape(p);
-    }
+    scene.add_shape(&pol0);
+    scene.add_shape(&pol1);
 
-    use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
-    let obj_iter = s.shape_iter()
-        .map(move |s| s as &BoundedSurface)
-        .chain(
-            polygons.iter()
-                    .map(move |p| p as &BoundedSurface)
-        );
+    // for p in polygons.iter() {
+    //     scene.add_shape(p);
+    // }
+
+    // use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
+    // let obj_iter = s.shape_iter()
+    //     .map(move |s| s as &BoundedSurface)
+    //     .chain(
+    //         polygons.iter()
+    //                 .map(move |p| p as &BoundedSurface)
+    //     );
     // println!("start building kdtree...");
     // let kdtree_build_start = time::precise_time_ns();
     // let kdtree_setup = KdTreeSetup::new(32, 8, Sah::new(1.0, 1.0));
@@ -117,7 +153,7 @@ fn main () {
     
     
     //rdr.render_scene(&scene, app.cam_ctrl().camera(), &setup, &mut img);
-    //println!("image succesfully rendered!");
+    //println!("scene succesfully rendered!");
 
     //let image_name: String = "res_img/".to_string() + rand::random::<u32>().to_string().as_ref() + ".png";
     //println!("img_name: {}", image_name);

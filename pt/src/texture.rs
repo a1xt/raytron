@@ -42,8 +42,8 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
     }
 
     pub fn sample(&self, u: f32, v: f32) -> P::Color {
-        let i = (clamp(u, 0.0, 1.0) * (self.width as f32) + 0.5) as usize;
-        let j = (clamp(v, 0.0, 1.0) * (self.height as f32) + 0.5) as usize;
+        let i = (clamp(u, 0.0, 1.0) * ((self.width - 1) as f32) + 0.5) as usize;
+        let j = (clamp(v, 0.0, 1.0) * ((self.height - 1) as f32) + 0.5) as usize;
         self.pixel(i, j)
     }
 
@@ -53,5 +53,13 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
 
     pub fn pixels<'s>(&'s self) -> impl Iterator<Item = P::Color> + 's {
         self.data.iter().map(|&r| r.into())
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
     }
 }

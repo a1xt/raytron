@@ -175,7 +175,7 @@ mod consts {
 }
 
 pub trait ColorChannel: Copy + PartialEq + PartialOrd + One + Zero + ChannelBounds + ChannelBlend + 
-                        FromPrimitive + ToPrimitive + Bounded + Default {}
+                        FromPrimitive + ToPrimitive + Bounded + Default + Sync + Send {}
 impl ColorChannel for u8 {}
 impl ColorChannel for f32 {}
 

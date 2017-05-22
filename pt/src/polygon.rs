@@ -1,5 +1,5 @@
-pub use self::vertex::{Vertex, BaseVertex};
-pub use self::material::{Material, DiffuseMat};
+pub use self::vertex::{Vertex, BaseVertex, TexturedVertex};
+pub use self::material::{Material, DiffuseMat, DiffuseTex};
 
 use std::sync::Arc;
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
@@ -29,7 +29,8 @@ impl<'a, V: Vertex + 'a> Polygon<'a, V> {
     }
 
     pub fn material<'s> (&'s self, coords: (Real, Real, Real)) -> BsdfRef<'s> {
-        self.mat.bsdf(&Vertex::interpolate(self.v0, self.v1, self.v2, coords))
+        //self.mat.bsdf(&Vertex::interpolate(self.v0, self.v1, self.v2, coords)) // [FIXME]
+        self.mat.bsdf(&Vertex::interpolate(self.v0, self.v2, self.v1, coords))
     }
 
 }
@@ -181,21 +182,21 @@ pub mod material {
         }
     }
 
-    pub struct DiffuseTex<T: ColorChannel = f32> {
-        pub albedo: Texture<Rgb<T>, [T; 4]>,
+    pub struct DiffuseTex<'a, T = f32> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
+        pub albedo: &'a Texture<Rgb<T>, [T; 4]>,
     }
 
-    impl<T: ColorChannel> DiffuseTex<T> {
-        pub fn new(albedo_texture: Texture<Rgb<T>, [T; 4]>) -> Self {
+    impl<'a, T> DiffuseTex<'a, T> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
+        pub fn new<'b: 'a>(albedo_texture: &'b Texture<Rgb<T>, [T; 4]>) -> Self {
             Self {albedo: albedo_texture}
         }
     }
 
-    impl Material<TexturedVertex> for DiffuseTex {
+    impl<'a, T> Material<TexturedVertex> for DiffuseTex<'a, T> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
         fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
             let uv = v.uv;
             let albedo = self.albedo.sample(uv[0], uv[1]);
-            BsdfRef::Shared(Arc::new(Diffuse::new(albedo, None)))
+            BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), None)))
         }
     }
 }
