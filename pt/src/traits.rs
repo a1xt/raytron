@@ -7,7 +7,7 @@ pub use bsdf::Bsdf;
 pub use polygon::{Vertex, Material};
 pub use aabb::{HasBounds};
 
-pub trait RenderCamera {
+pub trait RenderCamera: Sync {
     fn view_matrix(&self) -> Matrix4f;
     fn proj_matrix(&self) -> Matrix4f;
 

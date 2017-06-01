@@ -38,8 +38,8 @@ impl PathTracer {
         self
     }
 
-    fn trace_path_rec<S, C>(&self, scene: &S, ray: &Ray3f, depth: u32) -> Color
-        where S: SceneHolder, C: RenderCamera
+    fn trace_path_rec<S>(&self, scene: &S, ray: &Ray3f, depth: u32) -> Color
+        where S: SceneHolder + ?Sized
     {
 
         if depth == self.setup.path_depth {
@@ -121,7 +121,7 @@ impl PathTracer {
 
             let (new_ray_dir, fr, pdf_p) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
             let new_ray = Ray3f::new(&sp.position, &new_ray_dir);
-            let li = self.trace_path_rec::<S, C>(scene, &new_ray, depth + 1);
+            let li = self.trace_path_rec::<S>(scene, &new_ray, depth + 1);
             let indirect_illumination = (fr * li) * (1.0 / pdf_p) as f32;
 
             return le + (direct_illumination + indirect_illumination);
@@ -134,9 +134,9 @@ impl PathTracer {
 
 }
 
-impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for PathTracer {
+impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for PathTracer {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
-        let res = self.trace_path_rec::<S, C>(scene, &initial_ray, 0);
+        let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
         res        
     }
     
@@ -145,7 +145,7 @@ impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for PathTracer {
     }
 }
 
-impl<S:SceneHolder + Sync, C: RenderCamera + Sync> Renderer<S, C> for PathTracer {
+impl<S:SceneHolder + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for PathTracer {
     fn pre_render(&mut self, _: &S, camera: &C, _: &RenderSettings) {
         self.ray_gen = CameraRayGenerator::with_camera(camera);
     }

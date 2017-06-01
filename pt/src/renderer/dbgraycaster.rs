@@ -17,8 +17,8 @@ impl DbgRayCaster {
         }
     }
 
-    fn trace_path_rec<S, C>(&self, scene: &S, ray: &Ray3f, _: u32) -> Color
-        where S: SceneHolder, C: RenderCamera
+    fn trace_path_rec<S>(&self, scene: &S, ray: &Ray3f, _: u32) -> Color
+        where S: SceneHolder + ?Sized
     {
 
         if let Some(sp) = scene.intersection(ray) {
@@ -54,9 +54,9 @@ impl DbgRayCaster {
 
 }
 
-impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for DbgRayCaster {
+impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for DbgRayCaster {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
-        let res = self.trace_path_rec::<S, C>(scene, &initial_ray, 0);
+        let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
 
         res        
     }
@@ -66,7 +66,7 @@ impl<S: SceneHolder, C: RenderCamera> RendererHelper<S, C> for DbgRayCaster {
     }
 }
 
-impl<S: SceneHolder + Sync, C: RenderCamera + Sync> Renderer<S, C> for DbgRayCaster {
+impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for DbgRayCaster {
     fn pre_render(&mut self, _: &S, camera: &C, _: &RenderSettings) {
         self.ray_gen = CameraRayGenerator::with_camera(camera);
     }

@@ -7,7 +7,7 @@ use traits::Surface;
 use math::{Ray3f};
 use {SurfacePoint};
 
-pub trait SceneHolder {
+pub trait SceneHolder: Sync {
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint>;
 
     // delete
@@ -20,11 +20,7 @@ pub trait SceneHolder {
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's>;
 
-    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> where Self: Sized {
-        LightSourcesHandler {
-            scene: self as &SceneHolder,
-        }
-    }
+    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s>;
 }
 
 #[derive(Clone)]

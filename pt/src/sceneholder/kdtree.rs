@@ -6,6 +6,7 @@ use std::borrow::Borrow;
 use std::cmp::max;
 use {SurfacePoint};
 use utils::consts::POSITION_EPSILON;
+use super::{LightSourcesHandler};
 
 pub const KDTREE_DEPTH_MAX: usize = 512;
 
@@ -382,6 +383,12 @@ impl<'a, T> SceneHolder for KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a
 
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's> {
-        box self.light_sources.iter().map(|&s| s)
+        box self.light_sources.iter().cloned()
+    }
+
+    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
+        LightSourcesHandler {
+            scene: self,
+        }
     }
 }

@@ -20,7 +20,9 @@ mod inner {
     use rand::{self, Closed01};
     use color;
     
-    pub trait RendererHelper<S: SceneHolder, C: RenderCamera> {
+    pub trait RendererHelper<S, C> : Sync 
+        where S: SceneHolder + ?Sized, C: RenderCamera + ?Sized
+    {
 
         fn trace_path(&self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color;
         
@@ -77,7 +79,7 @@ mod inner {
                 dy: 0.0,
             }
         }
-        pub fn with_camera <C: RenderCamera> (camera: &C) -> CameraRayGenerator {
+        pub fn with_camera <C: RenderCamera + ?Sized> (camera: &C) -> CameraRayGenerator {
 
             let origin = camera.pos();
             let up = camera.up_vec().normalize();
@@ -123,7 +125,10 @@ mod inner {
     }
 }
 
-pub trait Renderer<S: SceneHolder + Sync, C: RenderCamera + Sync> : RendererHelper<S, C> + Sync {
+pub trait Renderer<S = SceneHolder, C = RenderCamera> : RendererHelper<S, C> + Sync
+    where S: SceneHolder + ?Sized,
+          C: RenderCamera + ?Sized
+{
 
     fn pre_render(&mut self, scene: &S, camera: &C, setup: &RenderSettings);
 

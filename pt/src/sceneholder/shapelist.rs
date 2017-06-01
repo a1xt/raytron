@@ -1,8 +1,9 @@
 use math::{Ray3f, Real};
 use traits::{Surface, SceneHolder};
-use ::{SurfacePoint};
+use {SurfacePoint};
 use std;
 use utils::consts;
+use super::{LightSourcesHandler};
 
 pub struct ShapeList<'a> {
     //shapes: Vec<Box<Surface + 'a>>,
@@ -59,6 +60,12 @@ impl<'a> SceneHolder for ShapeList<'a> {
     }
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's> {
-        Box::new(self.light_sources.iter().map(|&s| s))
+        box self.light_sources.iter().cloned()
+    }
+
+    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
+        LightSourcesHandler {
+            scene: self,
+        }
     }
 }
