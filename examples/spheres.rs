@@ -1,3 +1,5 @@
+#![feature(box_syntax)]
+
 extern crate pt_app;
 extern crate gfx;
 extern crate gfx_device_gl as gfx_gl;
@@ -6,16 +8,12 @@ extern crate time;
 extern crate image;
 extern crate rand;
 
-
-use gfx::Factory;
-
-//use pt_app::camera_controller::{CameraController, FPSCameraController};
-//use pt_app::utils::camera::{FPSCamera, RenderCamera};
 use pt_app::{App};
 use pt_app::scenes::spheres;
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
+use pt_app::pt::sceneholder::{ShapeList};
 use pt_app::pt::{Image, RenderSettings};
-use pt_app::pt::traits::{Renderer, BoundedSurface};
+use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHolder};
 
 use std::mem;
 
@@ -30,8 +28,14 @@ use std::string::{String, ToString};
 use glutin::{Event, ElementState, VirtualKeyCode};
 
 use pt_app::scenes::meshes::Cube;
+use pt_app::scenes::{cube_with_tex};
 use pt_app::pt::mesh::{Mesh};
 use pt_app::pt::polygon::{Polygon};
+
+type TexFormat = Rgba32F;
+
+use gfx::{Factory};
+use gfx::format::{Rgba32F};
 
 fn main () {
     let width = 400u32;
@@ -98,32 +102,35 @@ fn main () {
         }
     }
 
-    let verts = [
-        TexturedVertex::new(Point3f::new(-30.0, -30.0, -30.0), Point2::new(0.0, 0.0)),
-        TexturedVertex::new(Point3f::new(-30.0, 30.0, -30.0), Point2::new(0.0, 1.0)),
-        TexturedVertex::new(Point3f::new(30.0, 30.0, -30.0), Point2::new(1.0, 1.0)),
-        TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
-    ];
+    // let verts = [
+    //     TexturedVertex::new(Point3f::new(-30.0, -30.0, -30.0), Point2::new(0.0, 0.0)),
+    //     TexturedVertex::new(Point3f::new(-30.0, 30.0, -30.0), Point2::new(0.0, 1.0)),
+    //     TexturedVertex::new(Point3f::new(30.0, 30.0, -30.0), Point2::new(1.0, 1.0)),
+    //     TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
+    // ];
 
-    let mat = Arc::new(DiffuseTex::new(&dif_tex));
+    // let mat = Arc::new(DiffuseTex::new(&dif_tex));
 
-    let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
-    let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
+    // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
+    // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
 
     // let cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
     // let cube_mesh = cube.build_bv(false);
     // let polygons = cube_mesh.polygons();
 
+    let cube_mesh = cube_with_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex);
+    let polygons = cube_mesh.polygons();
+
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
-    let mut scene = s.shape_list();
+    let mut scene = Box::new(s.shape_list());
 
-    scene.add_shape(&pol0);
-    scene.add_shape(&pol1);
+    // scene.add_shape(&pol0);
+    // scene.add_shape(&pol1);
 
-    // for p in polygons.iter() {
-    //     scene.add_shape(p);
-    // }
+    for p in polygons.iter() {
+        scene.add_shape(p);
+    }
 
     // use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()
@@ -175,15 +182,16 @@ fn main () {
     let mut start_time;
     let mut total_time = 0u64;
     while app.run() {
+        let scn = scene.as_ref() as &SceneHolder;
         if dbg {
-            dbg_rdr.render_scene_threaded(&scene, app.cam_ctrl().camera(), &dbg_setup, &mut img);
+            dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
         } else {
             start_time = time::precise_time_ns();
             if pass_num == 0 {
-                rdr.pre_render(&scene, app.cam_ctrl().camera(), &setup);
+                rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
                 total_time = 0;
             }
-            rdr.render_pass_threaded(&scene, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
+            rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
             pass_num += 1;
             let frame_time = time::precise_time_ns() - start_time;
             total_time = total_time + frame_time;
@@ -211,13 +219,17 @@ fn main () {
 
                             let mut buf: Vec<u8> = Vec::new();
                             for c in img.pixels() {
-                                //let cc = color::clamp_rgba(c);
-                                // let cc = color::round_rgba(c);
-                                // buf.push((cc[0] * 255.0) as u8);
-                                // buf.push((cc[1] * 255.0) as u8);
-                                // buf.push((cc[2] * 255.0) as u8);
-                                //buf.push((cc[3] * 256.0) as u8);
                                 let cc: color::Rgb<u8> = c.into();
+                                // let lum = color::Rgb::new(0.3, 0.59, 0.11);
+                                // let l = lum.r * c.r + lum.g * c.g + lum.b * c.b;
+                                // let s = l / (1.0 + l);
+                                // let cc: color::Rgb<u8> = (c * s).into();
+                                // let r = (c.r / (1.0 + c.r)) * 255.0;
+                                // let g = (c.g / (1.0 + c.g)) * 255.0;
+                                // let b = (c.b / (1.0 + c.b)) * 255.0;
+                                // // buf.push(r as u8);
+                                // // buf.push(g as u8);
+                                // // buf.push(b as u8);
                                 buf.push(cc.r);
                                 buf.push(cc.g);
                                 buf.push(cc.b);

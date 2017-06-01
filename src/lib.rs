@@ -1,4 +1,5 @@
 #![feature(conservative_impl_trait)]
+#![feature(box_syntax)]
 
 #[macro_use] extern crate gfx;
 pub extern crate gfx_window_glutin;
@@ -20,7 +21,7 @@ use gfx::memory::Usage;
 use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
 use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
 use gfx::Bundle;
-use glutin::{CursorState};
+use glutin::{CursorState, GlRequest, Api};
 
 use pt::math::{Real};
 
@@ -52,14 +53,15 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
     pub fn new(screen_width: u32,
            screen_height: u32,
            title: String)
-           //-> App<gfx_device_gl::Device, gfx_device_gl::Factory> {
            -> App<gfx_device_gl::Device, gfx_device_gl::Factory> {
 
         use gfx::traits::FactoryExt;
 
+        let gl_version = GlRequest::Specific(Api::OpenGl, (2, 1));
         let builder = glutin::WindowBuilder::new()
             .with_title(title)
-            .with_dimensions(screen_width, screen_height);
+            .with_dimensions(screen_width, screen_height)
+            .with_gl(gl_version);
 
         let (window, device, mut factory, rt_view, depth_view) =
             gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder);

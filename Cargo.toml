@@ -29,7 +29,10 @@ rand = "*"
 
 [[example]]
 name = "spheres"
-path = "examples/spheres/spheres.rs"
+path = "examples/spheres.rs"
 
+[[example]]
+name = "envmap"
+path = "examples/envmap.rs"
 [workspace]
 
