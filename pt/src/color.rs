@@ -1,6 +1,6 @@
 use core::array::FixedSizeArray;
 
-use texture;
+use texture::{Texture};
 use num::{One, Zero, FromPrimitive, ToPrimitive, Bounded};
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
 use std::u8;
@@ -9,7 +9,9 @@ use utils::{clamp};
 pub use self::consts::*;
 
 pub type Color = Rgb;
-pub type Image = texture::Texture<Rgb, [f32; 4]>;
+pub type Image = Texture<Rgb, [f32; 4]>;
+// pub type RgbTexture<T: ColorChannel = f32> = Texture<Rgb<T>, [T; 3]>;
+// pub type RgbTexture4<T: ColorChannel = f32> = Texture<Rgb<T>, [T; 4]>;
 
 mod consts {
     use super::Color;
@@ -178,6 +180,7 @@ pub trait ColorChannel: Copy + PartialEq + PartialOrd + One + Zero + ChannelBoun
                         FromPrimitive + ToPrimitive + Bounded + Default + Sync + Send {}
 impl ColorChannel for u8 {}
 impl ColorChannel for f32 {}
+impl ColorChannel for f64 {}
 
 pub trait ChannelBounds {
     const MIN_CHVAL: Self;
@@ -192,6 +195,10 @@ impl ChannelBounds for f32 {
     const MIN_CHVAL: f32 = 0.0;
     const MAX_CHVAL: f32 = 1.0;
 }
+impl ChannelBounds for f64 {
+    const MIN_CHVAL: f64 = 0.0;
+    const MAX_CHVAL: f64 = 1.0;
+}
 
 pub trait ChannelBlend {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
@@ -202,7 +209,11 @@ impl ChannelBlend for f32 {
         c0 * w0 + c1 * w1
     }
 }
-
+impl ChannelBlend for f64 {
+    fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
+        c0 * (w0 as f64) + c1 * (w1 as f64)
+    }
+}
 impl ChannelBlend for u8 {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
         let t = w0 * (c0 as f32) + w1 * (c1 as f32);
@@ -226,6 +237,22 @@ pub trait Pixel<R> where R: FixedSizeArray<Self::Channel> + Copy {
 pub trait ChannelCast<T: ColorChannel>: ColorChannel {
     fn cast_from(other: T) -> Self;
     fn cast_into(self) -> T;
+}
+
+macro_rules! channel_cast_default {
+    ($t:ty, for $u:ty) => {
+        impl ChannelCast<$t> for $u {
+            #[inline]
+            fn cast_from(other: $t) -> $u {
+                other.cast_into()
+            }
+            
+            #[inline]
+            fn cast_into(self) -> $t {
+                <$t as ChannelCast<$u>>::cast_from(self)
+            }
+        }
+    }
 }
 
 impl<T: ColorChannel> ChannelCast<T> for T {
@@ -252,17 +279,33 @@ impl ChannelCast<f32> for u8 {
     }
 }
 
-impl ChannelCast<u8> for f32 {
+impl ChannelCast<f32> for f64 {
     #[inline]
-    fn cast_from(other: u8) -> f32 {
-        other.cast_into()
+    fn cast_from(other: f32) -> f64 {
+        other as f64
     }
     
     #[inline]
-    fn cast_into(self) -> u8 {
-        u8::cast_from(self)
+    fn cast_into(self) -> f32 {
+        self as f32
     }
 }
+
+impl ChannelCast<f64> for u8 {
+    #[inline]
+    fn cast_from(other: f64) -> u8 {
+        (clamp(other, f64::MIN_CHVAL, f64::MAX_CHVAL) * (u8::MAX_CHVAL as f64)) as u8
+    }
+    
+    #[inline]
+    fn cast_into(self) -> f64 {
+        (self as f64) / (u8::MAX_CHVAL as f64)
+    }
+}
+
+channel_cast_default!(u8, for f32);
+channel_cast_default!(f64, for f32);
+channel_cast_default!(u8, for f64);
 
 
 macro_rules! impl_color {
@@ -523,6 +566,10 @@ impl_into_arr!(Rgb, [T; 3], r, g, b);
 impl_into_arr_a!(Rgb, [T; 4], r, g, b);
 impl_from_self!(Rgb, u8, f32, r, g, b);
 impl_from_self!(Rgb, f32, u8, r, g, b);
+impl_from_self!(Rgb, f32, f64, r, g, b);
+impl_from_self!(Rgb, f64, f32, r, g, b);
+// impl_from_self!(Rgb, f64, u8, r, g, b);
+// impl_from_self!(Rgb, u8, f64, r, g, b);
 impl_from_other!(Rgb, Rgba, r, g, b);
 impl_from_other!(Rgb, Luma, luma, luma, luma);
 impl_from_other!(Rgb, LumaA, luma, luma, luma);
