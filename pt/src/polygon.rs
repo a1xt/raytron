@@ -16,15 +16,18 @@ pub struct Polygon<'a, V: Vertex + 'a> {
     pub v1: &'a V,
     pub v2: &'a V,
     pub mat: Arc<Material<V> + 'a>,
+    total_emittance: Option<Color>,
 }
 
 impl<'a, V: Vertex + 'a> Polygon<'a, V> {
     pub fn new (v0: &'a V, v1: &'a V, v2: &'a V, mat: Arc<Material<V> + 'a>) -> Self {
+        let e = mat.total_emittance(v0, v2, v1);
         Polygon {
             v0: v0,
             v1: v1,
             v2: v2,
             mat: mat,
+            total_emittance: e,
         }
     }
 
@@ -60,18 +63,22 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
         0.5 * b.cross(&a).norm()
     }
 
-    fn total_emittance(&self) -> Option<Color> {
-        if let Some(e) = self.mat.bsdf(self.v0).emittance() {
-            Some(e * (self.area() as f32))
-        } else {
-            None
-        }
+    default fn total_emittance(&self) -> Option<Color> {
+        self.total_emittance
     }
 
-    fn normal_at(&self, _: &Point3f) -> Vector3f {
+    default fn normal_at(&self, _: &Point3f) -> Vector3f {
         let a = self.v1.position() - self.v0.position();
         let b = self.v2.position() - self.v0.position();
         b.cross(&a).normalize()
+    }
+
+    default fn is_emitter(&self) -> bool {
+        if let Some(_) = self.total_emittance {
+            true
+        } else {
+            false
+        }
     }
 
     fn sample_surface_p(&self, (_, _): (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
@@ -104,14 +111,6 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
     fn pdf_p(&self, (_, _): (&Point3f, &Vector3f), (_, _): (&Point3f, &Vector3f)) -> Real {
         1.0 / self.area()
     }
-
-    fn is_emitter(&self) -> bool {
-        if let Some(_) = self.mat.bsdf(self.v0).emittance() {
-            true
-        } else {
-            false
-        }
-    }
 }
 
 impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {  
@@ -138,12 +137,20 @@ impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {
 pub mod material {
     use bsdf::{Diffuse, Phong, BsdfRef};
     use super::vertex::{Vertex, BaseVertex, TexturedVertex};
-    use color::{Color, Rgb, ColorChannel};
-    use texture::Texture;
+    use color::{self, Color, Rgb, ColorChannel};
+    use texture::{Tex, Texture};
     use std::sync::Arc;
+    use math;
+    use math::{Real, Norm};
+    use utils::consts;
+    use num::Float;
 
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
+
+        fn total_emittance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+            None
+        }
     }
 
     pub struct DiffuseMat {
@@ -158,9 +165,18 @@ pub mod material {
         }
     }
 
-    impl Material<BaseVertex> for DiffuseMat {
-        fn bsdf<'s>(&'s self, _: &BaseVertex) -> BsdfRef<'s> {
+    impl<V: Vertex> Material<V> for DiffuseMat {
+        fn bsdf<'s>(&'s self, _: &V) -> BsdfRef<'s> {
             BsdfRef::Ref(&self.bsdf)
+        }
+
+        fn total_emittance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+            if let Some(e) = self.bsdf(v0).emittance() {
+                let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
+                Some(e * (area as f32))
+            } else {
+                None
+            }
         }
     }
 
@@ -182,27 +198,74 @@ pub mod material {
         }
     }
 
-    pub struct DiffuseTex<'a, T = f32> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
-        pub albedo: &'a Texture<Rgb<T>, [T; 4]>,
+    pub struct DiffuseTex<'a, T: 'a + Tex<Color>> {
+        pub albedo: &'a T,
+        pub emittance: Option<&'a T>,
     }
 
-    impl<'a, T> DiffuseTex<'a, T> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
-        pub fn new<'b: 'a>(albedo_texture: &'b Texture<Rgb<T>, [T; 4]>) -> Self {
-            Self {albedo: albedo_texture}
+    impl<'a, T: 'a + Tex<Color>> DiffuseTex<'a, T> {
+        pub fn new(albedo: &'a T, emittance: Option<&'a T>) -> Self {
+            Self {
+                albedo,
+                emittance,
+            }
         }
     }
 
-    impl<'a, T> Material<TexturedVertex> for DiffuseTex<'a, T> where T: 'a + ColorChannel, Rgb<T>: Into<Color> {
+    impl<'a, T: 'a + Tex<Color>> Material<TexturedVertex> for DiffuseTex<'a, T> {
         fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
             let uv = v.uv;
-            let albedo = self.albedo.sample(uv[0], uv[1]);
-            BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), None)))
+            let albedo = self.albedo.sample(uv.x, uv.y);
+            let emittance = self.emittance.map(|e| e.sample(uv.x, uv.y).into());
+            BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), emittance)))
+        }
+
+        fn total_emittance(&self, v0: &TexturedVertex, v1: &TexturedVertex, v2: &TexturedVertex) -> Option<Color> {
+            if let Some(e_tex) = self.emittance {
+                let dt = consts::TEXTURE_INTEGRAL_STEP;
+                let da: Real = 2.0 * (math::triangle_area(&v0.position(), &v1.position(), &v2.position()) * dt * dt);
+                let mut sum: Rgb<Real> = color::BLACK.into();
+                let mut u = dt;
+                let mut v = dt;
+                let mut cl_area = 0.0;
+                while u < 1.0 + consts::REAL_EPSILON {
+                    v = dt;
+                    while v < 1.0 +consts::REAL_EPSILON {
+                        if u + v < 1.0 + consts::REAL_EPSILON {
+                            let us = u - dt * 0.25;
+                            let vs = v - dt * 0.25;
+                            let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
+                            let e = e_tex.sample(p.uv.x, p.uv.y);
+                            sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
+                            cl_area += 0.5 * da;
+                        }
+                        if u + v - dt < 1.0 + consts::REAL_EPSILON {
+                            let us = u - dt * 0.75;
+                            let vs = v - dt * 0.75;
+                            let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
+                            let e = e_tex.sample(p.uv.x, p.uv.y);
+                            sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
+                            cl_area += 0.5 * da;
+                        }
+                        v += dt;
+                    }
+                    u += dt;
+                }
+                let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
+                println!("texture integral calculated:");
+                println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
+                println!("  - texture total emittance: {:?}", sum);
+                Some(sum.into())
+            } else {
+                None
+            }
         }
     }
 }
 
 pub mod vertex {
     use math::{Vector3f, Point2, Point3f, Real};
+    use color::{Color};
 
     pub trait Vertex: Copy + Sync + Send {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self;
@@ -225,7 +288,7 @@ pub mod vertex {
     }
 
     impl Vertex for BaseVertex {
-        fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self {
+        fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self where Self: Sized {
             let pos = v0.position.to_vector() * w + 
                       v1.position.to_vector() * u + 
                       v2.position.to_vector() * v;
