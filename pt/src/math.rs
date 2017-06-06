@@ -84,6 +84,12 @@ pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray
     Some((t, (u, v)))
 }
 
+pub fn triangle_area(v0: &Point3f, v1: &Point3f, v2: &Point3f) -> Real {
+    let b = *v1 - *v0;
+    let c = *v2 - *v0;
+    0.5 * b.cross(&c).norm()
+}
+
 use rand;
 use rand::{random, Closed01};
 use rand::distributions::{Range, IndependentSample};
