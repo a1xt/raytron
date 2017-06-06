@@ -37,9 +37,13 @@ pub use self::traits::{
 };
 
 pub use self::sphere::{Sphere};
+pub use self::polygon::{Polygon};
+pub use self::polygon::material;
+pub use self::polygon::vertex;
 pub use self::sceneholder::{ShapeList};
 pub use self::color::{Color, Image};
 pub use self::bsdf::BsdfRef;
+pub use self::texture::{Tex, Texture};
 
 use self::math::{Point3f, Vector3f};
 
