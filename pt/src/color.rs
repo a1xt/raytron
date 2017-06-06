@@ -309,20 +309,30 @@ channel_cast_default!(u8, for f64);
 
 
 macro_rules! impl_color {
-    ($c:ident, $($x:ident),+) => {
+    ($c:ident, $x0:ident $(, $x:ident)*) => {
         #[repr(C)]
         #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
         pub struct $c<T = f32> where T: ColorChannel {
+            pub $x0: T,
             $(
                 pub $x: T,
             )*
         }
 
         impl<T: ColorChannel> $c<T> {
-            pub const fn new($( $x: T, )* ) -> Self {
+            pub const fn new($x0: T, $( $x: T, )* ) -> Self {
                 Self {
+                    $x0,
                     $( $x, )*
                 }
+            }
+        }
+        impl<T: ColorChannel> $c<T> where T: ChannelCast<f64> { 
+            pub fn dot(&self, other: &Self) -> f64 {
+                self.$x0.cast_into() * other.$x0.cast_into()
+                $(
+                    + self.$x.cast_into() * other.$x.cast_into()
+                )*
             }
         }
     }
