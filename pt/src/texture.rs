@@ -3,6 +3,16 @@ use std::marker::PhantomData;
 use utils::{clamp};
 use color::{Pixel};
 
+pub trait Tex<C>: Sync {
+    fn new(width: usize, height: usize) -> Self where Self: Sized;
+    fn pixel(&self, i: usize, j: usize) -> C;
+    fn set_pixel(&mut self, i: usize, j: usize, p: C);
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+    fn sample(&self, u: f32, v: f32) -> C;
+}
+
+#[derive(Clone, Debug)]
 pub struct Texture<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> {
     data: Vec<R>,
     width: usize,
@@ -12,7 +22,7 @@ pub struct Texture<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> {
 
 impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
 
-    pub fn new(width: usize, height: usize) -> Self where P: Default {
+    pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::with_capacity(width * height);
         for _ in 0..(width * height) {
             data.push(P::Color::default().into());
@@ -21,6 +31,7 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
     }
     
     pub fn from_data(data: Vec<R>, width: usize, height: usize) -> Self {
+        assert!(data.len() == width * height);
         Texture {
             data,
             width,
@@ -61,5 +72,37 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
 
     pub fn height(&self) -> usize {
         self.height
+    }
+}
+
+impl<P, R, C> Tex<C> for Texture<P, R> 
+    where P: Pixel<R> + Sync, 
+          R: FixedSizeArray<P::Channel> + Copy + Sync,
+          C: Into<P::Color>,
+          P::Color: Into<C>
+{
+    #[inline]
+    fn new(width: usize, height: usize) -> Self where Self: Sized {
+        Texture::new(width, height)
+    }
+    #[inline]
+    fn pixel(&self, i: usize, j: usize) -> C {
+        self.pixel(i, j).into()
+    }
+    #[inline]
+    fn set_pixel(&mut self, i: usize, j: usize, p: C) {
+        self.set_pixel(i, j, p.into());
+    }
+    #[inline]
+    fn width(&self) -> usize {
+        self.width
+    }
+    #[inline]
+    fn height(&self) -> usize {
+        self.height
+    }
+    #[inline]
+    fn sample(&self, u: f32, v: f32) -> C {
+        self.sample(u, v).into()
     }
 }
