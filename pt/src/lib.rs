@@ -40,6 +40,7 @@ pub use self::sphere::{Sphere};
 pub use self::polygon::{Polygon};
 pub use self::polygon::material;
 pub use self::polygon::vertex;
+pub use self::mesh::Mesh;
 pub use self::sceneholder::{ShapeList};
 pub use self::color::{Color, Image};
 pub use self::bsdf::BsdfRef;
