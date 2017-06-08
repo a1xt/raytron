@@ -41,8 +41,8 @@ pub struct App<D: Device, F: Factory<D::Resources>> {
     device: D,
     factory: F,
     window: glutin::Window,
-    color_out: RenderTargetView<D::Resources, ColorFormat>,
-    depth_out: DepthStencilView<D::Resources, DepthFormat>,
+    color_out: RenderTargetView<<D as Device>::Resources, ColorFormat>,
+    depth_out: DepthStencilView<<D as Device>::Resources, DepthFormat>,
 
     events: Vec<glutin::Event>,
     cam_ctrl: FPSCameraController,
@@ -234,6 +234,20 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
 
     pub fn cam_ctrl(&mut self) -> &FPSCameraController {
         &self.cam_ctrl
+    }
+}
+
+impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
+    pub fn resize(&mut self, width: u32, height: u32, scale: f32) {
+        let w = (width as f32 * scale) as u32;
+        let h = (height as f32 * scale) as u32;        
+        self.window.set_inner_size(w, h);
+        let (color, depth) = gfx_window_glutin::new_views(&self.window);
+        self.color_out = color.clone();
+        self.depth_out = depth.clone();
+        self.fsquad.data.out_color = color;
+        self.fsquad.data.out_depth = depth;
+        println!("win resized: w = {}, h = {}", width, height);
     }
 }
 

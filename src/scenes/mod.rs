@@ -31,7 +31,25 @@ pub mod meshes {
     }
 
     impl<'a, V: Vertex> Cube<'a, V> {
-        pub fn new<F>(center: Point3f, size: (Real, Real, Real), mut get_mat: F) -> Cube<'a, V>
+        pub fn new(center: Point3f, size: (Real, Real, Real)) -> Cube<'a, V> {
+            let mat = Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<V>>;
+            Cube {
+                center,
+                size,
+                materials: {
+                    let mut m = BTreeMap::new();
+                    m.insert(CubeSide::Top, mat.clone());
+                    m.insert(CubeSide::Bottom, mat.clone());
+                    m.insert(CubeSide::Right, mat.clone());
+                    m.insert(CubeSide::Left, mat.clone());                    
+                    m.insert(CubeSide::Front, mat.clone());
+                    m.insert(CubeSide::Back, mat.clone());
+                    m
+                }
+            }
+        }
+
+        pub fn with_materials<F>(center: Point3f, size: (Real, Real, Real), mut get_mat: F) -> Cube<'a, V>
             where F: FnMut(CubeSide) -> Arc<Material<V> + 'a>
         {
             Cube {
@@ -53,11 +71,11 @@ pub mod meshes {
 
     impl<'a, T: Vertex> Cube<'a, T> {
 
-        //! vertex order(normal is directed towards the observer):
-        //! 1-----2
-        //! |   / |
-        //! | /   |
-        //! 0-----3
+        // vertex order(normal is directed towards the observer):
+        // 1-----2
+        // |   / |
+        // | /   |
+        // 0-----3
         pub fn build<F>(&self, invert_normals: bool, mut pos_to_vertex: F) -> Mesh<'a, T> 
             where F: FnMut(CubeSide, &[Point3f; 4]) -> [T; 4]
         {
@@ -71,10 +89,10 @@ pub mod meshes {
             };
 
             let top = [
-                Point3f::new(center.x + dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z + dz),
                 Point3f::new(center.x - dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z - dz)];
+                Point3f::new(center.x - dx, center.y + dy, center.z - dz),
+                Point3f::new(center.x + dx, center.y + dy, center.z - dz),
+                Point3f::new(center.x + dx, center.y + dy, center.z + dz),];
 
             let bottom = [
                 Point3f::new(center.x - dx, center.y - dy, center.z - dz),
@@ -101,10 +119,10 @@ pub mod meshes {
                 Point3f::new(center.x + dx, center.y - dy, center.z + dz)];
             
             let back = [
+                Point3f::new(center.x - dx, center.y + dy, center.z - dz),
+                Point3f::new(center.x - dx, center.y - dy, center.z - dz),
                 Point3f::new(center.x + dx, center.y - dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z - dz), 
-                Point3f::new(center.x - dx, center.y - dy, center.z - dz),];
+                Point3f::new(center.x + dx, center.y + dy, center.z - dz),];
 
             {
                 let mut add_side = |side: CubeSide, i: u32, verts: &[Point3f; 4]| {                
@@ -203,12 +221,17 @@ pub mod meshes {
     }
 }
 
-pub fn cube_with_tex<'a>(pos: Point3f, size: (Real, Real, Real), tex: &'a Texture<Rgb, [f32; 4]>) -> Mesh<'a, TexturedVertex> {
+pub fn cube_with_diffuse_tex<'a>(pos: Point3f, 
+                                 size: (Real, Real, Real), 
+                                 albedo: &'a Texture<Rgb, [f32; 3]>,
+                                 emittance: Option<&'a Texture<Rgb, [f32; 3]>>) 
+                                 -> Mesh<'a, TexturedVertex>
+{
     use self::meshes::Cube;
     use std::sync::Arc;
     use pt::math::{Point2};
-    let mat = Arc::new(DiffuseTex::new(tex));
-    let cube = Cube::new(pos, size, |_| mat.clone());
+    let mat = Arc::new(DiffuseTex::new(albedo, emittance));
+    let cube = Cube::with_materials(pos, size, |_| mat.clone());
     cube.build(false, |_, v| {
         [
             TexturedVertex::new(v[0], Point2::new(0.0, 0.0)),

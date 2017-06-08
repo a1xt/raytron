@@ -14,6 +14,7 @@ use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
 use pt_app::pt::sceneholder::{ShapeList};
 use pt_app::pt::{Image, RenderSettings};
 use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHolder};
+use image::hdr;
 
 use std::mem;
 
@@ -28,7 +29,7 @@ use std::string::{String, ToString};
 use glutin::{Event, ElementState, VirtualKeyCode};
 
 use pt_app::scenes::meshes::Cube;
-use pt_app::scenes::{cube_with_tex};
+use pt_app::scenes::{cube_with_diffuse_tex};
 use pt_app::pt::mesh::{Mesh};
 use pt_app::pt::polygon::{Polygon};
 
@@ -88,7 +89,7 @@ fn main () {
 
     let diftex_w = 128usize;
     let diftex_h = 128usize;
-    let mut dif_tex: Texture<Rgb, [f32; 4]> = Texture::new(diftex_w, diftex_h);
+    let mut dif_tex: Texture<Rgb, [f32; 3]> = Texture::new(diftex_w, diftex_h);
     for j in 0..dif_tex.height() {
         for i in 0..dif_tex.width() {
             let u0v0 = color::YELLOW;
@@ -98,7 +99,8 @@ fn main () {
             let u = (i as f32) / (diftex_w - 1) as f32;
             let v = (j as f32) / (diftex_h - 1) as f32;
             let c = (u0v0 * (1.0 - u) + u1v0 * u) * (1.0 - v) + (u0v1 * (1.0 - u) + u1v1 * u) * v;
-            dif_tex.set_pixel(i, j, c);
+            //dif_tex.set_pixel(i, j, c);
+            dif_tex.set_pixel(i, j, color::WHITE);
         }
     }
 
@@ -114,11 +116,15 @@ fn main () {
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
 
-    // let cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
+    use pt_app::pt::polygon::DiffuseMat;
+    // let mut cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
+    // for (_, v) in cube.materials.iter_mut() {
+    //     *v = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE)));
+    // }
     // let cube_mesh = cube.build_bv(false);
     // let polygons = cube_mesh.polygons();
 
-    let cube_mesh = cube_with_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex);
+    let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, Some(&dif_tex));
     let polygons = cube_mesh.polygons();
 
     //let (scene, _) = spheres::create_scene();
@@ -158,46 +164,77 @@ fn main () {
     
     let mut img: Image = Image::new(width as usize, height as usize);
     
-    
-    //rdr.render_scene(&scene, app.cam_ctrl().camera(), &setup, &mut img);
-    //println!("scene succesfully rendered!");
+    use std::path::Path;
+    use std::fs::File;
+    use std::io::BufReader;
+    let img_path = "data/hdr/memorial.hdr".to_string();
+    //let img_file = File::open("data/hdr/grace_probe.hdr").unwrap();
+    let img_file = File::open("data/hdr/memorial.hdr").unwrap();
+    //let hdr_img = hdr::read_raw_file(Path::new(&img_path)).unwrap();
+    //let hdr_img = image::open(Path::new(&img_path)).unwrap().to_rgb();
+    let hdrdecoder = hdr::HDRDecoder::new(BufReader::new(img_file)).unwrap();
+    let hdr_meta = hdrdecoder.metadata();
+    println!("img_width = {}", hdr_meta.width);
+    println!("img_height = {}", hdr_meta.height);
+    let mut hdr_img = Image::new(hdr_meta.width as usize, hdr_meta.height as usize);
+    let hdr_data = hdrdecoder.read_image_hdr().unwrap();
+    for j in 0..(hdr_meta.height as usize) {
+        for i in 0..(hdr_meta.width as usize) {
+            let p = hdr_data[j * (hdr_meta.width as usize) + i];
+            let mut c = Rgb::new(p[0], p[1], p[2]);
+            // c.r = c.r / (c.r + 1.0);
+            // c.g = c.g / (c.g + 1.0);
+            // c.b = c.b / (c.b + 1.0);
+            hdr_img.set_pixel(i, j, c.into());
+        }
+    }
+    img = hdr_img;
 
-    //let image_name: String = "res_img/".to_string() + rand::random::<u32>().to_string().as_ref() + ".png";
-    //println!("img_name: {}", image_name);
-    // let mut buf: Vec<u8> = Vec::new();
-    // for c in img.pixels() {
-    //     //let cc = color::clamp_rgba(c);
-    //     let cc = color::round_rgba(c);
-    //     buf.push((cc[0] * 255.0) as u8);
-    //     buf.push((cc[1] * 255.0) as u8);
-    //     buf.push((cc[2] * 255.0) as u8);
-    //     //buf.push((cc[3] * 256.0) as u8);
-    // }
+    let tex = app.factory_mut().create_texture::<gfx::format::R32_G32_B32_A32> (
+        gfx::texture::Kind::D2(img.width() as u16, img.height() as u16, gfx::texture::AaMode::Single),
+        1,
+        gfx::SHADER_RESOURCE,
+        gfx::memory::Usage::Dynamic,
+        Some(gfx::format::ChannelType::Float)
+    ).unwrap();
 
-    //image::save_buffer(&std::path::Path::new(&image_name), buf.as_ref(), width, height, image::RGB(8)).unwrap();
-    //println!("image saved!");
+    let tex_view = app.factory_mut().view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
+        &tex,
+        (0,0),
+        gfx::format::Swizzle::new()
+    ).unwrap();
 
     let mut dbg = true;
     let mut pass_num = 0;
-    let mut start_time;
+    let mut start_time = 0;
     let mut total_time = 0u64;
     while app.run() {
-        let scn = scene.as_ref() as &SceneHolder;
-        if dbg {
-            dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
-        } else {
-            start_time = time::precise_time_ns();
-            if pass_num == 0 {
-                rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
-                total_time = 0;
-            }
-            rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
-            pass_num += 1;
-            let frame_time = time::precise_time_ns() - start_time;
-            total_time = total_time + frame_time;
-            println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
-                pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
-        }
+        // let scn = scene.as_ref() as &SceneHolder;
+        // if dbg {
+        //     dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
+        // } else {
+        //     start_time = time::precise_time_ns();
+        //     if pass_num == 0 {
+        //         rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
+        //         total_time = 0;
+        //     }
+        //     rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
+        //     pass_num += 1;
+        //     let frame_time = time::precise_time_ns() - start_time;
+        //     total_time = total_time + frame_time;
+        //     println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
+        //         pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
+        // }
+
+        // let mut himg = Image::new(hdr_img.width() as usize, hdr_img.height() as usize);
+        // for j in 0..hdr_img.height() {
+        //     for i in 0..hdr_img.width() {
+        //         let p: image::Rgb<f32> = *hdr_img.get_pixel(i, j);
+        //         let c = Rgb::new(p[0], p[1], p[2]);
+        //         himg.set_pixel(i as usize, j as usize, c);
+        //     }
+        // }
+        
 
         for event in app.events().iter() {
             match *event {
@@ -235,7 +272,11 @@ fn main () {
                                 buf.push(cc.b);
                             }
 
-                            image::save_buffer(&std::path::Path::new(&image_name), buf.as_ref(), width, height, image::RGB(8)).unwrap();
+                            image::save_buffer(&std::path::Path::new(&image_name), 
+                                               buf.as_ref(),
+                                               img.width() as u32,
+                                               img.height() as u32,
+                                               image::RGB(8)).unwrap();
                             println!("image saved!");
                         },
 
@@ -257,8 +298,10 @@ fn main () {
                 xoffset: 0,
                 yoffset: 0,
                 zoffset: 0,
-                width: tex_w,
-                height: tex_h,
+                // width: tex_w,
+                // height: tex_h,
+                width: img.width() as u16,
+                height: img.height() as u16,
                 depth: 0,
                 format: (),
                 mipmap: 0,
