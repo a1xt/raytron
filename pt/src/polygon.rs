@@ -134,6 +134,30 @@ impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {
     }
 }
 
+impl<'a, V: Vertex + 'a> AsRef<Surface + 'a> for Polygon<'a, V> {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self
+    }
+}
+
+impl<'a, V: Vertex + 'a> AsMut<Surface + 'a> for Polygon<'a, V> {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self
+    }
+}
+
+impl<'a, V: Vertex + 'a> AsRef<Surface + 'a> for Box<Polygon<'a, V>> {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self.as_ref()
+    }
+}
+
+impl<'a, V: Vertex + 'a> AsMut<Surface + 'a> for Box<Polygon<'a, V>> {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self.as_mut()
+    }
+}
+
 pub mod material {
     use bsdf::{Diffuse, Phong, BsdfRef};
     use super::vertex::{Vertex, BaseVertex, TexturedVertex};

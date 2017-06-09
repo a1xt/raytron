@@ -6,6 +6,7 @@ use std::f64::consts::PI;
 use color::{self, Color};
 use std::sync::Arc;
 use aabb::{Aabb3, HasBounds};
+use std::borrow::{Borrow, BorrowMut};
 
 #[derive(Clone)]
 pub struct Sphere {
@@ -130,5 +131,79 @@ impl HasBounds for Sphere {
             self.position - dpos,
             self.position + dpos,
         )
+    }
+}
+
+impl<'a> Borrow<Surface + 'a> for Sphere {
+    fn borrow(&self) -> &(Surface + 'a) {
+        self
+    }
+}
+
+impl<'a> Borrow<Surface + 'a> for &'a Sphere {
+    fn borrow(&self) -> &(Surface + 'a) {
+        *self
+    }
+}
+
+impl<'a> Borrow<Surface + 'a> for &'a mut Sphere {
+    fn borrow(&self) -> &(Surface + 'a) {
+        *self
+    }
+}
+
+impl<'a> BorrowMut<Surface + 'a> for &'a mut Sphere {
+    fn borrow_mut(&mut self) -> &mut (Surface + 'a) {
+        *self
+    }
+}
+
+impl<'a> AsRef<Surface + 'a> for Sphere {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self
+    }
+}
+
+impl<'a> AsMut<Surface + 'a> for Sphere {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self
+    }
+}
+
+impl<'a> AsRef<Surface + 'a> for Box<Sphere> {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self.as_ref()
+    }
+}
+
+impl<'a> AsMut<Surface + 'a> for Box<Sphere> {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self.as_mut()
+    }
+}
+
+use std::rc::Rc;
+
+impl<'a> AsRef<Surface + 'a> for Rc<Sphere> {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self.as_ref()
+    }
+}
+
+impl<'a> AsMut<Surface + 'a> for Rc<Sphere> {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self.as_mut()
+    }
+}
+
+impl<'a> AsRef<Surface + 'a> for Arc<Sphere> {
+    fn as_ref(&self) -> &(Surface + 'a) {
+        self.as_ref()
+    }
+}
+
+impl<'a> AsMut<Surface + 'a> for Arc<Sphere> {
+    fn as_mut(&mut self) -> &mut (Surface + 'a) {
+        self.as_mut()
     }
 }
