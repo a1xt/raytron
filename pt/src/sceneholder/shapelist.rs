@@ -45,15 +45,6 @@ impl<'a, T> SceneHolder for ShapeList<'a, T> where T: AsRef<Surface + 'a> + Sync
             }
         }
 
-        for shape in self.light_sources.iter() {
-            if let Some((t, surf_point)) = shape.intersection(ray) {
-                if t < t_min {
-                    t_min = t;
-                    sp = Some(surf_point);
-                }
-            }
-        }
-
         if let Some(ref mut x) = sp {
             x.position += x.normal * consts::POSITION_EPSILON;
         }

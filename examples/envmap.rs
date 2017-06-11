@@ -123,7 +123,7 @@ impl AppState for Envmap {
     fn create_scene<'s>(&'s self) -> Box<SceneHolder + 's> {
         let mut scene = box ShapeList::new();
         for p in self.envbox_polygons.iter() {
-            scene.add_shape(p);
+            scene.add_shape(p.as_ref());
         }
         scene.add_shape(&self.sphere);
         scene

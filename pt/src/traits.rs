@@ -94,12 +94,14 @@ pub trait Surface : Sync {
 }
 
 impl<'s, 'a: 's> AsRef<Surface + 'a> for &'s (Surface + 'a) {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         *self
     }
 }
 
 impl<'s, 'a: 's> AsMut<Surface + 'a> for &'s mut (Surface + 'a) {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         *self
     }

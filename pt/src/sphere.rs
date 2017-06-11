@@ -135,48 +135,56 @@ impl HasBounds for Sphere {
 }
 
 impl<'a> Borrow<Surface + 'a> for Sphere {
+    #[inline]
     fn borrow(&self) -> &(Surface + 'a) {
         self
     }
 }
 
 impl<'a> Borrow<Surface + 'a> for &'a Sphere {
+    #[inline]
     fn borrow(&self) -> &(Surface + 'a) {
         *self
     }
 }
 
 impl<'a> Borrow<Surface + 'a> for &'a mut Sphere {
+    #[inline]
     fn borrow(&self) -> &(Surface + 'a) {
         *self
     }
 }
 
 impl<'a> BorrowMut<Surface + 'a> for &'a mut Sphere {
+    #[inline]
     fn borrow_mut(&mut self) -> &mut (Surface + 'a) {
         *self
     }
 }
 
 impl<'a> AsRef<Surface + 'a> for Sphere {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self
     }
 }
 
 impl<'a> AsMut<Surface + 'a> for Sphere {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self
     }
 }
 
 impl<'a> AsRef<Surface + 'a> for Box<Sphere> {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self.as_ref()
     }
 }
 
 impl<'a> AsMut<Surface + 'a> for Box<Sphere> {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self.as_mut()
     }
@@ -185,24 +193,28 @@ impl<'a> AsMut<Surface + 'a> for Box<Sphere> {
 use std::rc::Rc;
 
 impl<'a> AsRef<Surface + 'a> for Rc<Sphere> {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self.as_ref()
     }
 }
 
 impl<'a> AsMut<Surface + 'a> for Rc<Sphere> {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self.as_mut()
     }
 }
 
 impl<'a> AsRef<Surface + 'a> for Arc<Sphere> {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self.as_ref()
     }
 }
 
 impl<'a> AsMut<Surface + 'a> for Arc<Sphere> {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self.as_mut()
     }
