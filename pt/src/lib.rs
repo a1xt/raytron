@@ -37,7 +37,7 @@ pub use self::traits::{
 };
 
 pub use self::sphere::{Sphere};
-pub use self::polygon::{Polygon};
+pub use self::polygon::{Polygon, PolygonS, PolygonR};
 pub use self::polygon::material;
 pub use self::polygon::vertex;
 pub use self::mesh::Mesh;

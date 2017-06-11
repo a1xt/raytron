@@ -115,7 +115,7 @@ impl Room {
         Room{spheres: btmap}
     }
 
-    pub fn shape_list<'s> (&'s self) -> ShapeList<'s> {
+    pub fn shape_list<'s> (&'s self) -> ShapeList<'s, &'s Surface> {
         let mut l = ShapeList::new();
         for (_, s) in self.spheres.iter() {
             l.add_shape(s as &Surface);

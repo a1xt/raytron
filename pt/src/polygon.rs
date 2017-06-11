@@ -2,6 +2,7 @@ pub use self::vertex::{Vertex, BaseVertex, TexturedVertex};
 pub use self::material::{Material, DiffuseMat, DiffuseTex};
 
 use std::sync::Arc;
+use std::marker::PhantomData;
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
 use {Surface, SurfacePoint, BsdfRef};
 use aabb::{Aabb3, HasBounds};
@@ -10,37 +11,65 @@ use color::{self, Color};
 use rand::{self, Closed01};
 use num::Float;
 
+pub type PolygonR<'a, R> = Polygon<'a, R, &'a R>;
+pub type PolygonS<'a, R> = Polygon<'a, R, R>;
+
 #[derive(Clone)]
-pub struct Polygon<'a, V: Vertex + 'a> {
-    pub v0: &'a V,
-    pub v1: &'a V,
-    pub v2: &'a V,
-    pub mat: Arc<Material<V> + 'a>,
+pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a, {
+    pub v0: V,
+    pub v1: V,
+    pub v2: V,
+    pub mat: Arc<Material<R> + 'a>,
     total_emittance: Option<Color>,
+    _marker: PhantomData<R>,
 }
 
-impl<'a, V: Vertex + 'a> Polygon<'a, V> {
-    pub fn new (v0: &'a V, v1: &'a V, v2: &'a V, mat: Arc<Material<V> + 'a>) -> Self {
-        let e = mat.total_emittance(v0, v2, v1);
+impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+    pub fn new (v0: V, v1: V, v2: V, mat: Arc<Material<R> + 'a>) -> Self {
+        let e = mat.total_emittance(v0.as_ref(), v2.as_ref(), v1.as_ref());
         Polygon {
             v0: v0,
             v1: v1,
             v2: v2,
             mat: mat,
             total_emittance: e,
+            _marker: PhantomData,
         }
     }
 
     pub fn material<'s> (&'s self, coords: (Real, Real, Real)) -> BsdfRef<'s> {
         //self.mat.bsdf(&Vertex::interpolate(self.v0, self.v1, self.v2, coords)) // [FIXME]
-        self.mat.bsdf(&Vertex::interpolate(self.v0, self.v2, self.v1, coords))
+        self.mat.bsdf(&Vertex::interpolate(self.v0(), 
+                                           self.v2(), 
+                                           self.v1(), 
+                                           coords))
+    }
+
+    #[inline]
+    pub fn v0(&self) -> &R {
+        self.v0.as_ref()
+    }
+
+    #[inline]
+    pub fn v1(&self) -> &R {
+        self.v1.as_ref()
+    }
+
+    #[inline]
+    pub fn v2(&self) -> &R {
+        self.v2.as_ref()
     }
 
 }
 
-impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
+impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
     fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
-        if let Some((t, (u, v))) = math::intersection_triangle(&self.v0.position(), &self.v1.position(), &self.v2.position(), ray, true) {
+        if let Some((t, (u, v))) = math::intersection_triangle(&self.v0().position(), 
+                                                               &self.v1().position(), 
+                                                               &self.v2().position(), 
+                                                               ray, 
+                                                               true)
+        {
             let pos = ray.origin + ray.dir * t;
             let norm = self.normal_at(&pos);
             Some((
@@ -58,8 +87,8 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
     }
 
     fn area (&self) -> Real {
-        let a = self.v1.position() - self.v0.position();
-        let b = self.v2.position() - self.v0.position();
+        let a = self.v1().position() - self.v0().position();
+        let b = self.v2().position() - self.v0().position();
         0.5 * b.cross(&a).norm()
     }
 
@@ -68,8 +97,8 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
     }
 
     default fn normal_at(&self, _: &Point3f) -> Vector3f {
-        let a = self.v1.position() - self.v0.position();
-        let b = self.v2.position() - self.v0.position();
+        let a = self.v1().position() - self.v0().position();
+        let b = self.v2().position() - self.v0().position();
         b.cross(&a).normalize()
     }
 
@@ -82,9 +111,9 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
     }
 
     fn sample_surface_p(&self, (_, _): (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
-        let a = self.v0.position().to_vector();
-        let b = self.v1.position().to_vector();
-        let c = self.v2.position().to_vector();
+        let a = self.v0().position().to_vector();
+        let b = self.v1().position().to_vector();
+        let c = self.v2().position().to_vector();
 
         let Closed01(r1) = rand::random::<Closed01<Real>>();
         let Closed01(r2) = rand::random::<Closed01<Real>>();
@@ -113,12 +142,12 @@ impl<'a, V: Vertex + 'a> Surface for Polygon<'a, V> {
     }
 }
 
-impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {  
+impl<'a, R, V> HasBounds for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {  
     fn aabb(&self) -> Aabb3 {
         use utils::consts::POSITION_EPSILON;
-        let p0 = self.v0.position();
-        let p1 = self.v1.position();
-        let p2 = self.v2.position();
+        let p0 = self.v0().position();
+        let p1 = self.v1().position();
+        let p2 = self.v2().position();
         let pmin = Point3f::new(
             p0.x.min(p1.x.min(p2.x)),
             p0.y.min(p1.y.min(p2.y)),
@@ -134,27 +163,31 @@ impl<'a, V: Vertex> HasBounds for Polygon<'a, V> {
     }
 }
 
-impl<'a, V: Vertex + 'a> AsRef<Surface + 'a> for Polygon<'a, V> {
+impl<'a, R, V> AsRef<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self
     }
 }
 
-impl<'a, V: Vertex + 'a> AsMut<Surface + 'a> for Polygon<'a, V> {
+impl<'a, R, V> AsMut<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self
     }
 }
 
-impl<'a, V: Vertex + 'a> AsRef<Surface + 'a> for Box<Polygon<'a, V>> {
+impl<'a, R, V> AsRef<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+    #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
-        self.as_ref()
+        &**self
     }
 }
 
-impl<'a, V: Vertex + 'a> AsMut<Surface + 'a> for Box<Polygon<'a, V>> {
+impl<'a, R, V> AsMut<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+    #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
-        self.as_mut()
+        &mut **self
     }
 }
 
@@ -291,10 +324,26 @@ pub mod vertex {
     use math::{Vector3f, Point2, Point3f, Real};
     use color::{Color};
 
-    pub trait Vertex: Copy + Sync + Send {
-        fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self;
+    pub trait Vertex: Copy + Clone + Sync + Send {
+        fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self where Self: Sized;
         //fn normal(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Vector3f;
         fn position(&self) -> Point3f;
+    }
+
+    macro_rules! impl_asref_for_vertex {
+        ($type:ident) => {
+            impl AsRef<$type> for $type {
+                fn as_ref(&self) -> & $type {
+                    self
+                }
+            }
+
+            impl AsMut<$type> for $type {
+                fn as_mut(&mut self) -> &mut $type {
+                    self
+                }
+            }
+        }
     }
 
     #[derive(Copy, Clone, Debug, PartialEq)]
@@ -310,6 +359,7 @@ pub mod vertex {
             }
         }
     }
+    impl_asref_for_vertex!(BaseVertex);
 
     impl Vertex for BaseVertex {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self where Self: Sized {
@@ -323,6 +373,7 @@ pub mod vertex {
             self.position
         }
     }
+
 
     #[derive(Copy, Clone, Debug, PartialEq)]
     #[repr(C)]
@@ -339,6 +390,8 @@ pub mod vertex {
             }
         }
     }
+
+    impl_asref_for_vertex!(TexturedVertex);
 
     impl Vertex for TexturedVertex {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self {
