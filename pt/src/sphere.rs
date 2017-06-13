@@ -179,14 +179,14 @@ impl<'a> AsMut<Surface + 'a> for Sphere {
 impl<'a> AsRef<Surface + 'a> for Box<Sphere> {
     #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
-        self.as_ref()
+        &**self
     }
 }
 
 impl<'a> AsMut<Surface + 'a> for Box<Sphere> {
     #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
-        self.as_mut()
+        &mut **self
     }
 }
 
@@ -195,27 +195,13 @@ use std::rc::Rc;
 impl<'a> AsRef<Surface + 'a> for Rc<Sphere> {
     #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
-        self.as_ref()
-    }
-}
-
-impl<'a> AsMut<Surface + 'a> for Rc<Sphere> {
-    #[inline]
-    fn as_mut(&mut self) -> &mut (Surface + 'a) {
-        self.as_mut()
+        &**self
     }
 }
 
 impl<'a> AsRef<Surface + 'a> for Arc<Sphere> {
     #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
-        self.as_ref()
-    }
-}
-
-impl<'a> AsMut<Surface + 'a> for Arc<Sphere> {
-    #[inline]
-    fn as_mut(&mut self) -> &mut (Surface + 'a) {
-        self.as_mut()
+        &**self
     }
 }
