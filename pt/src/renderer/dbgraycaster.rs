@@ -26,7 +26,7 @@ impl DbgRayCaster {
             if let Some(c) = mat.emittance() {
                 return c;
             } else {
-                if let Some(light) = scene.light_sources().into_iter().next() {
+                if let Some(light) = scene.light_sources().iter().into_iter().next() {
                     let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
                     let shadow_ray = Ray3f::new(&sp.position, &(light_point.position - sp.position).normalize());                    
 

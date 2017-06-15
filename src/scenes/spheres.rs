@@ -1,4 +1,4 @@
-use pt::sceneholder::{ShapeList};
+use pt::sceneholder::{ShapeList, ShapeListBuilder, EmittanceSampler};
 use pt::bsdf::{Diffuse, Phong};
 use pt::{Sphere, Color};
 use pt::traits::{Surface};
@@ -80,14 +80,14 @@ impl Room {
             ),
         );
         //Sphere 1
-        //let k = 10.0;
+        let k = 10.0;
         btmap.insert(
             "sphere1",
             Sphere::new(
                 Point3f::new(-20., -35.0, -20.),
                 7.0,
-                Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
-                //Arc::new(Diffuse::new(Color{data: [0.9, 0.9, 0.9f32, 1.0]}, Some(Color{data: [0.2 * k, 0.5 * k, 0.2 * k, 1.0]}))),
+                //Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
+                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), Some(Color::new(0.2 * k, 0.5 * k, 0.2 * k)) )),
                 //Box::new(Diffuse::new(Color{data: [1.0, 1.0, 1.0f32, 1.0]}, Some(Color{data: [15.0, 15.0, 15.0f32, 1.0]}))),
             ),
         );
@@ -106,7 +106,7 @@ impl Room {
             "light1",
             Sphere::new(
                 Point3f::new(0.0, 39.0, 0.0),
-                10.0,
+                7.0,
                 Arc::new(Diffuse::new(Color::new(1.0, 1.0, 1.0f32), Some(Color::new(15.0, 15.0, 15.0f32)))),
                 //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
             ),
@@ -115,8 +115,8 @@ impl Room {
         Room{spheres: btmap}
     }
 
-    pub fn shape_list<'s> (&'s self) -> ShapeList<'s, &'s Surface> {
-        let mut l = ShapeList::new();
+    pub fn shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, EmittanceSampler> {
+        let mut l = ShapeListBuilder::new();
         for (_, s) in self.spheres.iter() {
             l.add_shape(s as &Surface);
         }

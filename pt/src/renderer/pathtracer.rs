@@ -71,9 +71,12 @@ impl PathTracer {
                 let Closed01(e) = rand::random::<Closed01<Real>>();    
                 if e > brdf_w {
                     // light source sampling
-                    if let Some((lp, pdf_ls)) = utils::sample_surfaces::by_area(scene.light_sources(),
-                                                                                (&sp.position, &sp.normal),
-                                                                                Surface::sample_surface_d_proj) {
+                    // if let Some((lp, pdf_ls)) = utils::sample_surfaces::by_area(scene.light_sources().iter(),
+                    //                                                             (&sp.position, &sp.normal),
+                    //                                                             Surface::sample_surface_d_proj) {
+                    if let Some((lp, pdf_ls)) = scene.light_sources().sample((&sp.position, &sp.normal), 
+                                                                             Surface::sample_surface_d_proj) 
+                    {
                         let shadow_ray = Ray3f::new(&sp.position, &(lp.position - sp.position).normalize());
                         let cos_theta = sp.normal.dot(&shadow_ray.dir);
                         let cos_theta_l = lp.normal.dot(&(-shadow_ray.dir));
@@ -99,11 +102,15 @@ impl PathTracer {
                     if let Some(ip) = scene.intersection(&shadow_ray) {
                         if let Some(le) = ip.bsdf.emittance() {
 
-                            let pdf_ls = utils::sample_surfaces::by_area_pdf(ip.surface,
-                                                                             scene.light_sources(), 
-                                                                             (&ip.position, &ip.normal), 
-                                                                             (&sp.position, &sp.normal),
-                                                                             Surface::pdf_d_proj);
+                            // let pdf_ls = utils::sample_surfaces::by_area_pdf(ip.surface,
+                            //                                                  scene.light_sources().iter(), 
+                            //                                                  (&ip.position, &ip.normal), 
+                            //                                                  (&sp.position, &sp.normal),
+                            //                                                  Surface::pdf_d_proj);
+                            let pdf_ls = scene.light_sources().pdf(ip.surface,
+                                                                   (&ip.position, &ip.normal), 
+                                                                   (&sp.position, &sp.normal),
+                                                                   Surface::pdf_d_proj);
                             let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                             let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
 

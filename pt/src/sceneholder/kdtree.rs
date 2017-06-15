@@ -4,9 +4,10 @@ use aabb::{Aabb3, intersection_aabb};
 use num::Float;
 use std::borrow::Borrow;
 use std::cmp::max;
+use std::sync::Arc;
 use {SurfacePoint};
 use utils::consts::POSITION_EPSILON;
-use super::{LightSourcesHandler};
+use super::{LightSourcesHandler, UniformSampler};
 
 pub const KDTREE_DEPTH_MAX: usize = 512;
 
@@ -389,6 +390,7 @@ impl<'a, T> SceneHolder for KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a
     fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
         LightSourcesHandler {
             scene: self,
+            sampler: Arc::new(UniformSampler::from(self.light_sources.as_slice()))
         }
     }
 }

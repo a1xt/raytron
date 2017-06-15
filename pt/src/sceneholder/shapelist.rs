@@ -2,19 +2,29 @@ use math::{Ray3f, Real};
 use traits::{Surface, SceneHolder};
 use {SurfacePoint};
 use std;
+use std::sync::Arc;
+use std::marker::PhantomData;
 use utils::consts;
-use super::{LightSourcesHandler};
+use super::{LightSourcesHandler, UniformSampler, EmittersSampler};
 
-pub struct ShapeList<'a, T> where T: AsRef<Surface + 'a> + Sync + 'a {
+pub struct ShapeListBuilder<'a, T, S = UniformSampler<'a>> 
+    where T: AsRef<Surface + 'a> + Sync + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a  
+{
     shapes: Vec<T>,
-    light_sources: Vec<&'a (Surface + 'a)>,
+    light_sources: Vec<&'a Surface>,
+    _marker: PhantomData<S>,
 }
 
-impl<'a, T> ShapeList<'a, T> where  T: AsRef<Surface + 'a> + Sync + 'a {
+impl<'a, T, S> ShapeListBuilder<'a, T, S> 
+    where  T: AsRef<Surface + 'a> + Sync + 'a,
+           S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+{
     pub fn new() -> Self {
-        ShapeList {
+        Self {
             shapes: Vec::new(),
             light_sources: Vec::new(),
+            _marker: PhantomData,
         }
     }
 
@@ -29,9 +39,38 @@ impl<'a, T> ShapeList<'a, T> where  T: AsRef<Surface + 'a> + Sync + 'a {
             self.shapes.push(surface);
         }
     }
+
+    pub fn shape_list(&self) -> ShapeList<'a, T, S> where T: Clone {
+        ShapeList {
+            shapes: self.shapes.clone(),
+            light_sources: self.light_sources.clone(),
+            sampler: Arc::new(S::from(self.light_sources.as_slice())),
+        }
+    }
+
+    pub fn to_shape_list(self) -> ShapeList<'a, T, S> {
+        let sampler = unsafe { Arc::new(S::from(self.light_sources.as_slice())) };
+        ShapeList {
+            shapes: self.shapes,
+            light_sources: self.light_sources,
+            sampler,
+        }
+    }
 }
 
-impl<'a, T> SceneHolder for ShapeList<'a, T> where T: AsRef<Surface + 'a> + Sync + 'a {
+pub struct ShapeList<'a, T, S = UniformSampler<'a>> 
+    where T: AsRef<Surface + 'a> + Sync + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
+{
+    shapes: Vec<T>,
+    light_sources: Vec<&'a (Surface + 'a)>,
+    sampler: Arc<S>,
+}
+
+impl<'a, T, S> SceneHolder for ShapeList<'a, T, S>
+    where T: AsRef<Surface + 'a> + Sync + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
+{
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint> {
         let mut t_min: Real = std::f32::MAX as Real;
         let mut sp = None;
@@ -59,6 +98,8 @@ impl<'a, T> SceneHolder for ShapeList<'a, T> where T: AsRef<Surface + 'a> + Sync
     fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
         LightSourcesHandler {
             scene: self,
+            sampler: super::lt_arc_trait_hack(self.sampler.clone()),
+            //sampler: self.sampler.clone(),
         }
     }
 }

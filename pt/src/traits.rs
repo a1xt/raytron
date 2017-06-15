@@ -26,7 +26,7 @@ pub trait RenderCamera: Sync {
 
 pub trait Surface : Sync {
     /// return (t, sp)
-    fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)>;
+    fn intersection(&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)>;
 
     fn is_emitter(&self) -> bool;
 
