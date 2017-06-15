@@ -369,6 +369,19 @@ pub fn tone_mapping_simple<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     }    
 }
 
+pub fn gamma_correction<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+    let g = 1.0 / 2.2;
+    for j in 0..img.height() {
+        for i in 0..img.width() {
+            let mut c = img.pixel(i, j);
+            c.r = c.r.powf(g);
+            c.g = c.g.powf(g);
+            c.b = c.b.powf(g);
+            img.set_pixel(i, j, c);
+        }
+    }
+}
+
 pub fn load_hdr<T: Tex<Rgb>>(path: String) -> T {
     use std::path::Path;
     use std::fs::File;

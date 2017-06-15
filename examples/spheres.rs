@@ -76,7 +76,7 @@ fn main () {
 
 
     // RenderSettings::new(samples, depth);
-    let setup = RenderSettings::new(128, 4).with_threads(4, pt_render_chunk);    
+    let setup = RenderSettings::new(128,12).with_threads(4, pt_render_chunk);    
     let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
 
@@ -124,19 +124,20 @@ fn main () {
     // let cube_mesh = cube.build_bv(false);
     // let polygons = cube_mesh.polygons();
 
-    let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, Some(&dif_tex));
+    let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, None);
     let polygons = cube_mesh.polygons();
 
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
-    let mut scene = Box::new(s.shape_list());
+    let scene_builder = s.shape_list();
+    let mut scene = Box::new(scene_builder.to_shape_list());
 
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
 
-    for p in polygons.iter() {
-        scene.add_shape(p);
-    }
+    // for p in polygons.iter() {
+    //     scene.add_shape(p);
+    // }
 
     // use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()
@@ -188,7 +189,23 @@ fn main () {
             hdr_img.set_pixel(i, j, c.into());
         }
     }
-    img = hdr_img;
+
+    // for j in 0..img.height() {
+    //     for i in 0..img.width() {
+    //         let mut c = i as f32 / (img.width() - 1) as f32;
+    //         if j < img.height() / 3 {
+    //             c = c.powf(2.2);
+    //         } else if j < 2 * img.height() / 3 {
+    //             c = c;
+    //         } else {
+    //             c = c.powf(1.0 / 2.2);
+    //         }
+            
+            
+    //         let p = Rgb::new(c, c, c);
+    //         img.set_pixel(i, j, p);
+    //     }
+    // }
 
     let tex = app.factory_mut().create_texture::<gfx::format::R32_G32_B32_A32> (
         gfx::texture::Kind::D2(img.width() as u16, img.height() as u16, gfx::texture::AaMode::Single),
@@ -209,32 +226,22 @@ fn main () {
     let mut start_time = 0;
     let mut total_time = 0u64;
     while app.run() {
-        // let scn = scene.as_ref() as &SceneHolder;
-        // if dbg {
-        //     dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
-        // } else {
-        //     start_time = time::precise_time_ns();
-        //     if pass_num == 0 {
-        //         rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
-        //         total_time = 0;
-        //     }
-        //     rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
-        //     pass_num += 1;
-        //     let frame_time = time::precise_time_ns() - start_time;
-        //     total_time = total_time + frame_time;
-        //     println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
-        //         pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
-        // }
-
-        // let mut himg = Image::new(hdr_img.width() as usize, hdr_img.height() as usize);
-        // for j in 0..hdr_img.height() {
-        //     for i in 0..hdr_img.width() {
-        //         let p: image::Rgb<f32> = *hdr_img.get_pixel(i, j);
-        //         let c = Rgb::new(p[0], p[1], p[2]);
-        //         himg.set_pixel(i as usize, j as usize, c);
-        //     }
-        // }
-        
+        let scn = scene.as_ref() as &SceneHolder;
+        if dbg {
+            dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
+        } else {
+            start_time = time::precise_time_ns();
+            if pass_num == 0 {
+                rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
+                total_time = 0;
+            }
+            rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
+            pass_num += 1;
+            let frame_time = time::precise_time_ns() - start_time;
+            total_time = total_time + frame_time;
+            println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
+                pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
+        }
 
         for event in app.events().iter() {
             match *event {
@@ -288,6 +295,16 @@ fn main () {
             }
         }
         
+        // let mut himg = img.clone();
+        // for j in 0..himg.height() {
+        //     for i in 0..himg.width() {
+        //         let mut c = himg.pixel(i, j);
+        //         c.r = c.r.powf(1.0 / 2.2);
+        //         c.g = c.g.powf(1.0 / 2.2);
+        //         c.b = c.b.powf(1.0 / 2.2);
+        //         himg.set_pixel(i, j, c);
+        //     }
+        // }
 
         app.clear_frame();
 

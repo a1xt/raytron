@@ -90,7 +90,7 @@ impl Envmap {
             sphere: Sphere::new(Point3f::new(0.0, 0.0, 0.0), 
                                 15.0,
                                 //Arc::new(Diffuse::new(color::WHITE, None))),
-                                Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 100000.0)))
+                                Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 100.0)))
         };
         envmap
     }
@@ -131,8 +131,8 @@ impl AppState for Envmap {
 
     fn post_process(&self, img: &mut Image) {
         let t = 1.125; 
-        //*img = self.hdr_img.as_ref().clone();
         tone_mapping_exp(img, t);
+        //gamma_correction(img);
     }
 
     // fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHolder + 's> + 's>, RenderSettings) {
