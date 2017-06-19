@@ -21,6 +21,14 @@ impl<'a, V> Mesh<'a, V>
         }
     }
 
+    pub fn with_capacity(vertices: usize, polygons: usize) -> Self {
+        Self {
+            vertices: Vec::with_capacity(vertices),
+            indices: Vec::with_capacity(polygons * 3),
+            materials: Vec::with_capacity(polygons),
+        }
+    }
+
     pub fn from_data(vertices: Vec<V>,
                      indices: Vec<[u32; 3]>,
                      materials: Vec<Arc<Material<V> + 'a>>)
@@ -107,5 +115,20 @@ impl<'a, V> Mesh<'a, V>
                              mat)
             })
             .collect()
+    }
+
+    pub fn merge(&mut self, other: &mut Self) {
+        if !other.vertices.is_empty() && !other.indices.is_empty() && !other.materials.is_empty() {
+            let ix_offset = self.vertices.len() as u32;
+            let ix_num = self.indices.len();
+            self.vertices.append(&mut other.vertices);
+            self.indices.append(&mut other.indices);
+            self.materials.append(&mut other.materials);
+            for &mut [ref mut ix0, ref mut ix1, ref mut ix2] in &mut self.indices[ix_num..] {
+                *ix0 += ix_offset;
+                *ix1 += ix_offset;
+                *ix2 += ix_offset;
+            }
+        }
     }
 }
