@@ -2,6 +2,8 @@ pub mod shapelist;
 pub mod kdtree;
 
 pub use self::shapelist::{ShapeList, ShapeListBuilder};
+pub use self::kdtree::{KdTree, KdTreeS};
+pub use self::kdtree::{KdTreeSetup, Sah};
 
 use traits::Surface;
 use math::{Real, Point3f, Vector3f, Ray3f};

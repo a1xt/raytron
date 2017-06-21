@@ -28,8 +28,8 @@ use std::string::{String, ToString};
 
 use glutin::{Event, ElementState, VirtualKeyCode};
 
-use pt_app::scenes::meshes::Cube;
-use pt_app::scenes::{cube_with_diffuse_tex};
+//use pt_app::scenes::meshes::Cube;
+use pt_app::scenes::{Quad, Plane, Cube};
 use pt_app::pt::mesh::{Mesh};
 use pt_app::pt::polygon::{Polygon};
 
@@ -46,6 +46,9 @@ fn main () {
     //let dbg_render_chunk = (128, 128);
     let pt_render_chunk = (80, 60);
     let dbg_render_chunk = (100, 75);
+
+    let setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);    
+    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
     let tex_w = width as u16;
     let tex_h = height as u16;
@@ -76,14 +79,13 @@ fn main () {
 
 
     // RenderSettings::new(samples, depth);
-    let setup = RenderSettings::new(128,12).with_threads(4, pt_render_chunk);    
-    let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
+    
 
 
-    use pt_app::pt::math::{Point3f, Point2};
+    use pt_app::pt::math::{Point3f, Vector3f, Point2};
     use pt_app::pt::texture::Texture;
     use pt_app::pt::color::{self, Rgb, ColorBlend};
-    use pt_app::pt::polygon::vertex::{TexturedVertex };
+    use pt_app::pt::polygon::vertex::{TexturedVertex, BaseVertex };
     use pt_app::pt::polygon::material::{DiffuseTex};
     use std::sync::Arc;
 
@@ -99,8 +101,8 @@ fn main () {
             let u = (i as f32) / (diftex_w - 1) as f32;
             let v = (j as f32) / (diftex_h - 1) as f32;
             let c = (u0v0 * (1.0 - u) + u1v0 * u) * (1.0 - v) + (u0v1 * (1.0 - u) + u1v1 * u) * v;
-            //dif_tex.set_pixel(i, j, c);
-            dif_tex.set_pixel(i, j, color::WHITE);
+            dif_tex.set_pixel(i, j, c);
+            //dif_tex.set_pixel(i, j, color::WHITE);
         }
     }
 
@@ -111,7 +113,7 @@ fn main () {
     //     TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
     // ];
 
-    // let mat = Arc::new(DiffuseTex::new(&dif_tex));
+    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None));
 
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
@@ -119,25 +121,64 @@ fn main () {
     use pt_app::pt::polygon::DiffuseMat;
     // let mut cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
     // for (_, v) in cube.materials.iter_mut() {
-    //     *v = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE)));
+    //     *v = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE * 5.0)));
     // }
     // let cube_mesh = cube.build_bv(false);
     // let polygons = cube_mesh.polygons();
 
-    let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, None);
+    // let plane_mesh = Plane::build(
+    //     Point3f::new(0.0, 0.0, 0.0),
+    //     Point3f::new(0.0, 0.0, 1.0),
+    //     Vector3f::new(0.0, 1.0, 0.0),
+    //     (20.0, 20.0),
+    //     difftex_mat.clone(),
+    //     Some((5, 5)),
+    //     None,
+    //     |quad| {
+    //         Quad {
+    //             v0: TexturedVertex::new(quad.v0, Point2::new(0.0, 0.0)),
+    //             v1: TexturedVertex::new(quad.v1, Point2::new(0.0, 1.0)),
+    //             v2: TexturedVertex::new(quad.v2, Point2::new(1.0, 1.0)),
+    //             v3: TexturedVertex::new(quad.v3, Point2::new(1.0, 0.0)),
+    //         }
+    //     });
+  
+
+    // let polygons = plane_mesh.polygons();
+    let green_mat = Arc::new(DiffuseMat::new(color::Color::new(0.5, 0.75, 0.5), None));
+    let cube_mesh = Cube::build(
+        Point3f::new(0.0, 0.0, 0.0),
+        Vector3f::new(20.0, 20.0, 20.0),
+        |_, quad| { 
+            Quad {
+                v0: BaseVertex::new(quad.v0),
+                v1: BaseVertex::new(quad.v1),
+                v2: BaseVertex::new(quad.v2),
+                v3: BaseVertex::new(quad.v3),
+            }
+        },
+        |_| { green_mat.clone() },
+        |_| (1, 1),
+        false);
+
     let polygons = cube_mesh.polygons();
+
+    // let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, None);
+    // let polygons = cube_mesh.polygons();
 
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
-    let scene_builder = s.shape_list();
-    let mut scene = Box::new(scene_builder.to_shape_list());
+    let mut scene_builder = s.shape_list();
+    
 
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
 
-    // for p in polygons.iter() {
-    //     scene.add_shape(p);
-    // }
+    for p in polygons.iter() {
+        scene_builder.add_shape(p);
+    }
+
+    let scene = Box::new(scene_builder.to_shape_list());
 
     // use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()

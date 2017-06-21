@@ -7,7 +7,7 @@ use std::cmp::max;
 use std::sync::Arc;
 use {SurfacePoint};
 use utils::consts::POSITION_EPSILON;
-use super::{LightSourcesHandler, UniformSampler};
+use super::{LightSourcesHandler, UniformSampler, EmittersSampler};
 
 pub const KDTREE_DEPTH_MAX: usize = 512;
 
@@ -25,6 +25,29 @@ impl KdTreeSetup {
             sah,
             max_depth,
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Sah {
+    cost_t: Real,
+    cost_i: Real,
+}
+
+impl Sah {
+    pub fn new(cost_traverse: Real, cost_intersection: Real) -> Self {
+        Self {
+            cost_t: cost_traverse,
+            cost_i: cost_intersection,
+        }
+    }
+
+    pub fn eval(&self, (bbox0, num0): (&Aabb3, usize), (bbox1, num1): (&Aabb3, usize), bbox: &Aabb3) -> Real {
+        self.cost_t + self.cost_i * (bbox0.surface_area() * num0 as Real + bbox1.surface_area() * num1 as Real) / bbox.surface_area()
+    }
+
+    pub fn eval_short(&self, (l0, num0): (Real, usize), (l1, num1): (Real, usize)) -> Real {
+        l0 * num0 as Real + l1 * num1 as Real
     }
 }
 
@@ -78,29 +101,6 @@ impl<'a, T> KdTree<'a, T>
                 nodes: Vec::new(),
             }
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Sah {
-    cost_t: Real,
-    cost_i: Real,
-}
-
-impl Sah {
-    pub fn new(cost_traverse: Real, cost_intersection: Real) -> Self {
-        Self {
-            cost_t: cost_traverse,
-            cost_i: cost_intersection,
-        }
-    }
-
-    pub fn eval(&self, (bbox0, num0): (&Aabb3, usize), (bbox1, num1): (&Aabb3, usize), bbox: &Aabb3) -> Real {
-        self.cost_t + self.cost_i * (bbox0.surface_area() * num0 as Real + bbox1.surface_area() * num1 as Real) / bbox.surface_area()
-    }
-
-    pub fn eval_short(&self, (l0, num0): (Real, usize), (l1, num1): (Real, usize)) -> Real {
-        l0 * num0 as Real + l1 * num1 as Real
     }
 }
 
@@ -327,12 +327,19 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
     }
 }
 
-pub struct KdTreeS<'a, T: BoundedSurface + ?Sized + 'a> {
+pub struct KdTreeS<'a, T, S = UniformSampler<'a>> 
+    where T: BoundedSurface + ?Sized + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+{
     kdtree: KdTree<'a, T>,
     light_sources: Vec<&'a Surface>,
+    sampler: Arc<S>,
 }
 
-impl<'a, T> KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a {
+impl<'a, T, S> KdTreeS<'a, T, S> 
+    where T: BoundedSurface + ?Sized + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+{
     pub fn new<I, U>(obj_iter: U, setup: KdTreeSetup) -> Self
         where I: Iterator<Item = &'a T> + 'a,
               U: IntoIterator<Item = I::Item, IntoIter = I> + 'a
@@ -345,15 +352,20 @@ impl<'a, T> KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a {
             }
             objs.push((s.aabb(), s));
         }
+        let sampler = S::from(ls.as_slice());
         Self {
             kdtree: KdTree::build(objs, setup),
             light_sources: ls,
+            sampler: Arc::new(sampler),
         }
 
     }
 }
 
-impl<'a, T> SceneHolder for KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a {
+impl<'a, T, S> SceneHolder for KdTreeS<'a, T, S>
+    where T: BoundedSurface + ?Sized + 'a,
+          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+{
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint> {
         let leaf_iter = self.kdtree.traverse_iter(ray);
         let mut t_min = Real::max_value();
@@ -390,7 +402,9 @@ impl<'a, T> SceneHolder for KdTreeS<'a, T> where T: BoundedSurface + ?Sized + 'a
     fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
         LightSourcesHandler {
             scene: self,
-            sampler: Arc::new(UniformSampler::from(self.light_sources.as_slice()))
+            //sampler: Arc::new(UniformSampler::from(self.light_sources.as_slice()))
+            //sampler: Arc::new(EmittanceSampler::from(self.light_sources.as_slice()))
+            sampler: super::lt_arc_trait_hack(self.sampler.clone())
         }
     }
 }

@@ -1,243 +1,213 @@
 pub mod spheres;
 
-use pt::math::{Point3f, Real};
-use pt::polygon::{TexturedVertex, DiffuseTex};
+use pt::math::{Point3f, Vector3f, Real, Norm, Cross};
+use pt::polygon::{BaseVertex, Vertex, Material, DiffuseMat, TexturedVertex, DiffuseTex};
 use pt::mesh::{Mesh};
 use pt::texture::Texture;
+use pt::color;
 use pt::color::Rgb;
+use pt::utils::consts;
+use std::sync::Arc;
+use std::cell::RefCell;
+use std::fmt::Debug;
 
-pub mod meshes {
-    use pt::math::{Point3f, Real};
-    use pt::polygon::{BaseVertex, Vertex, Material, DiffuseMat, TexturedVertex, DiffuseTex};
-    use pt::mesh::{Mesh};
-    use pt::color;
-    use std::sync::Arc;
-    use std::collections::BTreeMap;
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum CubeSide {
+    Top = 0,
+    Bottom,
+    Right,
+    Left,
+    Front,
+    Back,
+}
 
-    #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-    pub enum CubeSide {
-        Top = 0,
-        Bottom,
-        Right,
-        Left,
-        Front,
-        Back,        
-    }
+// 1-----2
+// |   / |
+// | /   |
+// 0-----3
+#[derive(Clone)]
+pub struct Quad<V: Clone> {
+    pub v0: V,
+    pub v1: V,
+    pub v2: V,
+    pub v3: V,
+}
 
-    pub struct Cube<'a, V: Vertex> {
-        pub center: Point3f,
-        pub size: (Real, Real, Real),
-        pub materials: BTreeMap<CubeSide, Arc<Material<V> + 'a>>,
-    }
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum RotOrder {
+    CW,
+    CCW,
+}
 
-    impl<'a, V: Vertex> Cube<'a, V> {
-        pub fn new(center: Point3f, size: (Real, Real, Real)) -> Cube<'a, V> {
-            let mat = Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<V>>;
-            Cube {
-                center,
-                size,
-                materials: {
-                    let mut m = BTreeMap::new();
-                    m.insert(CubeSide::Top, mat.clone());
-                    m.insert(CubeSide::Bottom, mat.clone());
-                    m.insert(CubeSide::Right, mat.clone());
-                    m.insert(CubeSide::Left, mat.clone());                    
-                    m.insert(CubeSide::Front, mat.clone());
-                    m.insert(CubeSide::Back, mat.clone());
-                    m
-                }
-            }
-        }
-
-        pub fn with_materials<F>(center: Point3f, size: (Real, Real, Real), mut get_mat: F) -> Cube<'a, V>
-            where F: FnMut(CubeSide) -> Arc<Material<V> + 'a>
-        {
-            Cube {
-                center,
-                size,
-                materials: {
-                    let mut m = BTreeMap::new();
-                    m.insert(CubeSide::Top, get_mat(CubeSide::Top));
-                    m.insert(CubeSide::Bottom, get_mat(CubeSide::Bottom));
-                    m.insert(CubeSide::Right, get_mat(CubeSide::Right));
-                    m.insert(CubeSide::Left, get_mat(CubeSide::Left));                    
-                    m.insert(CubeSide::Front, get_mat(CubeSide::Front));
-                    m.insert(CubeSide::Back, get_mat(CubeSide::Back));
-                    m
-                }
-            }
-        }
-    }
-
-    impl<'a, T: Vertex> Cube<'a, T> {
-
-        // vertex order(normal is directed towards the observer):
-        // 1-----2
-        // |   / |
-        // | /   |
-        // 0-----3
-        pub fn build<F>(&self, invert_normals: bool, mut pos_to_vertex: F) -> Mesh<'a, T> 
-            where F: FnMut(CubeSide, &[Point3f; 4]) -> [T; 4]
-        {
-            use self::CubeSide::*;
-            let mut mesh = Mesh::new();
-
-            let center = self.center;
-            let (dx, dy, dz) = {
-                let (x, y, z) = self.size;
-                (x * 0.5, y * 0.5, z * 0.5)
-            };
-
-            let top = [
-                Point3f::new(center.x - dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z + dz),];
-
-            let bottom = [
-                Point3f::new(center.x - dx, center.y - dy, center.z - dz),
-                Point3f::new(center.x - dx, center.y - dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y - dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y - dy, center.z - dz)];
-
-            let right = [
-                Point3f::new(center.x + dx, center.y - dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y - dy, center.z - dz)];
-
-            let left = [
-                Point3f::new(center.x - dx, center.y - dy, center.z - dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x - dx, center.y - dy, center.z + dz)];
-
-            let front = [
-                Point3f::new(center.x - dx, center.y - dy, center.z + dz),
-                Point3f::new(center.x - dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z + dz),
-                Point3f::new(center.x + dx, center.y - dy, center.z + dz)];
-            
-            let back = [
-                Point3f::new(center.x - dx, center.y + dy, center.z - dz),
-                Point3f::new(center.x - dx, center.y - dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y - dy, center.z - dz),
-                Point3f::new(center.x + dx, center.y + dy, center.z - dz),];
-
-            {
-                let mut add_side = |side: CubeSide, i: u32, verts: &[Point3f; 4]| {                
-                    let vertices = pos_to_vertex(side, verts);
-                    for v in vertices.into_iter() {
-                        mesh.add_vertex(*v);
-                    }
-                    let ix = i * 4;
-                    if !invert_normals {
-                        mesh.add_face([ix + 0, ix + 1, ix + 2], self.materials.get(&side).unwrap().clone()).unwrap();
-                        mesh.add_face([ix + 0, ix + 2, ix + 3], self.materials.get(&side).unwrap().clone()).unwrap();
-                    } else {
-                        mesh.add_face([ix + 0, ix + 2, ix + 1], self.materials.get(&side).unwrap().clone()).unwrap();
-                        mesh.add_face([ix + 0, ix + 3, ix + 2], self.materials.get(&side).unwrap().clone()).unwrap();
-                    }
-                };
-
-                add_side(Top, 0, &top);
-                add_side(Bottom, 1, &bottom);
-                add_side(Right, 2, &right);
-                add_side(Left, 3, &left);
-                add_side(Front, 4, &front);
-                add_side(Back, 5, &back);
-
-            }
-
-            mesh
-            
-        }
-    }
-
-    impl Cube<'static, BaseVertex> {
-        pub fn with_bv(center: Point3f, size: (Real, Real, Real)) -> Cube<'static, BaseVertex> {
-            Cube {
-                center,
-                size,
-                materials: {
-                    let mut m = BTreeMap::new();
-                    m.insert(CubeSide::Top, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m.insert(CubeSide::Bottom, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m.insert(CubeSide::Left, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m.insert(CubeSide::Right, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m.insert(CubeSide::Front, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m.insert(CubeSide::Back, Arc::new(DiffuseMat::new(color::WHITE, None)) as Arc<Material<BaseVertex>>);
-                    m
-                }
-            }
-        }
-
-        pub fn build_bv(&self, invert_normals: bool) -> Mesh<BaseVertex> {
-            use self::CubeSide::*;
-            let mut mesh = Mesh::new();
-
-            let center = self.center;
-            let (dx, dy, dz) = {
-                let (x, y, z) = self.size;
-                (x * 0.5, y * 0.5, z * 0.5)
-            };
-            let vertices = vec! [
-                BaseVertex::new(Point3f::new(center.x - dx, center.y - dy, center.z + dz)),
-                BaseVertex::new(Point3f::new(center.x - dx, center.y - dy, center.z - dz)),
-                BaseVertex::new(Point3f::new(center.x + dx, center.y - dy, center.z - dz)),
-                BaseVertex::new(Point3f::new(center.x + dx, center.y - dy, center.z + dz)),
-                BaseVertex::new(Point3f::new(center.x - dx, center.y + dy, center.z + dz)),
-                BaseVertex::new(Point3f::new(center.x - dx, center.y + dy, center.z - dz)),
-                BaseVertex::new(Point3f::new(center.x + dx, center.y + dy, center.z - dz)),
-                BaseVertex::new(Point3f::new(center.x + dx, center.y + dy, center.z + dz)),
-
-            ];
-            
-            for v in vertices.iter() {
-                mesh.add_vertex(*v);
-            }
-
-            {
-                let mut face = |side: CubeSide, i0: u32, i1: u32, i2: u32| {
-                    if let Some(mat) = self.materials.get(&side) {
-                        if !invert_normals {
-                            mesh.add_face([i0, i1, i2], mat.clone()).unwrap();
-                        } else {
-                            mesh.add_face([i0, i2, i1], mat.clone()).unwrap();
-                        }
-                    }
-                };
-
-                face(Top, 4, 5, 6);     face(Top, 4, 6, 7);
-                face(Bottom, 0, 2, 1);  face(Bottom, 0, 3, 2);
-                face(Left, 0, 1, 4);    face(Left, 1, 5, 4);
-                face(Right, 2, 3, 7);   face(Right, 2, 7, 6);
-                face(Front, 0, 4, 7);   face(Front, 0, 7, 3);
-                face(Back, 1, 6, 5);    face(Back, 1, 2, 6);
-            }
-
-            mesh
-        }
+impl Default for RotOrder {
+    fn default() -> Self {
+        RotOrder::CW
     }
 }
 
-pub fn cube_with_diffuse_tex<'a>(pos: Point3f, 
-                                 size: (Real, Real, Real), 
-                                 albedo: &'a Texture<Rgb, [f32; 3]>,
-                                 emittance: Option<&'a Texture<Rgb, [f32; 3]>>) 
-                                 -> Mesh<'a, TexturedVertex>
-{
-    use self::meshes::Cube;
-    use std::sync::Arc;
-    use pt::math::{Point2};
-    let mat = Arc::new(DiffuseTex::new(albedo, emittance));
-    let cube = Cube::with_materials(pos, size, |_| mat.clone());
-    cube.build(false, |_, v| {
-        [
-            TexturedVertex::new(v[0], Point2::new(0.0, 0.0)),
-            TexturedVertex::new(v[1], Point2::new(0.0, 1.0)),
-            TexturedVertex::new(v[2], Point2::new(1.0, 1.0)),
-            TexturedVertex::new(v[3], Point2::new(1.0, 0.0)),
-        ]
-    })
+// pub struct Plane<V: Vertex + Clone> {
+//     center: Point3f,
+//     normal: Vector3f,
+//     up: Vector3f,
+//     size: (Real, Real),
+//     subdiv: (usize, usize),
+//     mat: Arc<Material<V>>,
+//     front_face: RotOrder,
+//     map_quads: RefCell<Box<FnMut(Quad<Point3f>) -> Quad<V> + 'static>>,
+// }
+
+pub struct Plane;
+
+impl Plane {
+    pub fn build<'m, 'c, F, V>(
+        center: Point3f,
+        look_at: Point3f,
+        up: Vector3f,
+        size: (Real, Real),
+        mat: Arc<Material<V> + 'm>,
+        subdiv: Option<(usize, usize)>,
+        front_face: Option<RotOrder>,
+        mut map_quads: F)
+        -> Mesh<'m, V>
+        where F: FnMut(Quad<Point3f>) -> Quad<V> + 'c,
+              V: Vertex + 'm
+    {
+        let front_face = front_face.unwrap_or(RotOrder::CW);
+        let (w, h) = size;
+        let (subdiv_x, subdiv_y) = subdiv.unwrap_or((1, 1));
+        assert!(subdiv_x > 0 && subdiv_y > 0);
+
+        let normal = (look_at - center).normalize();
+        let right = up.cross(&normal).normalize();
+        let up = normal.cross(&right).normalize();      
+        let dx = 1.0 / (subdiv_x as Real);
+        let dy = 1.0 / (subdiv_y as Real);
+        let v0 = center - right * (w * 0.5) - up * (h * 0.5);
+
+        let outer_quad = map_quads(Quad {
+            v0: v0,
+            v1: v0 + up * h,
+            v2: v0 + up * h + right * w,
+            v3: v0 + right * w,
+        });
+
+        let mut mesh = Mesh::with_capacity((subdiv_x + 1) * (subdiv_y + 1), subdiv_x * subdiv_y * 2);
+
+        for j in 0..(subdiv_y + 1) {
+            for i in 0..(subdiv_x + 1) {
+                let x = (i as Real) * dx;
+                let y = (j as Real) * dy;
+                let v = if x + y < 1.0 + consts::REAL_EPSILON {
+                    <V as Vertex>::interpolate(
+                        &outer_quad.v0,
+                        &outer_quad.v3,
+                        &outer_quad.v1,                        
+                        (1.0 - (x + y), x, y),
+                    )
+                } else {
+                    <V as Vertex>::interpolate(
+                        &outer_quad.v2,
+                        &outer_quad.v1,
+                        &outer_quad.v3,                                                
+                        (x + y - 1.0, 1.0 - x, 1.0 - y),
+                    )
+                };
+                mesh.add_vertex(v);
+            }
+        }
+
+        for j in 0..subdiv_y {
+            for i in 0..subdiv_x {
+                let ix0 = (i + j * (subdiv_x + 1)) as u32;
+                let ix1 = (i + (j + 1) * (subdiv_x + 1)) as u32;
+                let ix2 = (i + 1 + (j + 1) * (subdiv_x + 1)) as u32;
+                let ix3 = (i + 1 + j * (subdiv_x + 1)) as u32;
+
+                let (f1, f2) = if let RotOrder::CW = front_face {
+                    ([ix0, ix1, ix2], [ix0, ix2, ix3])
+                } else {
+                    ([ix0, ix2, ix1], [ix0, ix3, ix2])
+                };
+
+                mesh.add_face(f1, mat.clone()).unwrap();
+                mesh.add_face(f2, mat.clone()).unwrap();
+            }
+        }
+
+        mesh
+    }
+
+}
+
+
+pub struct Cube;
+
+impl Cube {
+    pub fn build<'c, 'm, V, F, G, M>(
+        center: Point3f, 
+        size: Vector3f,
+        mut map_quads: F,
+        mut map_materials: M,
+        mut map_subdivs: G,
+        invert_normals: bool)
+        -> Mesh<'m, V>
+        where F: FnMut(CubeSide, Quad<Point3f>) -> Quad<V> + 'c,
+              G: FnMut(CubeSide) -> (usize, usize) + 'c,
+              M: FnMut(CubeSide) -> Arc<Material<V> + 'm> + 'c,
+              V: Vertex + 'm
+
+    {
+        assert!(size.x > 0.0 && size.y > 0.0 && size.z > 0.0);
+        // let mut map_subdivs = if let Some(ms) = map_subdivs {
+        //     box ms as Box<FnMut<_, Output = _>>
+        // } else {
+        //     box |_| {(1, 1)} 
+        // };
+
+        let sides = [
+            CubeSide::Front,
+            CubeSide::Back,
+            CubeSide::Right,
+            CubeSide::Left,
+            CubeSide::Top,
+            CubeSide::Bottom,
+        ];
+    
+        let c = center;
+        let dx = (size * 0.5).x;
+        let dy = (size * 0.5).y;
+        let dz = (size * 0.5).z;
+        let front_face = if !invert_normals { RotOrder::CW } else {RotOrder::CCW };
+        let mut planes = Vec::with_capacity(sides.len());
+        for &side in sides.iter() {
+            let (origin, up, size) = match side {
+                CubeSide::Front => (Point3f::new(c.x, c.y, c.z + dz), Vector3f::new(0.0, 1.0, 0.0), (size.x, size.y)),
+                CubeSide::Back => (Point3f::new(c.x, c.y, c.z - dz), Vector3f::new(0.0, 1.0, 0.0), (size.x, size.y)),
+                CubeSide::Right => (Point3f::new(c.x + dx, c.y, c.z), Vector3f::new(0.0, 1.0, 0.0), (size.z, size.y)),
+                CubeSide::Left => (Point3f::new(c.x - dx, c.y, c.z), Vector3f::new(0.0, 1.0, 0.0), (size.z, size.y)),
+                CubeSide::Top => (Point3f::new(c.x, c.y + dy, c.z), Vector3f::new(0.0, 0.0, -1.0), (size.x, size.z)),
+                CubeSide::Bottom => (Point3f::new(c.x, c.y - dy, c.z), Vector3f::new(0.0, 0.0, 1.0), (size.x, size.z)),
+            };
+
+            let normal = origin - center;
+            let mut plane = Plane::build(
+                origin,
+                origin + normal,
+                up,
+                size,
+                map_materials(side),
+                Some(map_subdivs(side)),
+                Some(front_face),
+                |quad| { map_quads(side, quad) });
+            
+            planes.push(plane);
+        }
+
+        let mut mesh = Mesh::new();
+        for mut p in planes.into_iter() {
+            mesh.merge(&mut p);
+        }
+        
+        mesh
+    }    
 }

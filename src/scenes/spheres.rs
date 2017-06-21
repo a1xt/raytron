@@ -108,7 +108,7 @@ impl Room {
                 Point3f::new(0.0, 39.0, 0.0),
                 7.0,
                 Arc::new(Diffuse::new(Color::new(1.0, 1.0, 1.0f32), Some(Color::new(15.0, 15.0, 15.0f32)))),
-                //Box::new(Diffuse::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, None)),
+                //Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
             ),
         );
         
