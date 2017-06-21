@@ -4,7 +4,7 @@ pub mod dbgraycaster;
 pub use self::pathtracer::PathTracer;
 pub use self::dbgraycaster::DbgRayCaster;
 
-use traits::{RenderCamera, SceneHolder};
+use traits::{RenderCamera, SceneHandler};
 use {RenderSettings, Image};
 use std::sync::{Arc, Mutex};
 use std::ops::DerefMut;
@@ -14,14 +14,14 @@ use scoped_threadpool::{Pool};
 use self::inner::RendererHelper;
 
 mod inner {
-    use traits::{RenderCamera, SceneHolder};
+    use traits::{RenderCamera, SceneHandler};
     use math::{self, Ray3f, Point3f, Vector3f, Real, Norm};
     use {Image, RenderSettings, Color};
     use rand::{self, Closed01};
     use color;
     
     pub trait RendererHelper<S, C> : Sync 
-        where S: SceneHolder + ?Sized, C: RenderCamera + ?Sized
+        where S: SceneHandler + ?Sized, C: RenderCamera + ?Sized
     {
 
         fn trace_path(&self, scene: &S, initial_ray: &Ray3f, setup: &RenderSettings) -> Color;
@@ -125,8 +125,8 @@ mod inner {
     }
 }
 
-pub trait Renderer<S = SceneHolder, C = RenderCamera> : RendererHelper<S, C> + Sync
-    where S: SceneHolder + ?Sized,
+pub trait Renderer<S = SceneHandler, C = RenderCamera> : RendererHelper<S, C> + Sync
+    where S: SceneHandler + ?Sized,
           C: RenderCamera + ?Sized
 {
 

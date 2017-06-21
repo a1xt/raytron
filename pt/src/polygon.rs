@@ -20,19 +20,19 @@ pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + 
     pub v1: V,
     pub v2: V,
     pub mat: Arc<Material<R> + 'a>,
-    total_emittance: Option<Color>,
+    total_radiance: Option<Color>,
     _marker: PhantomData<R>,
 }
 
 impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
     pub fn new (v0: V, v1: V, v2: V, mat: Arc<Material<R> + 'a>) -> Self {
-        let e = mat.total_emittance(v0.as_ref(), v2.as_ref(), v1.as_ref());
+        let e = mat.total_radiance(v0.as_ref(), v2.as_ref(), v1.as_ref());
         Polygon {
             v0: v0,
             v1: v1,
             v2: v2,
             mat: mat,
-            total_emittance: e,
+            total_radiance: e,
             _marker: PhantomData,
         }
     }
@@ -92,18 +92,21 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
         0.5 * b.cross(&a).norm()
     }
 
-    default fn total_emittance(&self) -> Option<Color> {
-        self.total_emittance
+    #[inline]
+    default fn total_radiance(&self) -> Option<Color> {
+        self.total_radiance
     }
 
+    #[inline]
     default fn normal_at(&self, _: &Point3f) -> Vector3f {
         let a = self.v1().position() - self.v0().position();
         let b = self.v2().position() - self.v0().position();
         b.cross(&a).normalize()
     }
 
+    #[inline]
     default fn is_emitter(&self) -> bool {
-        if let Some(_) = self.total_emittance {
+        if let Some(_) = self.total_radiance {
             true
         } else {
             false
@@ -205,7 +208,7 @@ pub mod material {
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
 
-        fn total_emittance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+        fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
             None
         }
     }
@@ -215,9 +218,9 @@ pub mod material {
     }
 
     impl DiffuseMat {
-        pub fn new(color: Color, emittance: Option<Color>) -> DiffuseMat {
+        pub fn new(color: Color, radiance: Option<Color>) -> DiffuseMat {
             DiffuseMat {
-                bsdf: Diffuse::new(color, emittance),
+                bsdf: Diffuse::new(color, radiance),
             }
         }
     }
@@ -227,8 +230,8 @@ pub mod material {
             BsdfRef::Ref(&self.bsdf)
         }
 
-        fn total_emittance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
-            if let Some(e) = self.bsdf(v0).emittance() {
+        fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+            if let Some(e) = self.bsdf(v0).radiance() {
                 let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
                 Some(e * (area as f32))
             } else {
@@ -257,14 +260,14 @@ pub mod material {
 
     pub struct DiffuseTex<'a, T: 'a + Tex<Color>> {
         pub albedo: &'a T,
-        pub emittance: Option<&'a T>,
+        pub radiance: Option<&'a T>,
     }
 
     impl<'a, T: 'a + Tex<Color>> DiffuseTex<'a, T> {
-        pub fn new(albedo: &'a T, emittance: Option<&'a T>) -> Self {
+        pub fn new(albedo: &'a T, radiance: Option<&'a T>) -> Self {
             Self {
                 albedo,
-                emittance,
+                radiance,
             }
         }
     }
@@ -273,12 +276,12 @@ pub mod material {
         fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
             let uv = v.uv;
             let albedo = self.albedo.sample(uv.x, uv.y);
-            let emittance = self.emittance.map(|e| e.sample(uv.x, uv.y).into());
-            BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), emittance)))
+            let radiance = self.radiance.map(|e| e.sample(uv.x, uv.y).into());
+            BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), radiance)))
         }
 
-        fn total_emittance(&self, v0: &TexturedVertex, v1: &TexturedVertex, v2: &TexturedVertex) -> Option<Color> {
-            if let Some(e_tex) = self.emittance {
+        fn total_radiance(&self, v0: &TexturedVertex, v1: &TexturedVertex, v2: &TexturedVertex) -> Option<Color> {
+            if let Some(e_tex) = self.radiance {
                 let dt = consts::TEXTURE_INTEGRAL_STEP;
                 let da: Real = 2.0 * (math::triangle_area(&v0.position(), &v1.position(), &v2.position()) * dt * dt);
                 let mut sum: Rgb<Real> = color::BLACK.into();
@@ -311,7 +314,7 @@ pub mod material {
                 let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
                 println!("texture integral calculated:");
                 println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
-                println!("  - texture total emittance: {:?}", sum);
+                println!("  - texture total radiance: {:?}", sum);
                 Some(sum.into())
             } else {
                 None
@@ -369,6 +372,7 @@ pub mod vertex {
             BaseVertex::new(pos.to_point())
         }
 
+        #[inline]
         fn position(&self) -> Point3f {
             self.position
         }
@@ -404,6 +408,7 @@ pub mod vertex {
             TexturedVertex::new(pos.to_point(), tex_uv.to_point())
         }
 
+        #[inline]
         fn position(&self) -> Point3f {
             self.position
         }

@@ -1,4 +1,4 @@
-use pt::sceneholder::{ShapeList, ShapeListBuilder, EmittanceSampler};
+use pt::scenehandler::{ShapeList, ShapeListBuilder, LinearSampler};
 use pt::bsdf::{Diffuse, Phong};
 use pt::{Sphere, Color};
 use pt::traits::{Surface};
@@ -115,7 +115,7 @@ impl Room {
         Room{spheres: btmap}
     }
 
-    pub fn shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, EmittanceSampler> {
+    pub fn shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
         let mut l = ShapeListBuilder::new();
         for (_, s) in self.spheres.iter() {
             l.add_shape(s as &Surface);

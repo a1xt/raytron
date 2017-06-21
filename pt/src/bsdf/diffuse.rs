@@ -6,22 +6,22 @@ use std::f32::consts::PI;
 #[derive(Clone, Copy, Debug)]
 pub struct Diffuse {
     pub color: Color,
-    pub emittance: Option<Color>,
+    pub radiance: Option<Color>,
 }
 
 impl Diffuse {
-    pub fn new(color: Color, emittance: Option<Color>) -> Diffuse {
+    pub fn new(color: Color, radiance: Option<Color>) -> Diffuse {
         Diffuse {
             color: color,
-            emittance: emittance,
+            radiance: radiance,
         }
     }
 }
 
 impl Bsdf for Diffuse {
 
-    fn emittance(&self) -> Option<Color> {
-        self.emittance
+    fn radiance(&self) -> Option<Color> {
+        self.radiance
     }
 
     // fn reflectance(&self, _: &Vector3f, _: &Vector3f, _: &Vector3f) -> Color {

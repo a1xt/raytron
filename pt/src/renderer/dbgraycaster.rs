@@ -1,7 +1,7 @@
 use ::{RenderSettings, Color};
 use math::{Ray3f, Dot, Norm};
 use color;
-use traits::{Renderer, SceneHolder, RenderCamera};
+use traits::{Renderer, SceneHandler, RenderCamera};
 
 use super::inner::{RendererHelper, CameraRayGenerator};
 
@@ -18,12 +18,12 @@ impl DbgRayCaster {
     }
 
     fn trace_path_rec<S>(&self, scene: &S, ray: &Ray3f, _: u32) -> Color
-        where S: SceneHolder + ?Sized
+        where S: SceneHandler + ?Sized
     {
 
         if let Some(sp) = scene.intersection(ray) {
             let mat = sp.bsdf;
-            if let Some(c) = mat.emittance() {
+            if let Some(c) = mat.radiance() {
                 return c;
             } else {
                 if let Some(light) = scene.light_sources().iter().into_iter().next() {
@@ -36,7 +36,7 @@ impl DbgRayCaster {
                     //return color;
                     if let Some(lp) = scene.intersection(&shadow_ray){
                         
-                        if let Some(_) = lp.bsdf.emittance() {
+                        if let Some(_) = lp.bsdf.radiance() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
                             return color * (cos_theta as f32);
@@ -54,7 +54,7 @@ impl DbgRayCaster {
 
 }
 
-impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for DbgRayCaster {
+impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for DbgRayCaster {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
         let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
 
@@ -66,7 +66,7 @@ impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for
     }
 }
 
-impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for DbgRayCaster {
+impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for DbgRayCaster {
     fn pre_render(&mut self, _: &S, camera: &C, _: &RenderSettings) {
         self.ray_gen = CameraRayGenerator::with_camera(camera);
     }

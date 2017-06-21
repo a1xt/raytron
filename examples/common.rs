@@ -13,7 +13,7 @@ use pt_app::{App};
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
 use pt_app::pt::{Image, RenderSettings, Tex};
 use pt_app::pt::color::{self, Color, Rgb};
-use pt_app::pt::traits::{Renderer, SceneHolder};
+use pt_app::pt::traits::{Renderer, SceneHandler};
 use image::hdr;
 
 use std;
@@ -329,14 +329,14 @@ pub trait AppState {
     fn init_camera(&self, &mut FPSCameraController) { }
     //fn update_camera(&self, &mut CameraController) { }
 
-    fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHolder + 's> + 's>, RenderSettings) {
+    fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {
         let pt_render_chunk = (80, 60);
         let rdr_setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);       
         let rdr = box PathTracer::new(&rdr_setup).with_direct_illumination(0.75, 0.25);
         (rdr, rdr_setup)
     }
 
-    fn create_scene<'s>(&'s self) -> Box<SceneHolder + 's>;
+    fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's>;
 }
 
 pub fn tone_mapping_exp<'a, T: Tex<Color>>(img: &'a mut T, t: f32) {

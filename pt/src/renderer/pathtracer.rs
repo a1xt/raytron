@@ -1,7 +1,7 @@
 use ::{RenderSettings, Color};
 use math::{Ray3f, Dot, Norm,ApproxEq, Real};
 use color;
-use traits::{Renderer, SceneHolder, RenderCamera, Surface};
+use traits::{Renderer, SceneHandler, RenderCamera, Surface};
 use utils;
 use utils::consts;
 use rand;
@@ -39,7 +39,7 @@ impl PathTracer {
     }
 
     fn trace_path_rec<S>(&self, scene: &S, ray: &Ray3f, depth: u32) -> Color
-        where S: SceneHolder + ?Sized
+        where S: SceneHandler + ?Sized
     {
 
         if depth == self.setup.path_depth {
@@ -55,7 +55,7 @@ impl PathTracer {
         if let Some(sp) = scene.intersection(ray) {
             let mat = sp.bsdf.as_ref();
 
-            let le = if let Some(c) = mat.emittance() {
+            let le = if let Some(c) = mat.radiance() {
                 if depth > 0 && di_enable {
                     color::BLACK
                 } else {
@@ -87,7 +87,7 @@ impl PathTracer {
 
                                     let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                                     let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
-                                    let le = lp.bsdf.emittance().unwrap();
+                                    let le = lp.bsdf.radiance().unwrap();
                                     
                                     di = (fr * le) * (pdf_sum_inv as f32);
                                 }
@@ -100,7 +100,7 @@ impl PathTracer {
                     let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
 
                     if let Some(ip) = scene.intersection(&shadow_ray) {
-                        if let Some(le) = ip.bsdf.emittance() {
+                        if let Some(le) = ip.bsdf.radiance() {
 
                             // let pdf_ls = utils::sample_surfaces::by_area_pdf(ip.surface,
                             //                                                  scene.light_sources().iter(), 
@@ -141,7 +141,7 @@ impl PathTracer {
 
 }
 
-impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for PathTracer {
+impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for PathTracer {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
         let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
         res        
@@ -152,7 +152,7 @@ impl<S: SceneHolder + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for
     }
 }
 
-impl<S:SceneHolder + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for PathTracer {
+impl<S:SceneHandler + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for PathTracer {
     fn pre_render(&mut self, _: &S, camera: &C, _: &RenderSettings) {
         self.ray_gen = CameraRayGenerator::with_camera(camera);
     }

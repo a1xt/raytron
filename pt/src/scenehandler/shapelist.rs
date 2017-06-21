@@ -1,15 +1,15 @@
 use math::{Ray3f, Real};
-use traits::{Surface, SceneHolder};
+use traits::{Surface, SceneHandler};
 use {SurfacePoint};
 use std;
 use std::sync::Arc;
 use std::marker::PhantomData;
 use utils::consts;
-use super::{LightSourcesHandler, UniformSampler, EmittersSampler};
+use super::{LightSourcesHandler, UniformSampler, LuminairesSampler};
 
 pub struct ShapeListBuilder<'a, T, S = UniformSampler<'a>> 
     where T: AsRef<Surface + 'a> + Sync + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a  
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a  
 {
     shapes: Vec<T>,
     light_sources: Vec<&'a Surface>,
@@ -18,7 +18,7 @@ pub struct ShapeListBuilder<'a, T, S = UniformSampler<'a>>
 
 impl<'a, T, S> ShapeListBuilder<'a, T, S> 
     where  T: AsRef<Surface + 'a> + Sync + 'a,
-           S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+           S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
 {
     pub fn new() -> Self {
         Self {
@@ -60,16 +60,16 @@ impl<'a, T, S> ShapeListBuilder<'a, T, S>
 
 pub struct ShapeList<'a, T, S = UniformSampler<'a>> 
     where T: AsRef<Surface + 'a> + Sync + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
 {
     shapes: Vec<T>,
     light_sources: Vec<&'a (Surface + 'a)>,
     sampler: Arc<S>,
 }
 
-impl<'a, T, S> SceneHolder for ShapeList<'a, T, S>
+impl<'a, T, S> SceneHandler for ShapeList<'a, T, S>
     where T: AsRef<Surface + 'a> + Sync + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a,
 {
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint> {
         let mut t_min: Real = std::f32::MAX as Real;

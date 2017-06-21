@@ -1,5 +1,6 @@
 pub mod diffuse;
 pub mod phong;
+pub mod cooktorrance;
 
 pub use self::diffuse::Diffuse;
 pub use self::phong::Phong;
@@ -11,7 +12,7 @@ use std::ops::Deref;
 
 pub trait Bsdf : Sync + Send {
 
-    fn emittance(&self) -> Option<Color>;
+    fn radiance(&self) -> Option<Color>;
 
     fn eval(&self, 
             surface_normal: &Vector3f,
@@ -55,6 +56,8 @@ pub enum BsdfRef<'a> {
 
 impl<'a> Deref for BsdfRef<'a> {
     type Target = Bsdf + 'a;
+
+    #[inline]
     fn deref(&self) -> &Self::Target {
         match self {
             &BsdfRef::Ref(r) => r,
@@ -64,6 +67,7 @@ impl<'a> Deref for BsdfRef<'a> {
 }
 
 impl<'a> AsRef<Bsdf + 'a> for BsdfRef<'a> {
+    #[inline]
     fn as_ref(&self) -> &(Bsdf + 'a) {
         &**self
     }

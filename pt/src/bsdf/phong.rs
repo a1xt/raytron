@@ -68,7 +68,7 @@ impl Phong {
 }
 
 impl Bsdf for Phong {
-    fn emittance(&self) -> Option<Color> {
+    fn radiance(&self) -> Option<Color> {
         None
     }
 

@@ -2,7 +2,7 @@ use math::{Ray3f, Matrix4f, Vector3f, Point3f, Real, Dot, Norm};
 use super::{SurfacePoint, Color};
 
 pub use renderer::Renderer;
-pub use sceneholder::SceneHolder;
+pub use scenehandler::SceneHandler;
 pub use bsdf::Bsdf;
 pub use polygon::{Vertex, Material};
 pub use aabb::{HasBounds};
@@ -31,7 +31,7 @@ pub trait Surface : Sync {
     fn is_emitter(&self) -> bool;
 
     /// ∫ Le dA
-    fn total_emittance(&self) -> Option<Color>;
+    fn total_radiance(&self) -> Option<Color>;
 
     fn area (&self) -> Real;
     fn normal_at(&self, pos: &Point3f) -> Vector3f;
@@ -111,6 +111,7 @@ pub trait BoundedSurface: Surface + HasBounds {
     fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where Self: 'a;
 }
 impl<T> BoundedSurface for T where T: Surface + HasBounds {
+    #[inline]
     fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where T: 'a {
         self as &Surface
     }

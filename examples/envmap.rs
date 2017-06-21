@@ -5,9 +5,9 @@ pub mod common;
 use common::*;
 
 use scenes::spheres;
-use pt::traits::{SceneHolder, Renderer};
+use pt::traits::{SceneHandler, Renderer};
 use pt::renderer::PathTracer;
-use pt::sceneholder::{ShapeList, KdTreeS};
+use pt::scenehandler::{ShapeList, KdTreeS};
 use pt::{Image, Texture, Tex, Mesh, Polygon, RenderSettings};
 use pt::bsdf::{Phong, Diffuse};
 use pt::sphere::Sphere;
@@ -132,9 +132,9 @@ impl AppState for Envmap {
         ctrl.set_mouse_sensitivity(0.20);
     }
 
-    fn create_scene<'s>(&'s self) -> Box<SceneHolder + 's> {
-        use pt::sceneholder::{ShapeListBuilder, UniformSampler, EmittanceSampler};
-        use pt::sceneholder::kdtree::{KdTreeSetup, Sah};
+    fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's> {
+        use pt::scenehandler::{ShapeListBuilder, UniformSampler, LinearSampler};
+        use pt::scenehandlerkdtree::{KdTreeSetup, Sah};
         use pt::traits::{BoundedSurface, Surface};
         use std::iter::once;
         
@@ -148,7 +148,7 @@ impl AppState for Envmap {
         let pol_iter = self.envbox_polygons.iter().map(|r| r as &BoundedSurface);
         let it = pol_iter.chain(once(&self.sphere as &BoundedSurface));
         let kdtree_setup = KdTreeSetup::new(32, 128, Sah::new(1.0, 1.0));
-        let kdtree = box KdTreeS::<BoundedSurface, EmittanceSampler>::new(it, kdtree_setup);
+        let kdtree = box KdTreeS::<BoundedSurface, LinearSampler>::new(it, kdtree_setup);
         println!("kdtree builded");
         kdtree
     }
@@ -159,7 +159,7 @@ impl AppState for Envmap {
         //gamma_correction(img);
     }
 
-    fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHolder + 's> + 's>, RenderSettings) {
+    fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {
         let pt_render_chunk = (80, 60);
         let rdr_setup = RenderSettings::new(128, 2).with_threads(4, pt_render_chunk);       
         let rdr = box PathTracer::new(&rdr_setup).with_direct_illumination(0.25, 0.75);
@@ -172,7 +172,7 @@ impl AppState for Envmap {
     // fn init_camera(&self, &mut FPSCameraController) { }
     // //fn update_camera(&self, &mut CameraController) { }
 
-    // fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHolder + 's> + 's>, RenderSettings) {
+    // fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {
     //     let pt_render_chunk = (80, 60);
     //     let rdr_setup = RenderSettings::new(128, 10).with_threads(4, pt_render_chunk);       
     //     let rdr = box PathTracer::new(&rdr_setup).with_direct_illumination(0.75, 0.25);

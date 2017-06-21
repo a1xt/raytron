@@ -11,14 +11,14 @@ use {SurfacePoint};
 use std::sync::Arc;
 use rand;
 
-pub trait SceneHolder: Sync {
+pub trait SceneHandler: Sync {
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint>;
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's>;
     fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s>;
 }
 
-pub trait EmittersSampler<'a>: Sync + Send {
+pub trait LuminairesSampler<'a>: Sync + Send {
      fn sample(&self, 
                view_point: (&Point3f, &Vector3f), 
                surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
@@ -37,7 +37,7 @@ pub struct UniformSampler<'s> {
     surfaces: Vec<&'s Surface>,
 }
 
-impl<'a> EmittersSampler<'a> for UniformSampler<'a> {
+impl<'a> LuminairesSampler<'a> for UniformSampler<'a> {
     fn sample(&self, 
               view_point: (&Point3f, &Vector3f), 
               surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
@@ -79,7 +79,7 @@ impl<'s, 'a> From<&'s [&'a Surface]> for UniformSampler<'a> {
     }
 }
 
-pub struct EmittanceSampler<'a> {
+pub struct LinearSampler<'a> {
     surfaces: Vec<&'a Surface>,
     partial_sum: Vec<Real>,
     sum: Real,
@@ -91,12 +91,12 @@ fn color_norm<T: ColorChannel>(c: &Rgb<T>) -> Real where Rgb<Real>: From<Rgb<T>>
     (c.r * c.r + c.g * c.g + c.b * c.b).sqrt() as Real
 }
 
-impl<'s, 'a> From<&'s [&'a Surface]> for EmittanceSampler<'a> {
+impl<'s, 'a> From<&'s [&'a Surface]> for LinearSampler<'a> {
     fn from(other: &'s [&'a Surface]) -> Self {
         let mut surfaces = other.to_vec();
         surfaces.sort_by(|&s1, &s2| {
-            let c1 = color_norm(&s1.total_emittance().unwrap());
-            let c2 = color_norm(&s2.total_emittance().unwrap());
+            let c1 = color_norm(&s1.total_radiance().unwrap());
+            let c2 = color_norm(&s2.total_radiance().unwrap());
             c1.partial_cmp(&c2).unwrap()
         });
 
@@ -105,7 +105,7 @@ impl<'s, 'a> From<&'s [&'a Surface]> for EmittanceSampler<'a> {
             surfaces
             .iter()
             .map(|&s|{ 
-                let e = color_norm(&s.total_emittance().unwrap()) as Real;
+                let e = color_norm(&s.total_radiance().unwrap()) as Real;
                 sum += e;
                 sum
             })
@@ -119,7 +119,7 @@ impl<'s, 'a> From<&'s [&'a Surface]> for EmittanceSampler<'a> {
     }
 }
  
-impl<'a> EmittersSampler<'a> for EmittanceSampler<'a> {
+impl<'a> LuminairesSampler<'a> for LinearSampler<'a> {
     fn sample(&self, 
               view_point: (&Point3f, &Vector3f), 
               surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
@@ -138,7 +138,7 @@ impl<'a> EmittersSampler<'a> for EmittanceSampler<'a> {
             };
 
             let s = self.surfaces[ix];
-            let il = color_norm(&s.total_emittance().unwrap());
+            let il = color_norm(&s.total_radiance().unwrap());
             let pdf = il / self.sum;
             let (sp, spdf) = surface_sampler(s, view_point);
 
@@ -159,7 +159,7 @@ impl<'a> EmittersSampler<'a> for EmittanceSampler<'a> {
            -> Real
     {
         let pdf = surface_pdf(surface, point_at_surface, view_point);
-        let il = color_norm(&surface.total_emittance().unwrap());
+        let il = color_norm(&surface.total_radiance().unwrap());
         let spdf = il / self.sum;
 
         pdf * spdf
@@ -168,7 +168,7 @@ impl<'a> EmittersSampler<'a> for EmittanceSampler<'a> {
 
 #[derive(Clone)]
 pub struct LightSourcesIter<'a> {
-    scene: &'a SceneHolder,
+    scene: &'a SceneHandler,
 }
 
 impl<'a> IntoIterator for LightSourcesIter<'a> {
@@ -182,8 +182,8 @@ impl<'a> IntoIterator for LightSourcesIter<'a> {
 
 
 pub struct LightSourcesHandler<'a> {
-    scene: &'a SceneHolder,
-    sampler: Arc<EmittersSampler<'a> + 'a>,
+    scene: &'a SceneHandler,
+    sampler: Arc<LuminairesSampler<'a> + 'a>,
 }
 
 impl<'a> LightSourcesHandler<'a> {
@@ -196,13 +196,13 @@ impl<'a> LightSourcesHandler<'a> {
 
 use std::ops::Deref;
 impl<'a> Deref for LightSourcesHandler<'a> {
-    type Target = EmittersSampler<'a> + 'a;
+    type Target = LuminairesSampler<'a> + 'a;
     #[inline]
     fn deref(&self) -> &Self::Target {
         self.sampler.as_ref()
     }
 }
 #[inline]
-fn lt_arc_trait_hack<'a, 'b: 'a>(t: Arc<EmittersSampler<'b> + 'b>) -> Arc<EmittersSampler<'a> + 'b> {
+fn lt_arc_trait_hack<'a, 'b: 'a>(t: Arc<LuminairesSampler<'b> + 'b>) -> Arc<LuminairesSampler<'a> + 'b> {
     unsafe {::std::mem::transmute(t)}
 }

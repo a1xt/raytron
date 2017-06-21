@@ -35,8 +35,9 @@ impl Sphere {
 
 impl Surface for Sphere {
 
+    #[inline]
     fn is_emitter(&self) -> bool {
-        if let Some(_) = self.bsdf.emittance() {
+        if let Some(_) = self.bsdf.radiance() {
             true
         } else {
             false
@@ -61,19 +62,22 @@ impl Surface for Sphere {
         }
     }
 
+    #[inline]
     fn area (&self) -> Real {
         use std::f32::consts::PI;
         4.0 * (PI as Real) * self.radius * self.radius
     }
 
-    fn total_emittance(&self) -> Option<Color> {
-        if let Some(e) = self.bsdf.emittance() {
+    #[inline]
+    fn total_radiance(&self) -> Option<Color> {
+        if let Some(e) = self.bsdf.radiance() {
             Some(e * self.area() as f32)
         } else {
             None
         }
     }
 
+    #[inline]
     fn normal_at(&self, pos: &Point3f) -> Vector3f {
         self.normal_to(pos)
     }
@@ -94,6 +98,7 @@ impl Surface for Sphere {
         pdf)
     }
 
+    #[inline]
     fn pdf_p(&self, _: (&Point3f, &Vector3f), _ : (&Point3f, &Vector3f)) -> Real {      
         2.0 / self.area()
     }

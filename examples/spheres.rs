@@ -11,9 +11,9 @@ extern crate rand;
 use pt_app::{App};
 use pt_app::scenes::spheres;
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::sceneholder::{ShapeList};
+use pt_app::pt::scenehandler::{ShapeList};
 use pt_app::pt::{Image, RenderSettings};
-use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHolder};
+use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHandler};
 use image::hdr;
 
 use std::mem;
@@ -180,7 +180,7 @@ fn main () {
 
     let scene = Box::new(scene_builder.to_shape_list());
 
-    // use pt_app::pt::sceneholder::kdtree::{KdTreeS, KdTreeSetup, Sah};
+    // use pt_app::pt::scenehandlerkdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()
     //     .map(move |s| s as &BoundedSurface)
     //     .chain(
@@ -267,7 +267,7 @@ fn main () {
     let mut start_time = 0;
     let mut total_time = 0u64;
     while app.run() {
-        let scn = scene.as_ref() as &SceneHolder;
+        let scn = scene.as_ref() as &SceneHandler;
         if dbg {
             dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
         } else {

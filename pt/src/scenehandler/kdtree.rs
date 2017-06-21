@@ -1,4 +1,4 @@
-use traits::{SceneHolder, HasBounds, Surface, BoundedSurface};
+use traits::{SceneHandler, HasBounds, Surface, BoundedSurface};
 use math::{Ray3f, Real};
 use aabb::{Aabb3, intersection_aabb};
 use num::Float;
@@ -7,7 +7,7 @@ use std::cmp::max;
 use std::sync::Arc;
 use {SurfacePoint};
 use utils::consts::POSITION_EPSILON;
-use super::{LightSourcesHandler, UniformSampler, EmittersSampler};
+use super::{LightSourcesHandler, UniformSampler, LuminairesSampler};
 
 pub const KDTREE_DEPTH_MAX: usize = 512;
 
@@ -329,7 +329,7 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
 
 pub struct KdTreeS<'a, T, S = UniformSampler<'a>> 
     where T: BoundedSurface + ?Sized + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
 {
     kdtree: KdTree<'a, T>,
     light_sources: Vec<&'a Surface>,
@@ -338,7 +338,7 @@ pub struct KdTreeS<'a, T, S = UniformSampler<'a>>
 
 impl<'a, T, S> KdTreeS<'a, T, S> 
     where T: BoundedSurface + ?Sized + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
 {
     pub fn new<I, U>(obj_iter: U, setup: KdTreeSetup) -> Self
         where I: Iterator<Item = &'a T> + 'a,
@@ -362,9 +362,9 @@ impl<'a, T, S> KdTreeS<'a, T, S>
     }
 }
 
-impl<'a, T, S> SceneHolder for KdTreeS<'a, T, S>
+impl<'a, T, S> SceneHandler for KdTreeS<'a, T, S>
     where T: BoundedSurface + ?Sized + 'a,
-          S: EmittersSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
+          S: LuminairesSampler<'a> + for<'s> From<&'s [&'a Surface]> + 'a
 {
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint> {
         let leaf_iter = self.kdtree.traverse_iter(ray);
@@ -403,7 +403,7 @@ impl<'a, T, S> SceneHolder for KdTreeS<'a, T, S>
         LightSourcesHandler {
             scene: self,
             //sampler: Arc::new(UniformSampler::from(self.light_sources.as_slice()))
-            //sampler: Arc::new(EmittanceSampler::from(self.light_sources.as_slice()))
+            //sampler: Arc::new(LinearSampler::from(self.light_sources.as_slice()))
             sampler: super::lt_arc_trait_hack(self.sampler.clone())
         }
     }
