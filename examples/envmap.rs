@@ -1,5 +1,6 @@
 #![feature(box_syntax)]
 #![feature(type_ascription)]
+#![allow(unused_imports)]
 
 pub mod common;
 use common::*;
@@ -15,11 +16,15 @@ use pt::color;
 use pt::color::{Color, Rgb};
 use image::hdr;
 use scenes::{Cube, Quad, CubeSide};
-use pt::material::DiffuseTex;
+use pt::material::{DiffuseTex, DiffuseMat};
 use pt::vertex::TexturedVertex;
 use std::sync::Arc;
 use std::collections::BTreeMap;
 use pt::math::{Point3f, Point2, Vector3f};
+use pt::scenehandler::{ShapeListBuilder, UniformSampler, LinearSampler};
+use pt::scenehandler::kdtree::{KdTreeSetup, Sah};
+use pt::traits::{BoundedSurface, Surface};
+use std::iter::once;
 
 pub fn lifetime_hack<'a, 'b, T>(t: &'a T) -> &'b T {
     unsafe {::std::mem::transmute(t) }
@@ -44,9 +49,10 @@ impl Envmap {
         // let mut cube = Cube::new(Point3f::new(0.0, 0.0, 0.0),
         //                      (cube_size, cube_size, cube_size));
 
-        let mat = Arc::new(DiffuseTex::new(lifetime_hack(black_tex.as_ref()), 
-                                           Some(lifetime_hack(hdr_img.as_ref())) ));
-                                           //None));
+        // let mat = Arc::new(DiffuseTex::new(lifetime_hack(black_tex.as_ref()), 
+        //                                    Some(lifetime_hack(hdr_img.as_ref())) ));
+        //                                    //None));
+        let mat = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE)));
 
         // for (_, m) in cube.materials.iter_mut() {
         //     *m = mat.clone();
@@ -133,10 +139,7 @@ impl AppState for Envmap {
     }
 
     fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's> {
-        use pt::scenehandler::{ShapeListBuilder, UniformSampler, LinearSampler};
-        use pt::scenehandlerkdtree::{KdTreeSetup, Sah};
-        use pt::traits::{BoundedSurface, Surface};
-        use std::iter::once;
+        
         
         // let mut scene = ShapeListBuilder::<&Surface, UniformSampler>::new();
         // for p in self.envbox_polygons.iter() {
@@ -155,8 +158,8 @@ impl AppState for Envmap {
 
     fn post_process(&self, img: &mut Image) {
         let t = 1.125; 
-        tone_mapping_exp(img, t);
-        //gamma_correction(img);
+        //tone_mapping_exp(img, t);
+        //gamma_encoding(img);
     }
 
     fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {

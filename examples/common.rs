@@ -369,8 +369,21 @@ pub fn tone_mapping_simple<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     }    
 }
 
-pub fn gamma_correction<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+pub fn gamma_encoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     let g = 1.0 / 2.2;
+    for j in 0..img.height() {
+        for i in 0..img.width() {
+            let mut c = img.pixel(i, j);
+            c.r = c.r.powf(g);
+            c.g = c.g.powf(g);
+            c.b = c.b.powf(g);
+            img.set_pixel(i, j, c);
+        }
+    }
+}
+
+pub fn gamma_decoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+    let g = 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
             let mut c = img.pixel(i, j);
@@ -398,7 +411,7 @@ pub fn load_hdr<T: Tex<Rgb>>(path: String) -> T {
     for j in 0..(hdr_meta.height as usize) {
         for i in 0..(hdr_meta.width as usize) {
             let p = hdr_data[j * (hdr_meta.width as usize) + i];
-            let mut c = Rgb::new(p[0], p[1], p[2]);
+            let c = Rgb::new(p[0], p[1], p[2]);
             img.set_pixel(i, j, c.into());
         }
     }
