@@ -122,8 +122,31 @@ pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
     let ys = theta.cos();
     let zs = theta.sin() * phi.sin();
 
-    let y = n.clone();
-    let mut h = y.clone();
+    // let y = n.clone();
+    // let mut h = y.clone();
+
+    // if h.x.abs() <= h.y.abs() && h.x.abs() <= h.z.abs() {
+    //     h.x = 1.0;
+    // } else if h.y.abs() <= h.x.abs() && h.y.abs() <= h.z.abs() {
+    //     h.y = 1.0;
+    // } else {
+    //     h.z = 1.0;
+    // }
+
+    // let x = h.cross(&y).normalize();
+    // let z = x.cross(&y).normalize();
+
+    // let dir = x * xs + y * ys + z * zs;
+
+    // dir.normalize()
+
+    transform_basis_y(n, &Vector3f::new(xs, ys, zs))
+
+}
+
+pub fn transform_basis_y(up: &Vector3f, vec: &Vector3f) -> Vector3f {
+    let y = *up;
+    let mut h = y;
 
     if h.x.abs() <= h.y.abs() && h.x.abs() <= h.z.abs() {
         h.x = 1.0;
@@ -136,11 +159,17 @@ pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
     let x = h.cross(&y).normalize();
     let z = x.cross(&y).normalize();
 
-    let dir = x * xs + y * ys + z * zs;
+    let dir = x * vec.x + y * vec.y + z * vec.z;
 
     dir.normalize()
+}
 
-}  
+pub fn reflect_vec(vec: &Vector3f, base: &Vector3f) -> Vector3f {
+    let cos_theta = vec.dot(base);
+    let h = base * 2.0 * cos_theta;
+    let res = h - vec;
+    res
+}
 
 
 pub fn sph_uniform_sampling() -> Vector3f {

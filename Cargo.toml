@@ -22,6 +22,12 @@ pathtracer = {path = "pt", version = "*"}
 time = "0.1.*"
 rand = "*"
 
+# [profile.release]
+# opt-level = 3
+# debug = false
+# lto = true
+# debug-assertions = false
+
 
 #[[example]]
 #name = "apptest"
@@ -34,5 +40,11 @@ path = "examples/spheres.rs"
 [[example]]
 name = "envmap"
 path = "examples/envmap.rs"
+
+[[example]]
+name = "materials"
+path = "examples/materials.rs"
+
+
 [workspace]
 

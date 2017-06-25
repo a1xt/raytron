@@ -55,8 +55,8 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, 0.0, -1.0e5 - 50.0),
                 1.0e5,///////
-                Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
-                //Box::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.1, 0.9, 100000.0))
+                //Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
+                Arc::new(Phong::new(Color::new(0.999, 0.999, 0.999f32), 0.1, 0.9, 100000.0))
             ),
         );
         //Bottom

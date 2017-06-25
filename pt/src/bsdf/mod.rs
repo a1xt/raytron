@@ -4,6 +4,7 @@ pub mod cooktorrance;
 
 pub use self::diffuse::Diffuse;
 pub use self::phong::Phong;
+pub use self::cooktorrance::*;
 
 use color::Color;
 use math::{Vector3f, Real, Dot};

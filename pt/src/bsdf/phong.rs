@@ -1,12 +1,12 @@
 use {Bsdf, Color};
 use math::{Vector3f, Real};
+use math::{Cross, Norm, Dot};
 use math;
 use color;
 use std::f32::consts::{PI};
 use rand;
 use rand::{Closed01};
 use rand::distributions::{Range, IndependentSample};
-use math::{Cross, Norm, Dot};
 
 
 #[derive(Clone, Copy, Debug)]
@@ -140,8 +140,9 @@ impl Bsdf for Phong {
         } else if e < self.kd + self.ks {
             let n = self.n as Real;
 
-            let cos_theta_in = surface_normal.dot(&(-in_dir));
-            let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
+            // let cos_theta_in = surface_normal.dot(&(-in_dir));
+            // let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
+            let in_dir_refl = math::reflect_vec(&(-in_dir), surface_normal);
             
             let cos_alpha = in_dir_refl.dot(&out_dir);
             if cos_alpha > 0.0 {
@@ -172,8 +173,9 @@ impl Bsdf for Phong {
         } else if e < self.kd + self.ks {
             let n = self.n as Real;
 
-            let cos_theta_in = surface_normal.dot(&(-in_dir));
-            let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
+            // let cos_theta_in = surface_normal.dot(&(-in_dir));
+            // let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
+            let in_dir_refl = math::reflect_vec(&(-in_dir), surface_normal);
             let out_dir = self.random_vector(&in_dir_refl);
             
             let f = (n + 2.0) / (n + 1.0);

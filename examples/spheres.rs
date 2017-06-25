@@ -174,9 +174,9 @@ fn main () {
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
 
-    for p in polygons.iter() {
-        scene_builder.add_shape(p);
-    }
+    // for p in polygons.iter() {
+    //     scene_builder.add_shape(p);
+    // }
 
     let scene = Box::new(scene_builder.to_shape_list());
 

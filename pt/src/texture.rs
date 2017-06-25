@@ -40,36 +40,44 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
         }
     }
 
+    #[inline]
     pub fn pixel(&self, i: usize, j: usize) -> P::Color {
         self.data[self.width * j + i].into()
     }
 
+    #[inline]
     pub fn pixel_raw(&self, i: usize, j: usize) -> &R {
         &self.data[self.width * j + i]
     }
 
+    #[inline]
     pub fn set_pixel(&mut self, i: usize, j: usize, p: P::Color) {
         self.data[self.width * j + i] = p.into();
     }
 
+    #[inline]
     pub fn sample(&self, u: f32, v: f32) -> P::Color {
         let i = (clamp(u, 0.0, 1.0) * ((self.width - 1) as f32) + 0.5) as usize;
         let j = (clamp(v, 0.0, 1.0) * ((self.height - 1) as f32) + 0.5) as usize;
         self.pixel(i, j)
     }
 
+    #[inline]
     pub fn as_slice(&self) -> &[R] {
         self.data.as_slice()
     }
 
+    #[inline]
     pub fn pixels<'s>(&'s self) -> impl Iterator<Item = P::Color> + 's {
         self.data.iter().map(|&r| r.into())
     }
 
+    #[inline]
     pub fn width(&self) -> usize {
         self.width
     }
 
+    #[inline]
     pub fn height(&self) -> usize {
         self.height
     }
