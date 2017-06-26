@@ -69,8 +69,8 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         let encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
         let pso = factory.create_pipeline_simple(
-            include_bytes!("shaders/default2d_140.glslv"),
-            include_bytes!("shaders/default2d_140.glslf"),
+            include_bytes!("shaders/default_120.glslv"),
+            include_bytes!("shaders/default_120.glslf"),
             pipe::new()
         ).unwrap();
 
