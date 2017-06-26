@@ -270,7 +270,7 @@ gfx_defines!{
     pipeline pipe {
         vbuf: gfx::VertexBuffer<Vertex> = (),
         tex: gfx::TextureSampler<[f32; 4]> = "tex2",
-        out_color: gfx::RenderTarget<::ColorFormat> = "target0",
+        out_color: gfx::RenderTarget<::ColorFormat> = "Target0",
         out_depth: gfx::DepthTarget<::DepthFormat> = gfx::preset::depth::LESS_EQUAL_WRITE,
     }
 }
