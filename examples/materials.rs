@@ -11,6 +11,7 @@ use pt::renderer::PathTracer;
 use pt::scenehandler::{ShapeList, KdTreeS};
 use pt::{Image, Texture, Tex, Mesh, Polygon, RenderSettings};
 use pt::bsdf::{Phong, Diffuse, CookTorrance};
+use pt::bsdf::cooktorrance::*;
 use pt::sphere::Sphere;
 use pt::color;
 use pt::color::{Color, Rgb};
@@ -20,7 +21,7 @@ use pt::material::{DiffuseTex, DiffuseMat};
 use pt::vertex::{BaseVertex, TexturedVertex};
 use std::sync::Arc;
 use std::collections::BTreeMap;
-use pt::math::{Point3f, Point2, Vector3f};
+use pt::math::{Real, Point3f, Point2, Vector3f};
 
 use pt::scenehandler::{ShapeListBuilder, UniformSampler, LinearSampler};
 use pt::scenehandler::kdtree::{KdTreeSetup, Sah};
@@ -90,15 +91,39 @@ impl AppState for Materials {
             scene.add_shape((box p) as Box<Surface>);
         }
 
-        let roughness = 0.7;
-        let sphere = box Sphere::new(
-            Point3f::new(0.0, 0.0, 0.0), 
-            100.0,
-            //Arc::new(Diffuse::new(color::BLACK, None)));
-            Arc::new(CookTorrance::new(color::BLACK, Vector3f::new(0.2, 0.2, 0.2), roughness * roughness)));
-            //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 10000.0)));
+        let spheres_num = 5;
+        let radius = 50.0;
+        let offset_x = 15.0;
+        let offset_y = 50.0;
+        let roughness_min = 0.05;
+        let roughness_max = 1.0;
+        let row_ior = [
+            //Vector3f::new(2.5355, 2.0745, 1.8131), // platinum
+            Vector3f::new(0.16761, 0.14462, 0.13536), // silver
+            Vector3f::new(0.16909, 0.44433, 1.4532),  // gold
+            Vector3f::new(0.21258, 0.70391, 1.3370)]; // copper
 
-        scene.add_shape(sphere);
+        let air_ior = Vector3f::new(1.0, 1.0, 1.0);
+
+        let mut pos_y =  ((row_ior.len() - 1) as Real) * radius + offset_y * (row_ior.len() / 2) as Real;
+        for r in 0..row_ior.len() {
+            let mut pos_x = 0.0 - ((spheres_num - 1) as Real) * radius - offset_x * (spheres_num / 2) as Real;
+            for i in 0..spheres_num {
+                let roughness = roughness_min + (roughness_max - roughness_min) * (i as Real / (spheres_num - 1) as Real);
+                println!("roughness({}): {}",i, roughness);
+                let sphere = box Sphere::new(
+                    Point3f::new(pos_x, pos_y, 0.0), 
+                    radius,
+                    //Arc::new(Diffuse::new(color::BLACK, None)));
+                    Arc::new(CookTorrance::new(color::BLACK, calc3_f0(&air_ior, &row_ior[r]), roughness * roughness)));
+                    //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 10000.0)));
+                
+                pos_x += 2.0 * radius + offset_x;
+
+                scene.add_shape(sphere);
+            }
+            pos_y -= 2.0 * radius + offset_y;
+        }
         
         box scene.to_shape_list()
 
