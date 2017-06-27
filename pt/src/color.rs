@@ -327,7 +327,8 @@ macro_rules! impl_color {
                 }
             }
         }
-        impl<T: ColorChannel> $c<T> where T: ChannelCast<f64> { 
+        impl<T: ColorChannel> $c<T> where T: ChannelCast<f64> {
+            #[inline]
             pub fn dot(&self, other: &Self) -> f64 {
                 self.$x0.cast_into() * other.$x0.cast_into()
                 $(
@@ -350,6 +351,7 @@ macro_rules! impl_pixel {
 macro_rules! impl_from_self {
     ($c:ident, $t:ident, $u:ident, $( $x:ident ),+) => {
         impl From<$c<$t>> for $c<$u> {
+            #[inline]
             fn from(other: $c<$t>) -> Self {
                 Self::new(
                     $(
@@ -364,6 +366,7 @@ macro_rules! impl_from_self {
 macro_rules! impl_colorblend {
     ($c:ident, $($x:ident),+) => {
         impl<T> ColorBlend<T> for $c<T> where T: ColorChannel {
+            #[inline]
             fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self {
                 Self::new(
                     $(
@@ -378,6 +381,7 @@ macro_rules! impl_colorblend {
 macro_rules! impl_colorclamp {
     ($c:ident, $( $x:ident ),+) => {
         impl<T> ColorClamp for $c<T> where T: ColorChannel {
+            #[inline]
             fn clamp(self) -> Self {
                 Self::new(
                     $(
@@ -392,6 +396,7 @@ macro_rules! impl_colorclamp {
 macro_rules! impl_from_arr {
     ($c:ident, [$t:ident; $n:expr], $v:ident, $($x:expr),+) => {
         impl<$t> From<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            #[inline]
             fn from($v: [$t; $n]) -> Self {
                 Self::new(
                     $(
@@ -407,6 +412,7 @@ macro_rules! impl_from_arr {
 macro_rules! impl_into_arr_a {
     ($c:ident, [$t:ident; $n:expr], $($x:ident),+) => {
         impl<$t> Into<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            #[inline]
             fn into(self) -> [$t; $n] {
                 [$(
                     self.$x,
@@ -420,6 +426,7 @@ macro_rules! impl_into_arr_a {
 macro_rules! impl_into_arr {
     ($c:ident, [$t:ident; $n:expr], $($x:ident),+ ) => {
         impl<$t> Into<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            #[inline]
             fn into(self) -> [$t; $n] {
                 [$(
                     self.$x,
@@ -435,6 +442,7 @@ macro_rules! impl_into_arr {
 macro_rules! impl_from_other {
     ($c:ident, $r:ident, $($x:ident),+) => {
         impl<T, U> From<$r<T>> for $c<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
+            #[inline]
             fn from(other: $r<T>) -> Self {
                 Self::new(
                     $(
@@ -449,6 +457,7 @@ macro_rules! impl_from_other {
 macro_rules! impl_from_other_a {
     ($c:ident, $r:ident, $($x:ident),+) => {
         impl<T, U> From<$r<T>> for $c<U> where T: ColorChannel + ChannelCast<U>, U: ColorChannel {
+            #[inline]
             fn from(other: $r<T>) -> Self {
                 Self::new(
                     $(
@@ -464,6 +473,7 @@ macro_rules! impl_from_other_a {
 macro_rules! impl_from_scalar {
     ($c:ident, $($x:ident),+) => {
         impl<T> From<T> for $c<T> where T: ColorChannel {
+            #[inline]
             fn from(val: T) -> Self {
                 Self {
                     $($x: val, )*
@@ -476,6 +486,7 @@ macro_rules! impl_from_scalar {
 macro_rules! impl_from_scalar_a{
     ($c:ident, $($x:ident),+) => {
         impl<T> From<T> for $c<T> where T: ColorChannel {
+            #[inline]
             fn from(val: T) -> Self {
                 Self {
                     $($x: val, )*
@@ -489,6 +500,7 @@ macro_rules! impl_from_scalar_a{
 macro_rules! impl_asref {
     ($c:ident, [$t:ident; $n:expr]) => {
         impl<$t> AsRef<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            #[inline]
             fn as_ref(&self) -> &[$t; $n] {
                 unsafe {
                     ::std::mem::transmute::<&Self, &[$t; $n]>(self) 
@@ -501,6 +513,7 @@ macro_rules! impl_asref {
 macro_rules! impl_asmut {
     ($c:ident, [$t:ident; $n:expr]) => {
         impl<$t> AsMut<[$t; $n]> for $c<$t> where $t: ColorChannel {
+            #[inline]
             fn as_mut(&mut self) -> &mut [$t; $n] {
                 unsafe {
                     ::std::mem::transmute::<&mut Self, &mut [$t; $n]>(self) 
@@ -515,6 +528,7 @@ macro_rules! impl_add {
     ($c:ident, $($x:ident),+) => {
         impl<T, R> Add<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
             type Output = $c<T>;
+            #[inline]
             fn add(self, other: R) -> Self::Output {
                 let rhs = other.into();
                 Self::new(
@@ -525,6 +539,7 @@ macro_rules! impl_add {
             }
         }
         impl<T, R> AddAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            #[inline]
             fn add_assign(&mut self, other: R) {
                 let rhs = other.into();
                 *self = Self::new(
@@ -541,6 +556,7 @@ macro_rules! impl_mul {
     ($c:ident, $($x:ident),+) => {
         impl<T, R> Mul<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
             type Output = $c<T>;
+            #[inline]
             fn mul(self, other: R) -> Self::Output {
                 let rhs = other.into();
                 Self::new(
@@ -551,6 +567,7 @@ macro_rules! impl_mul {
             }
         }
         impl<T, R> MulAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            #[inline]
             fn mul_assign(&mut self, other: R) {
                 let rhs = other.into();
                 *self = Self::new(
