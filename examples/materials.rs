@@ -132,7 +132,7 @@ impl AppState for Materials {
                     Arc::new(CookTorrance::new(
                         color::BLACK, 
                         c,
-                        roughness * roughness * 2.0))
+                        roughness * roughness ))
                 };
                 let sphere = box Sphere::new(
                     Point3f::new(pos_x, pos_y, 0.0), 

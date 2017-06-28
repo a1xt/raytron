@@ -27,7 +27,7 @@ pub fn ggx_g_partial(cos_no: Real, cos_oh: Real, alpha: Real) -> Real {
     let tan_no2 = (1.0 - cos_no2) / cos_no2;
 
     //ggx_chi(cos_oh / cos_no) *
-    0.5 * (1.0 + (1.0 + alpha2 * tan_no2).sqrt())
+    2.0 / (1.0 + (1.0 + alpha2 * tan_no2).sqrt())
 }
 
 /// Bidirectional shadowing-masking function
