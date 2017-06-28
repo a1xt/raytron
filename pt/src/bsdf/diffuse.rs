@@ -1,7 +1,31 @@
 use {Bsdf};
 use math::{self, Vector3f, Real, Dot};
-use color::{self, Color};
-use std::f32::consts::PI;
+use color::{self, Color, Rgb};
+use std::f64::consts::PI;
+
+#[inline]
+pub fn sample<F>(normal: &Vector3f, albedo: &Rgb<F>) -> (Vector3f, Rgb<F>, Real) 
+    where Color: From<Rgb<F>>,
+          Rgb<F>: From<F>,
+          F: color::ColorChannel + color::ChannelCast<Real>,
+{
+    let vec_out = math::hs_cosine_sampling(normal);
+    let cos_no = normal.dot(&vec_out);
+    let pdf = cos_no;
+    let fr: Rgb<F> = *albedo * Rgb::from(F::cast_from(1.0 as Real));
+    (vec_out, fr, pdf)
+}
+ 
+#[inline]
+pub fn eval<F>(cos_no: Real, albedo: &Rgb<F>) -> (Rgb<F>, Real)
+    where Color: From<Rgb<F>>,
+          Rgb<F>: From<F>,
+          F: color::ColorChannel + color::ChannelCast<Real>,
+{
+    let pdf = cos_no / PI as Real;
+    let fr: Rgb<F> = *albedo * Rgb::from(F::cast_from(1.0 as Real / PI as Real));
+    (fr, pdf)
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Diffuse {
@@ -24,106 +48,46 @@ impl Bsdf for Diffuse {
         self.radiance
     }
 
-    // fn reflectance(&self, _: &Vector3f, _: &Vector3f, _: &Vector3f) -> Color {
-    //     self.color
-    // }
-
-    // fn reflect_ray(&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> Ray3f {
-    //     Ray3f {
-    //         origin: *surface_point,
-    //         //dir: math::hs_uniform_sampling(surface_normal)
-    //         dir: math::hs_cosine_sampling(surface_normal)
-    //     }
-    // }
-
-    // fn brdf (&self, ray_dir: &Vector3f, surface_point: &Point3f, surface_normal: &Vector3f) -> (Ray3f, Color) {
-    //     (
-    //         Ray3f {
-    //             origin: *surface_point,
-    //             dir: math::hs_cosine_sampling(surface_normal),
-    //         },
-    //         self.color,
-    //     )
-    // }
-
-    // fn reflectance(
-    //     &self, 
-    //     surface_normal: &Vector3f, 
-    //     out_dir: &Vector3f,
-    //     in_dir: &Vector3f
-    // ) -> Color {
-
-    //     color::mul_s(&self.color, 1.0 / PI)           
-    // }
-
     fn sample(
         &self, 
         surface_normal: &Vector3f, 
-        _: &Vector3f
-    ) -> (Vector3f, Color, Real) {
-
-        let out_dir = math::hs_cosine_sampling(surface_normal);
-        let cos_theta = surface_normal.dot(&out_dir);
-        (out_dir, self.color * (cos_theta as f32), 1.0)
-    }
-
-    fn sample_proj(
-        &self, 
-        surface_normal: &Vector3f, 
-        _: &Vector3f
-    ) -> (Vector3f, Color, Real)
+        _: &Vector3f)
+        -> (Vector3f, Color, Real)
     {
-        let out_dir = math::hs_cosine_sampling(surface_normal);
-        //let cos_theta = surface_normal.dot(&out_dir);
-        (out_dir, self.color, 1.0)
+        sample::<f32>(surface_normal, &self.color)
     }
+
+    // fn sample_proj(
+    //     &self, 
+    //     surface_normal: &Vector3f, 
+    //     _: &Vector3f)
+    //     -> (Vector3f, Color, Real)
+    // {
+    //     let out_dir = math::hs_cosine_sampling(surface_normal);
+    //     (out_dir, self.color, 1.0)
+    // }
 
     fn eval(
         &self, 
         surface_normal: &Vector3f,
         _: &Vector3f,
-        out_dir: &Vector3f,        
-    ) -> (Color, Real)
+        out_dir: &Vector3f)
+        -> (Color, Real)
     {
-        let cos_theta = surface_normal.dot(&(-out_dir));
-        let reflectance = self.color * (1.0 / PI);
-        let pdf = cos_theta / PI as Real;
-
-        (reflectance, pdf)
+        let cos_no = surface_normal.dot(out_dir);
+        eval::<f32>(cos_no, &self.color)
     }
 
-    fn eval_proj(
-        &self, 
-        _: &Vector3f,
-        _: &Vector3f, 
-        _: &Vector3f,        
-    ) -> (Color, Real)
-    {
-        let reflectance = self.color * (1.0 / PI);
-        let pdf = 1.0 / PI as Real;
+    // fn eval_proj(
+    //     &self, 
+    //     _: &Vector3f,
+    //     _: &Vector3f, 
+    //     _: &Vector3f)
+    //     -> (Color, Real)
+    // {
+    //     let reflectance = self.color * (1.0 / PI as f32);
+    //     let pdf = 1.0 / PI as Real;
 
-        (reflectance, pdf)
-    }
-
-    // fn pdf(
-    //     &self,
-    //     surface_normal: &Vector3f, 
-    //     in_dir: &Vector3f, 
-    //     out_dir: &Vector3f
-    // ) -> Real {
-
-    //     let cos_theta = surface_normal.dot(&(-in_dir));
-    //     cos_theta / PI as Real
-    // }
-
-    // /// pdf = pdf_proj * cos_theta
-    // fn pdf_proj(
-    //     &self,
-    //     surface_normal: &Vector3f, 
-    //     in_dir: &Vector3f, 
-    //     out_dir: &Vector3f
-    // ) -> Real {
-
-    //     1.0 / PI as Real
+    //     (reflectance, pdf)
     // }
 }

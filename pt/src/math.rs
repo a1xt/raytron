@@ -13,6 +13,7 @@ pub type Point4f = Point4<Real>;
 
 use std::f32::EPSILON;
 pub const FLOAT_EPSILON: Real = EPSILON as Real;
+use color::Rgb;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F> where F: Copy + Clone {
@@ -188,4 +189,43 @@ pub fn sph_uniform_sampling() -> Vector3f {
         }
     }
     vec
+}
+
+
+pub fn fresnel_schlick(normal: &Vector3f, light: &Vector3f, n1: Real, n2: Real) -> Real {
+    let f0sqrt = (n1 - n2) / (n1 + n2);
+    let f0 = f0sqrt * f0sqrt;
+    let cos_theta = light.dot(&normal);
+    f0 + (1.0 - f0) * (1.0 - cos_theta).powi(5)
+}
+
+pub fn fresnel3_schlick(normal: &Vector3f, light: &Vector3f, n1: &Vector3f, n2: &Vector3f) -> Vector3f {
+    Vector3f::new(
+        fresnel_schlick(normal, light, n1.x, n2.x),
+        fresnel_schlick(normal, light, n1.y, n2.y),
+        fresnel_schlick(normal, light, n1.z, n2.z))
+}
+
+pub fn fresnel_schlick_f0(cos_nl: Real, f0: Real) -> Real {
+    f0 + (1.0 - f0) * (1.0 - cos_nl).powi(5)
+}
+
+pub fn fresnel3_schlick_f0(cos_nl: Real, f0: &Rgb<Real>) -> Rgb<Real> {
+    Rgb::new(
+        fresnel_schlick_f0(cos_nl, f0.r),
+        fresnel_schlick_f0(cos_nl, f0.g),
+        fresnel_schlick_f0(cos_nl, f0.b))
+}
+
+pub fn calc_f0(n1: Real, n2: Real) -> Real {
+    let f0sqrt = (n1 - n2) / (n1 + n2);
+    f0sqrt * f0sqrt
+}
+
+pub fn calc3_f0(n1: &Rgb<Real>, n2: &Rgb<Real>) -> Rgb<Real> {
+    Rgb::new(
+        calc_f0(n1.r, n2.r),
+        calc_f0(n1.g, n2.g),
+        calc_f0(n1.b, n2.b),
+    )
 }
