@@ -1,8 +1,8 @@
 use core::array::FixedSizeArray;
 
 use texture::{Texture};
-use num::{One, Zero, FromPrimitive, ToPrimitive, Bounded};
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
+use num::{Num, FromPrimitive, ToPrimitive, Bounded};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
 use std::u8;
 use utils::{clamp};
 
@@ -176,7 +176,7 @@ mod consts {
 
 }
 
-pub trait ColorChannel: Copy + PartialEq + PartialOrd + One + Zero + ChannelBounds + ChannelBlend + 
+pub trait ColorChannel: Copy + PartialOrd + Num + ChannelBounds + ChannelBlend + 
                         FromPrimitive + ToPrimitive + Bounded + Default + Sync + Send {}
 impl ColorChannel for u8 {}
 impl ColorChannel for f32 {}
@@ -552,6 +552,34 @@ macro_rules! impl_add {
     }
 }
 
+macro_rules! impl_sub {
+    ($c:ident, $($x:ident),+) => {
+        impl<T, R> Sub<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            type Output = $c<T>;
+            #[inline]
+            fn sub(self, other: R) -> Self::Output {
+                let rhs = other.into();
+                Self::new(
+                    $(
+                        self.$x - rhs.$x,
+                    )*
+                )
+            }
+        }
+        impl<T, R> SubAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            #[inline]
+            fn sub_assign(&mut self, other: R) {
+                let rhs = other.into();
+                *self = Self::new(
+                    $(
+                        self.$x - rhs.$x,
+                    )*
+                )
+            }
+        }
+    }
+}
+
 macro_rules! impl_mul {
     ($c:ident, $($x:ident),+) => {
         impl<T, R> Mul<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
@@ -573,6 +601,34 @@ macro_rules! impl_mul {
                 *self = Self::new(
                     $(
                         self.$x * rhs.$x,
+                    )*
+                )
+            }
+        }
+    }
+}
+
+macro_rules! impl_div {
+    ($c:ident, $($x:ident),+) => {
+        impl<T, R> Div<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            type Output = $c<T>;
+            #[inline]
+            fn div(self, other: R) -> Self::Output {
+                let rhs = other.into();
+                Self::new(
+                    $(
+                        self.$x / rhs.$x,
+                    )*
+                )
+            }
+        }
+        impl<T, R> DivAssign<R> for $c<T> where T: ColorChannel, R: Into<$c<T>> {
+            #[inline]
+            fn div_assign(&mut self, other: R) {
+                let rhs = other.into();
+                *self = Self::new(
+                    $(
+                        self.$x / rhs.$x,
                     )*
                 )
             }
@@ -604,7 +660,9 @@ impl_from_scalar!(Rgb, r, g, b);
 impl_asref!(Rgb, [T; 3]);
 impl_asmut!(Rgb, [T; 3]);
 impl_add!(Rgb, r, g, b);
+impl_sub!(Rgb, r, g, b);
 impl_mul!(Rgb, r, g, b);
+impl_div!(Rgb, r, g, b);
 
 
 impl_color!(Rgba, r, g, b, a);
@@ -626,7 +684,9 @@ impl_from_scalar_a!(Rgba, r, g, b);
 impl_asref!(Rgba, [T; 4]);
 impl_asmut!(Rgba, [T; 4]);
 impl_add!(Rgba, r, g, b, a);
+impl_sub!(Rgba, r, g, b, a);
 impl_mul!(Rgba, r, g, b, a);
+impl_div!(Rgba, r, g, b, a);
 
 
 impl_color!(Luma, luma);
@@ -646,7 +706,9 @@ impl_from_scalar!(Luma, luma);
 impl_asref!(Luma, [T; 1]);
 impl_asmut!(Luma, [T; 1]);
 impl_add!(Luma, luma);
+impl_sub!(Luma, luma);
 impl_mul!(Luma, luma);
+impl_div!(Luma, luma);
 
 
 
@@ -667,4 +729,6 @@ impl_from_scalar_a!(LumaA, luma);
 impl_asref!(LumaA, [T; 2]);
 impl_asmut!(LumaA, [T; 2]);
 impl_add!(LumaA, luma, a);
+impl_sub!(LumaA, luma, a);
 impl_mul!(LumaA, luma, a);
+impl_div!(LumaA, luma, a);
