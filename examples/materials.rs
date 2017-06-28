@@ -125,7 +125,8 @@ impl AppState for Materials {
                     //let c: Rgb<f64> = color::GOLD.into();
                     let mut c: Rgb<f32> = color::Rgb::<u8>::new(212, 175, 55).into(); // gold
                     //let mut c: Rgb<f32> = color::Rgb::<u8>::new(69, 55, 36).into(); // gold
-                    //c *= 1.5;
+                    //use color::ColorClamp;
+                    //let c = Rgb::new(c.r.powf(2.2), c.g.powf(2.2), c.b.powf(2.2)).clamp();
                 
                     //let c: Rgb<f32> = Rgb::from(math::calc3_f0(&Rgb::from(1.5), &Rgb::from(1.0)));
                     println!("c = {:?}", c);

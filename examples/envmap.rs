@@ -31,9 +31,8 @@ pub fn lifetime_hack<'a, 'b, T>(t: &'a T) -> &'b T {
 }
 
 pub struct Envmap {
-    //room: spheres::Room,
-    hdr_img: Box<Image>,
-    black_tex: Box<Image>,
+    // hdr_img: Box<Image>,
+    // black_tex: Box<Image>,
     //envbox: Cube<'static, TexturedVertex>,
     envbox_mesh: Box<Mesh<'static, TexturedVertex>>,
     envbox_polygons: Vec<Polygon<'static, TexturedVertex>>,
@@ -42,21 +41,16 @@ pub struct Envmap {
 
 impl Envmap {
     fn new() -> Self {
-        let hdr_img: Box<Image> = box load_hdr("data/hdr/grace_cross.hdr".to_string());
-        let black_tex = box Image::new(1, 1);
-        //let mat = Arc::new(DiffuseTex::new(black_tex.as_ref(), Some(hdr_img.as_ref()) ));
+        let hdr_img: Arc<Tex<Color>> = Arc::new(load_hdr("data/hdr/grace_cross.hdr".to_string()) :Image);
+        let black_tex: Arc<Tex<Color>> = Arc::new(Image::new(1, 1));
+        let mat = Arc::new(DiffuseTex::new(black_tex, Some(hdr_img) ));
         let cube_size = 1000.0;
-        // let mut cube = Cube::new(Point3f::new(0.0, 0.0, 0.0),
-        //                      (cube_size, cube_size, cube_size));
 
         // let mat = Arc::new(DiffuseTex::new(lifetime_hack(black_tex.as_ref()), 
         //                                    Some(lifetime_hack(hdr_img.as_ref())) ));
         //                                    //None));
-        let mat = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE)));
+        //let mat = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE)));
 
-        // for (_, m) in cube.materials.iter_mut() {
-        //     *m = mat.clone();
-        // }
         let f03 = 1.0 / 3.0;
         let f06 = 2.0 / 3.0;
         let mut tex_uv = BTreeMap::new();
@@ -67,17 +61,6 @@ impl Envmap {
         tex_uv.insert(CubeSide::Front,  [(f03, 0.5), (f03, 0.75), (f06, 0.75), (f06, 0.5)]);
         tex_uv.insert(CubeSide::Back,   [(f06, 0.25), (f06, 0.0), (f03, 0.0), (f03, 0.25)]);
 
-        // let mesh = box cube.build(
-        //     true, 
-        //     |side, v| {
-        //         let uv = *tex_uv.get(&side).unwrap();
-        //         [
-        //             TexturedVertex::new(v[0], Point2::new(uv[0].0, 1.0 - uv[0].1)),
-        //             TexturedVertex::new(v[1], Point2::new(uv[1].0, 1.0 - uv[1].1)),
-        //             TexturedVertex::new(v[2], Point2::new(uv[2].0, 1.0 - uv[2].1)),
-        //             TexturedVertex::new(v[3], Point2::new(uv[3].0, 1.0 - uv[3].1)),
-        //         ]
-        //    });
         let mesh = box Cube::build(
             Point3f::new(0.0, 0.0, 0.0),
             Vector3f::new(cube_size, cube_size, cube_size),
@@ -91,7 +74,7 @@ impl Envmap {
                 }
             },
             |_| mat.clone(),
-            |_| (30, 30),
+            |_| (1, 1),
             true);
 
 
@@ -99,10 +82,8 @@ impl Envmap {
 
         
         let mut envmap = Self {
-            //room: spheres::Room::new(),
-            hdr_img,
-            black_tex,
-            //envbox: cube,
+            // hdr_img,
+            // black_tex,
             envbox_mesh: mesh,
             envbox_polygons: polygons,
             sphere: Sphere::new(Point3f::new(0.0, 0.0, 0.0), 

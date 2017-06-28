@@ -229,10 +229,18 @@ pub trait ColorBlend<T: ColorChannel> {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
 }
 
-pub trait Pixel<R> where R: FixedSizeArray<Self::Channel> + Copy {
+pub trait Pixel<R>: Sync + Send
+    where R: RawColor<Self::Channel>,
+{
     type Channel: ColorChannel;
     type Color: Copy + ColorBlend<Self::Channel> + From<R> + Into<R> + Default;
 }
+
+pub trait RawColor<Ch>: FixedSizeArray<Ch> + Copy + Sync + Send {}
+
+impl<T, Ch> RawColor<Ch> for T
+    where T: FixedSizeArray<Ch> + Copy + Sync + Send,
+          Ch: ColorChannel { }
 
 pub trait ChannelCast<T: ColorChannel>: ColorChannel {
     fn cast_from(other: T) -> Self;
@@ -651,8 +659,8 @@ impl_from_self!(Rgb, u8, f32, r, g, b);
 impl_from_self!(Rgb, f32, u8, r, g, b);
 impl_from_self!(Rgb, f32, f64, r, g, b);
 impl_from_self!(Rgb, f64, f32, r, g, b);
-// impl_from_self!(Rgb, f64, u8, r, g, b);
-// impl_from_self!(Rgb, u8, f64, r, g, b);
+impl_from_self!(Rgb, f64, u8, r, g, b);
+impl_from_self!(Rgb, u8, f64, r, g, b);
 impl_from_other!(Rgb, Rgba, r, g, b);
 impl_from_other!(Rgb, Luma, luma, luma, luma);
 impl_from_other!(Rgb, LumaA, luma, luma, luma);
@@ -677,6 +685,10 @@ impl_into_arr!(Rgba, [T; 3], r, g, b);
 impl_into_arr!(Rgba, [T; 4], r, g, b, a);
 impl_from_self!(Rgba, u8, f32, r, g, b, a);
 impl_from_self!(Rgba, f32, u8, r, g, b, a);
+impl_from_self!(Rgba, f32, f64, r, g, b, a);
+impl_from_self!(Rgba, f64, f32, r, g, b, a);
+impl_from_self!(Rgba, f64, u8, r, g, b, a);
+impl_from_self!(Rgba, u8, f64, r, g, b, a);
 impl_from_other_a!(Rgba, Rgb, r, g, b);
 impl_from_other_a!(Rgba, Luma, luma, luma, luma);
 impl_from_other!(Rgba, LumaA, luma, luma, luma, a);
@@ -701,6 +713,10 @@ impl_into_arr!(Luma, [T; 1], luma);
 impl_into_arr_a!(Luma, [T; 2], luma);
 impl_from_self!(Luma, u8, f32, luma);
 impl_from_self!(Luma, f32, u8, luma);
+impl_from_self!(Luma, f32, f64, luma);
+impl_from_self!(Luma, f64, f32, luma);
+impl_from_self!(Luma, f64, u8, luma);
+impl_from_self!(Luma, u8, f64, luma);
 impl_from_other!(Luma, LumaA, luma);
 impl_from_scalar!(Luma, luma);
 impl_asref!(Luma, [T; 1]);
@@ -724,6 +740,10 @@ impl_into_arr!(LumaA, [T; 1], luma);
 impl_into_arr!(LumaA, [T; 2], luma, a);
 impl_from_self!(LumaA, u8, f32, luma, a);
 impl_from_self!(LumaA, f32, u8, luma, a);
+impl_from_self!(LumaA, f32, f64, luma, a);
+impl_from_self!(LumaA, f64, f32, luma, a);
+impl_from_self!(LumaA, f64, u8, luma, a);
+impl_from_self!(LumaA, u8, f64, luma, a);
 impl_from_other_a!(LumaA, Luma, luma);
 impl_from_scalar_a!(LumaA, luma);
 impl_asref!(LumaA, [T; 2]);

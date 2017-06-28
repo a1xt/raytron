@@ -1,9 +1,10 @@
-use core::array::FixedSizeArray;
 use std::marker::PhantomData;
 use utils::{clamp};
-use color::{Pixel};
+use color::{Pixel, RawColor};
+use std::rc::Rc;
+use std::sync::Arc;
 
-pub trait Tex<C>: Sync {
+pub trait Tex<C>: Sync + Send {
     fn new(width: usize, height: usize) -> Self where Self: Sized;
     fn pixel(&self, i: usize, j: usize) -> C;
     fn set_pixel(&mut self, i: usize, j: usize, p: C);
@@ -13,14 +14,14 @@ pub trait Tex<C>: Sync {
 }
 
 #[derive(Clone, Debug)]
-pub struct Texture<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> {
+pub struct Texture<P: Pixel<R>, R: RawColor<P::Channel>> {
     data: Vec<R>,
     width: usize,
     height: usize,
     _marker: PhantomData<P>,
 }
 
-impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
+impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
 
     pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::with_capacity(width * height);
@@ -84,8 +85,8 @@ impl<P: Pixel<R>, R: FixedSizeArray<P::Channel> + Copy> Texture<P, R>  {
 }
 
 impl<P, R, C> Tex<C> for Texture<P, R> 
-    where P: Pixel<R> + Sync, 
-          R: FixedSizeArray<P::Channel> + Copy + Sync,
+    where P: Pixel<R>, 
+          R: RawColor<P::Channel>,
           C: Into<P::Color>,
           P::Color: Into<C>
 {
@@ -112,5 +113,67 @@ impl<P, R, C> Tex<C> for Texture<P, R>
     #[inline]
     fn sample(&self, u: f32, v: f32) -> C {
         self.sample(u, v).into()
+    }
+}
+
+impl<'a, P, R, C> AsRef<Tex<C> + 'a> for Texture<P, R>
+    where P: Pixel<R> + 'a, 
+          R: RawColor<P::Channel> + 'a,
+          C: Into<P::Color> + 'a,
+          P::Color: Into<C> + 'a
+{
+    #[inline]
+    fn as_ref(&self) -> &(Tex<C> + 'a) {
+        self
+    }
+}
+
+impl<'a, P, R, C> AsMut<Tex<C> + 'a> for Texture<P, R>
+    where P: Pixel<R> + 'a, 
+          R: RawColor<P::Channel> + 'a,
+          C: Into<P::Color> + 'a,
+          P::Color: Into<C> + 'a
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+        self
+    }
+}
+
+impl<'s, 'a: 's, C> AsRef<Tex<C> + 'a> for &'s (Tex<C> + 'a) {
+    #[inline]
+    fn as_ref(&self) -> &(Tex<C> + 'a) {
+        *self
+    }
+}
+
+impl<'s, 'a: 's, C> AsMut<Tex<C> + 'a> for &'s mut (Tex<C> + 'a) {
+    #[inline]
+    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+        *self
+    }
+}
+
+impl<'a, P, R, C> AsRef<Tex<C> + 'a> for Box<Texture<P, R>>
+    where P: Pixel<R> + 'a, 
+          R: RawColor<P::Channel> + 'a,
+          C: Into<P::Color> + 'a,
+          P::Color: Into<C> + 'a
+{
+    #[inline]
+    fn as_ref(&self) -> &(Tex<C> + 'a) {
+        &**self
+    }
+}
+
+impl<'a, P, R, C> AsMut<Tex<C> + 'a> for Box<Texture<P, R>>
+    where P: Pixel<R> + 'a, 
+          R: RawColor<P::Channel> + 'a,
+          C: Into<P::Color> + 'a,
+          P::Color: Into<C> + 'a
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+        &mut **self
     }
 }

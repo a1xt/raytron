@@ -257,31 +257,50 @@ pub mod material {
             BsdfRef::Ref(&self.bsdf)
         }
     }
-
-    pub struct DiffuseTex<'a, T: 'a + Tex<Color>> {
-        pub albedo: &'a T,
-        pub radiance: Option<&'a T>,
+    use std::marker::PhantomData;
+    pub struct DiffuseTex<'a, T, C>
+        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+              Color: From<C>,
+              Rgb<Real>: From<C>,
+              C: 'a + Send + Sync,
+    {
+        pub albedo: T,
+        pub radiance: Option<T>,
+        _marker_r: PhantomData<&'a (Tex<Color> + 'a)>,
+        _marker_c: PhantomData<C>,
     }
 
-    impl<'a, T: 'a + Tex<Color>> DiffuseTex<'a, T> {
-        pub fn new(albedo: &'a T, radiance: Option<&'a T>) -> Self {
+    impl<'a, T, C> DiffuseTex<'a, T, C> 
+        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+              Color: From<C>,
+              Rgb<Real>: From<C>,
+              C: 'a + Send + Sync,
+    {
+        pub fn new(albedo: T, radiance: Option<T>) -> Self {
             Self {
                 albedo,
                 radiance,
+                _marker_r: PhantomData,
+                _marker_c: PhantomData,
             }
         }
     }
 
-    impl<'a, T: 'a + Tex<Color>> Material<TexturedVertex> for DiffuseTex<'a, T> {
+    impl<'a, T, C> Material<TexturedVertex> for DiffuseTex<'a, T, C>
+        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+              Color: From<C>,
+              Rgb<Real>: From<C>,
+              C: 'a + Send + Sync,
+    {
         fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
             let uv = v.uv;
-            let albedo = self.albedo.sample(uv.x, uv.y);
-            let radiance = self.radiance.map(|e| e.sample(uv.x, uv.y).into());
+            let albedo = self.albedo.as_ref().sample(uv.x, uv.y);
+            let radiance = self.radiance.as_ref().map(|e| e.as_ref().sample(uv.x, uv.y).into());
             BsdfRef::Shared(Arc::new(Diffuse::new(albedo.into(), radiance)))
         }
 
         fn total_radiance(&self, v0: &TexturedVertex, v1: &TexturedVertex, v2: &TexturedVertex) -> Option<Color> {
-            if let Some(e_tex) = self.radiance {
+            if let Some(e_tex) = self.radiance.as_ref() {
                 let dt = consts::TEXTURE_INTEGRAL_STEP;
                 let da: Real = 2.0 * (math::triangle_area(&v0.position(), &v1.position(), &v2.position()) * dt * dt);
                 let mut sum: Rgb<Real> = color::BLACK.into();
@@ -295,7 +314,7 @@ pub mod material {
                             let us = u - dt * 0.25;
                             let vs = v - dt * 0.25;
                             let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
-                            let e = e_tex.sample(p.uv.x, p.uv.y);
+                            let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
                             sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
                             cl_area += 0.5 * da;
                         }
@@ -303,7 +322,7 @@ pub mod material {
                             let us = u - dt * 0.75;
                             let vs = v - dt * 0.75;
                             let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
-                            let e = e_tex.sample(p.uv.x, p.uv.y);
+                            let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
                             sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
                             cl_area += 0.5 * da;
                         }
