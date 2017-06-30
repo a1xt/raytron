@@ -726,6 +726,20 @@ impl_sub!(Luma, luma);
 impl_mul!(Luma, luma);
 impl_div!(Luma, luma);
 
+macro_rules! luma_to_scalar {
+    ($t:ident) => {
+        impl<C: ColorChannel + ChannelCast<$t>> From<Luma<C>> for $t {
+            fn from(other: Luma<C>) -> Self {
+                other.luma.cast_into()
+            }
+        }
+    }
+}
+
+luma_to_scalar!(u8);
+luma_to_scalar!(f32);
+luma_to_scalar!(f64);
+
 
 
 impl_color!(LumaA, luma, a);
