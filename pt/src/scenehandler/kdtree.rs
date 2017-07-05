@@ -59,7 +59,7 @@ pub struct KdTree<'a, T>
 {
     head: Node<'a, T>,
     depth: usize,
-    //bbox: Aabb3,
+    bbox: Aabb3,
 }
 
 impl<'a, T> KdTree<'a, T>
@@ -79,21 +79,17 @@ impl<'a, T> KdTree<'a, T>
 
         KdTree {
             head,
-            depth
+            depth,
+            bbox,
         }
     }
 
     pub fn traverse_iter(&self, ray: &Ray3f) -> TraverseIter<T> {
-        let bbox = match self.head {
-            Node::Leaf(_, ref bbox) => bbox,
-            Node::Tree(_, _, ref node_data) => &node_data.bbox,
-        };
-        if let Some(t) = intersection_aabb(&bbox, ray) {
+        if let Some(t) = intersection_aabb(&self.bbox, ray) {
             TraverseIter {
                 ray: *ray,
                 nodes: {
                     let mut v = Vec::with_capacity(self.depth + 1);
-                    //let mut v = Vec::with_capacity(KDTREE_DEPTH_MAX);
                     v.push((&self.head, t));
                     v
                 }
@@ -113,7 +109,7 @@ impl<'a, T> KdTree<'a, T>
 
 #[derive(Copy, Clone, Debug)]
 struct NodeData{
-    pub bbox: Aabb3,
+    //pub bbox: Aabb3,
     pub split: (usize, Real),
 }
 
@@ -121,7 +117,7 @@ impl NodeData {
     pub fn new(aabb: Aabb3, split_plane: (usize, Real)) -> NodeData {
         assert!(split_plane.0 < 3);
         Self {
-            bbox: aabb,
+            //bbox: aabb,
             split: split_plane,
         }
     }
@@ -131,19 +127,17 @@ enum Node<'a, T>
     where T: HasBounds + ?Sized + 'a
 {
     Tree(Box<Node<'a, T>>, Box<Node<'a, T>>, NodeData),
-    Leaf(Vec<&'a T>, Aabb3),
+    Leaf(Vec<&'a T>),
 }
 
 impl<'a, T> Node<'a, T>
     where T: HasBounds + ?Sized + 'a
 {
     pub fn build(objs: Vec<(Aabb3, &'a T)>, setup: &KdTreeSetup, self_bbox: &Aabb3, depth: usize) -> (Self, usize) {
-        //println!("build node start:");
         let splits_num = setup.splits_num;
         let sah = &setup.sah;
         let mut split = (Real::max_value(), (0, 0.0), (*self_bbox, 0), (*self_bbox, 0));
         for i in 0..3 {
-            //println!(" - {} axis:", i);
             // search split plane
             let mut bins_l = Vec::with_capacity(splits_num);
             let mut bins_h = Vec::with_capacity(splits_num);
@@ -196,7 +190,7 @@ impl<'a, T> Node<'a, T>
                 })
                 .min_by(|&(ref sah0, _, _), &(ref sah1, _, _)| sah0.partial_cmp(sah1).unwrap()).unwrap();
 
-            // calc full sah_i
+            // calculate full sah_i
             let mut split_pos_left = *self_bbox.maxs();
             split_pos_left[i] = split_pos;
             let mut split_pos_right = *self_bbox.mins();
@@ -207,10 +201,6 @@ impl<'a, T> Node<'a, T>
             let n_left = bins_l[bin_ix];
             let n_right = bins_h[bin_ix];
             let sah_i = sah.eval((&bbox_left, n_left), (&bbox_right, n_right), self_bbox);
-
-            // println!(" -- sah of {} axis: {}", i, sah_i);
-            // println!("    n_left: {}, area: {}", n_left, bbox_left.volume());
-            // println!("    n_right: {}, area: {}", n_right, bbox_right.volume());
 
             if i == 0 {
                 split = (sah_i, (i, split_pos), (bbox_left, n_left), (bbox_right, n_right)); 
@@ -261,9 +251,8 @@ impl<'a, T> Node<'a, T>
             for &(_,  o) in objs.iter() {
                 leaf_objs.push(o);
             }
-            //println!(" -- leaf size: {}", leaf_objs.len());
 
-            (Node::Leaf(leaf_objs, *self_bbox), depth)
+            (Node::Leaf(leaf_objs), depth)
         }  
         
 
@@ -307,7 +296,7 @@ impl<'a, T> Node<'a, T>
             if leaf_objs.len() > 100 {
                 println!(" -- leaf objs num: {}", leaf_objs.len());
             }
-            Node::Leaf(leaf_objs, *self_bbox)
+            Node::Leaf(leaf_objs)
         }
     }
 
@@ -354,7 +343,7 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
                         self.nodes.push((fst_node, (t_min, t_max)));
                     }                    
                 },
-                &Node::Leaf(ref objs, _) => {
+                &Node::Leaf(ref objs) => {
                     return Some((objs, t_min, t_max));
                 },
             }
