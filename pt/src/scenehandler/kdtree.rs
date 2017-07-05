@@ -6,7 +6,7 @@ use std::borrow::Borrow;
 use std::cmp::max;
 use std::sync::Arc;
 use {SurfacePoint};
-use utils::consts::POSITION_EPSILON;
+use utils::consts;
 use super::{LightSourcesHandler, UniformSampler, LuminairesSampler};
 
 pub const KDTREE_DEPTH_MAX: usize = 512;
@@ -30,8 +30,8 @@ impl KdTreeSetup {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Sah {
-    cost_t: Real,
-    cost_i: Real,
+    pub cost_t: Real,
+    pub cost_i: Real,
 }
 
 impl Sah {
@@ -43,7 +43,10 @@ impl Sah {
     }
 
     pub fn eval(&self, (bbox0, num0): (&Aabb3, usize), (bbox1, num1): (&Aabb3, usize), bbox: &Aabb3) -> Real {
-        self.cost_t + self.cost_i * (bbox0.surface_area() * num0 as Real + bbox1.surface_area() * num1 as Real) / bbox.surface_area()
+        self.cost_t
+        + self.cost_i 
+            * (bbox0.volume() * num0 as Real + bbox1.volume() * num1 as Real) 
+            / bbox.volume()
     }
 
     pub fn eval_short(&self, (l0, num0): (Real, usize), (l1, num1): (Real, usize)) -> Real {
@@ -70,7 +73,7 @@ impl<'a, T> KdTree<'a, T>
         }
 
 
-        let (head, depth) = Node::build(objs, &setup, &bbox, Real::max_value(), 1);
+        let (head, depth) = Node::build(objs, &setup, &bbox, 1);
         // let head = Node::build_median(objs, &bbox, 0, setup.max_depth);
         // let depth = setup.max_depth;
 
@@ -102,6 +105,10 @@ impl<'a, T> KdTree<'a, T>
             }
         }
     }
+
+    pub fn depth(&self) -> usize {
+        self.depth
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -130,11 +137,13 @@ enum Node<'a, T>
 impl<'a, T> Node<'a, T>
     where T: HasBounds + ?Sized + 'a
 {
-    pub fn build(objs: Vec<(Aabb3, &'a T)>, setup: &KdTreeSetup, self_bbox: &Aabb3, parent_sah: Real, depth: usize) -> (Self, usize) {
+    pub fn build(objs: Vec<(Aabb3, &'a T)>, setup: &KdTreeSetup, self_bbox: &Aabb3, depth: usize) -> (Self, usize) {
+        //println!("build node start:");
         let splits_num = setup.splits_num;
         let sah = &setup.sah;
         let mut split = (Real::max_value(), (0, 0.0), (*self_bbox, 0), (*self_bbox, 0));
         for i in 0..3 {
+            //println!(" - {} axis:", i);
             // search split plane
             let mut bins_l = Vec::with_capacity(splits_num);
             let mut bins_h = Vec::with_capacity(splits_num);
@@ -146,9 +155,12 @@ impl<'a, T> Node<'a, T>
             let pos_min = self_bbox.mins()[i];
             let pos_max = self_bbox.maxs()[i];
             let pos_step = (pos_max - pos_min) / ((splits_num + 1) as Real);
+            if pos_step < consts::REAL_EPSILON {
+                continue;
+            }
             for &(ref aabb, _) in objs.iter() {
-                let ix_l = (aabb.mins()[i] - pos_min) / pos_step;
-                let ix_h = splits_num as Real - ((pos_max - aabb.maxs()[i]) / pos_step);
+                let ix_l: Real = (aabb.mins()[i] - pos_min) / pos_step;
+                let ix_h: Real = splits_num as Real - ((pos_max - aabb.maxs()[i]) / pos_step);
 
                 let il = if ix_l < 0.0 {
                     0usize
@@ -195,6 +207,11 @@ impl<'a, T> Node<'a, T>
             let n_left = bins_l[bin_ix];
             let n_right = bins_h[bin_ix];
             let sah_i = sah.eval((&bbox_left, n_left), (&bbox_right, n_right), self_bbox);
+
+            // println!(" -- sah of {} axis: {}", i, sah_i);
+            // println!("    n_left: {}, area: {}", n_left, bbox_left.volume());
+            // println!("    n_right: {}, area: {}", n_right, bbox_right.volume());
+
             if i == 0 {
                 split = (sah_i, (i, split_pos), (bbox_left, n_left), (bbox_right, n_right)); 
             } else {
@@ -207,7 +224,7 @@ impl<'a, T> Node<'a, T>
 
         // build node
         let (sah_min, split_plane, (bbox_left, n_left), (bbox_right, n_right)) = split;
-        if sah_min < parent_sah {
+        if sah_min < setup.sah.cost_i * (objs.len() as Real) {
             let mut objs_l = Vec::with_capacity(n_left);
             let mut objs_r = Vec::with_capacity(n_right);
             for &(ref bbox, obj) in objs.iter() {
@@ -218,25 +235,42 @@ impl<'a, T> Node<'a, T>
                     objs_r.push((*bbox, obj));
                 }
             }
-            let (node_left, depth_left) = Self::build(objs_l, setup, &bbox_left, sah_min, depth + 1);
-            let (node_right, depth_right) = Self::build(objs_r, setup, &bbox_right, sah_min, depth + 1);
+            let (node_left, depth_left) = Self::build(objs_l, setup, &bbox_left, depth + 1);
+            let (node_right, depth_right) = Self::build(objs_r, setup, &bbox_right, depth + 1);
 
-            (Node::Tree(box node_left, box node_right, NodeData::new(*self_bbox, split_plane)), max(depth_left, depth_right))
+            (Node::Tree(
+                box node_left,
+                box node_right,
+                NodeData::new(*self_bbox, split_plane)), 
+            max(depth_left, depth_right))
+            
         } else {
+
+            if objs.len() > 200 {
+                println!("kd-tree warning: num of items in leaf: {}", objs.len());
+                println!("    leaf items num: {}", objs.len());
+                println!("    min sah: {}", sah_min);
+                println!("    parent sah: {}", setup.sah.cost_i * (objs.len() as Real));
+                println!("    n_left: {}, area: {}", n_left, bbox_left.volume());
+                println!("    n_right: {}, area: {}", n_right, bbox_right.volume());
+                println!("    parent area: {}", self_bbox.volume());
+                
+            }
             
             let mut leaf_objs = Vec::with_capacity(objs.len());
             for &(_,  o) in objs.iter() {
                 leaf_objs.push(o);
             }
+            //println!(" -- leaf size: {}", leaf_objs.len());
 
             (Node::Leaf(leaf_objs, *self_bbox), depth)
-        }      
+        }  
         
 
     }
 
     pub fn build_median(objs: Vec<(Aabb3, &'a T)>, self_bbox: &Aabb3, depth: usize, max_depth: usize) -> Self {
-        if depth < max_depth {
+        if depth < max_depth && objs.len() > 5 {
             let (axis, side_len) = (0..3).map(|i| (i, self_bbox.maxs()[i] - self_bbox.mins()[i]))
                                          .max_by(|&(_, l0), &(_, l1)| l0.partial_cmp(&l1).unwrap()).unwrap();
             let split_pos =  0.5 * (self_bbox.maxs()[axis] + self_bbox.mins()[axis]);
@@ -269,6 +303,9 @@ impl<'a, T> Node<'a, T>
             let mut leaf_objs = Vec::with_capacity(objs.len());
             for &(_,  o) in objs.iter() {
                 leaf_objs.push(o);
+            }
+            if leaf_objs.len() > 100 {
+                println!(" -- leaf objs num: {}", leaf_objs.len());
             }
             Node::Leaf(leaf_objs, *self_bbox)
         }
@@ -360,6 +397,10 @@ impl<'a, T, S> KdTreeS<'a, T, S>
         }
 
     }
+
+    pub fn depth(&self) -> usize {
+        self.kdtree.depth()
+    }
 }
 
 impl<'a, T, S> SceneHandler for KdTreeS<'a, T, S>
@@ -389,7 +430,7 @@ impl<'a, T, S> SceneHandler for KdTreeS<'a, T, S>
         }
 
         if let Some(ref mut sp) = res {
-            sp.position += sp.normal * POSITION_EPSILON;    
+            sp.position += sp.normal * consts::POSITION_EPSILON;    
         }
         res
     }
