@@ -9,7 +9,7 @@ use scenes::spheres;
 use pt::traits::{SceneHandler, Renderer};
 use pt::renderer::PathTracer;
 use pt::scenehandler::{ShapeList, KdTreeS};
-use pt::{Image, Texture, Tex, Mesh, Polygon, RenderSettings};
+use pt::{Image, Texture, Tex, Mesh, Polygon, PolygonS, RenderSettings};
 use pt::bsdf::{Phong, Diffuse};
 use pt::sphere::Sphere;
 use pt::color;
@@ -17,10 +17,12 @@ use pt::color::{Color, Rgb};
 use image::hdr;
 use scenes::{Cube, Quad, CubeSide};
 use pt::material::{DiffuseTex, DiffuseMat};
-use pt::vertex::TexturedVertex;
+use pt::vertex::{TbnVertex, TexturedVertex};
 use std::sync::Arc;
+use std::io::Write;
 use std::collections::BTreeMap;
-use pt::math::{Point3f, Point2, Vector3f};
+use pt::math::{Real, Point3f, Vector2, Vector3f};
+use pt::math;
 use pt::scenehandler::{ShapeListBuilder, UniformSampler, LinearSampler};
 use pt::scenehandler::kdtree::{KdTreeSetup, Sah};
 use pt::traits::{BoundedSurface, Surface};
@@ -36,12 +38,15 @@ pub struct Envmap {
     //envbox: Cube<'static, TexturedVertex>,
     envbox_mesh: Box<Mesh<'static, TexturedVertex>>,
     envbox_polygons: Vec<Polygon<'static, TexturedVertex>>,
+    model_polygons: Vec<PolygonS<'static, TbnVertex>>,
     sphere: Sphere,
 }
 
 impl Envmap {
     fn new() -> Self {
-        let hdr_img: Arc<Tex<Color>> = Arc::new(load_hdr("data/hdr/grace_cross.hdr".to_string()) :Image);
+        //let hdr_img_path = "data/hdr/grace_cross.hdr".to_string();
+        let hdr_img_path = "data/hdr/rnl_cross.hdr".to_string();
+        let hdr_img: Arc<Tex<Color>> = Arc::new(load_hdr(hdr_img_path) :Image);
         let black_tex: Arc<Tex<Color>> = Arc::new(Image::new(1, 1));
         let mat = Arc::new(DiffuseTex::new(black_tex, Some(hdr_img) ));
         let cube_size = 1000.0;
@@ -61,35 +66,55 @@ impl Envmap {
         tex_uv.insert(CubeSide::Front,  [(f03, 0.5), (f03, 0.75), (f06, 0.75), (f06, 0.5)]);
         tex_uv.insert(CubeSide::Back,   [(f06, 0.25), (f06, 0.0), (f03, 0.0), (f03, 0.25)]);
 
-        let mesh = box Cube::build(
+        let envbox_mesh = box Cube::build(
             Point3f::new(0.0, 0.0, 0.0),
             Vector3f::new(cube_size, cube_size, cube_size),
             |side, quad| {
-                let uv = *tex_uv.get(&side).unwrap(); 
+                let uv = *tex_uv.get(&side).unwrap();
                 Quad {
-                    v0: TexturedVertex::new(quad.v0, Point2::new(uv[0].0, 1.0 - uv[0].1)),
-                    v1: TexturedVertex::new(quad.v1, Point2::new(uv[1].0, 1.0 - uv[1].1)),
-                    v2: TexturedVertex::new(quad.v2, Point2::new(uv[2].0, 1.0 - uv[2].1)),
-                    v3: TexturedVertex::new(quad.v3, Point2::new(uv[3].0, 1.0 - uv[3].1)),         
+                    v0: TexturedVertex::new(quad.v0, Vector2::new(uv[0].0, uv[0].1)),
+                    v1: TexturedVertex::new(quad.v1, Vector2::new(uv[1].0, uv[1].1)),
+                    v2: TexturedVertex::new(quad.v2, Vector2::new(uv[2].0, uv[2].1)),
+                    v3: TexturedVertex::new(quad.v3, Vector2::new(uv[3].0, uv[3].1)),         
                 }
             },
             |_| mat.clone(),
             |_| (1, 1),
             true);
 
+        print!("creating envbox polygons ...");
+        std::io::stdout().flush();
+        let envbox_polygons = unsafe{ ::std::mem::transmute(envbox_mesh.polygons()) };
+        println!("done!");
 
-        let polygons = unsafe{ ::std::mem::transmute(mesh.polygons()) };
+        let model_mat = load_pbr("data/rusted_iron2/".to_string());
+        //let model_mat = load_pbr("data/rusted_iron/".to_string());
+        //let model_mat = Arc::new(DiffuseMat::new(color::WHITE, None));
+        let scale = 0.4;
+        //let scale = Vector3f::new(15.0, 15.0, 15.0);
+        let dpos = Vector3f::new(0.0, -20.0, 0.0);
+        let model_mesh = load_obj_pbr(
+            "data/teapot.obj".to_string(),
+            //"data/mitsuba.obj".to_string(),
+            |_| model_mat.clone(),
+            |pos| pos * scale + dpos)
+            .into_iter()
+            .fold(Mesh::new(), |mut base, mut mesh| { base.merge(&mut mesh); base });
+        
+        
+        let model_polygons = model_mesh.to_polygons();
 
         
         let mut envmap = Self {
             // hdr_img,
             // black_tex,
-            envbox_mesh: mesh,
-            envbox_polygons: polygons,
+            envbox_mesh,
+            envbox_polygons,
             sphere: Sphere::new(Point3f::new(0.0, 0.0, 0.0), 
                                 15.0,
                                 Arc::new(Diffuse::new(color::WHITE, None))),
                                 //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 100.0)))
+            model_polygons,
         };
         envmap
     }
@@ -130,17 +155,22 @@ impl AppState for Envmap {
         // box scene.to_shape_list()
 
         let pol_iter = self.envbox_polygons.iter().map(|r| r as &BoundedSurface);
-        let it = pol_iter.chain(once(&self.sphere as &BoundedSurface));
-        let kdtree_setup = KdTreeSetup::new(32, 128, Sah::new(1.0, 1.0));
+        //let it = pol_iter.chain(once(&self.sphere as &BoundedSurface));
+        let model_iter = self.model_polygons.iter().map(|r| r as &BoundedSurface);
+        let it = pol_iter.chain(model_iter);
+        let kdtree_setup = KdTreeSetup::new(300, 32, Sah::new(1.0, 1.0));
+
+        print!("building kd-tree ...");
+        std::io::stdout().flush();
         let kdtree = box KdTreeS::<BoundedSurface, LinearSampler>::new(it, kdtree_setup);
-        println!("kdtree builded");
+        println!("done! (depth: {})", kdtree.depth());
         kdtree
     }
 
     fn post_process(&self, img: &mut Image) {
         let t = 1.125; 
         //tone_mapping_exp(img, t);
-        //gamma_encoding(img);
+        gamma_encoding(img);
     }
 
     fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {

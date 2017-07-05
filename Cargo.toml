@@ -14,13 +14,13 @@ gfx_window_glutin = { git = 'https://github.com/gfx-rs/gfx' }
 gfx = { git = 'https://github.com/gfx-rs/gfx' }
 
 glutin = "*"
-#genmesh = "*"
 image = "*"
 nalgebra = "0.10.*"
 obj-rs = "*"
 pathtracer = {path = "pt", version = "*"}
 time = "0.1.*"
 rand = "*"
+tobj = "*"
 
 # [profile.release]
 # opt-level = 3

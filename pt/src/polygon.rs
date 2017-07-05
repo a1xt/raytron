@@ -1,4 +1,4 @@
-pub use self::vertex::{Vertex, BaseVertex, TexturedVertex};
+pub use self::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
 pub use self::material::{Material, DiffuseMat, DiffuseTex};
 
 use std::sync::Arc;
@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
 use {Surface, SurfacePoint, BsdfRef};
 use aabb::{Aabb3, HasBounds};
+use utils::consts;
 
 use color::{self, Color};
 use rand::{self, Closed01};
@@ -15,7 +16,7 @@ pub type PolygonR<'a, R> = Polygon<'a, R, &'a R>;
 pub type PolygonS<'a, R> = Polygon<'a, R, R>;
 
 #[derive(Clone)]
-pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a, {
+pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a, {
     pub v0: V,
     pub v1: V,
     pub v2: V,
@@ -24,7 +25,7 @@ pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + 
     _marker: PhantomData<R>,
 }
 
-impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     pub fn new (v0: V, v1: V, v2: V, mat: Arc<Material<R> + 'a>) -> Self {
         let e = mat.total_radiance(v0.as_ref(), v2.as_ref(), v1.as_ref());
         Polygon {
@@ -62,7 +63,7 @@ impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clon
 
 }
 
-impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
         if let Some((t, (u, v))) = math::intersection_triangle(&self.v0().position(), 
                                                                &self.v1().position(), 
@@ -71,7 +72,7 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
                                                                true)
         {
             let pos = ray.origin + ray.dir * t;
-            let norm = self.normal_at(&pos);
+            let norm = self.mat.normal(self.v0(), self.v1(), self.v2(), (1.0 - u - v, v, u)); // FIXME
             Some((
                 t,
                 SurfacePoint {
@@ -98,10 +99,9 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
     }
 
     #[inline]
-    default fn normal_at(&self, _: &Point3f) -> Vector3f {
-        let a = self.v1().position() - self.v0().position();
-        let b = self.v2().position() - self.v0().position();
-        b.cross(&a).normalize()
+    default fn normal_at(&self, p: &Point3f) -> Vector3f {
+        unimplemented!()
+        //V::normal(self.v0(), self.v1(), self.v2(), p)
     }
 
     #[inline]
@@ -122,12 +122,13 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
         let Closed01(r2) = rand::random::<Closed01<Real>>();
         let r1s = r1.sqrt();
         
-        //P = (1 − √r1) A + √r1(1 − r2) B + √r1r2 C
+        //P = (1 − √r1) A + √r1(1 − r2) B + √r1r2 C -- uniform sampling
         let pos = a * (1.0 - r1s) + b * (r1s * (1.0 - r2)) + c * (r1s * r2);
         let w = 1.0 - r1s;
         let u = r1s * (1.0 - r2);
         let v = r1s * r2;
-        let normal = self.normal_at(pos.as_point());
+        //let normal = self.normal_at(pos.as_point());
+        let normal = self.mat.normal(self.v0(), self.v1(), self.v2(), (w, v, u));
 
         let pdf = 1.0 / self.area();
 
@@ -145,7 +146,7 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
     }
 }
 
-impl<'a, R, V> HasBounds for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {  
+impl<'a, R, V> HasBounds for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {  
     fn aabb(&self) -> Aabb3 {
         use utils::consts::POSITION_EPSILON;
         let p0 = self.v0().position();
@@ -166,28 +167,28 @@ impl<'a, R, V> HasBounds for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R>
     }
 }
 
-impl<'a, R, V> AsRef<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> AsRef<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         self
     }
 }
 
-impl<'a, R, V> AsMut<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> AsMut<Surface + 'a> for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         self
     }
 }
 
-impl<'a, R, V> AsRef<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> AsRef<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     #[inline]
     fn as_ref(&self) -> &(Surface + 'a) {
         &**self
     }
 }
 
-impl<'a, R, V> AsMut<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Clone + Copy + 'a {
+impl<'a, R, V> AsMut<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     #[inline]
     fn as_mut(&mut self) -> &mut (Surface + 'a) {
         &mut **self
@@ -195,15 +196,16 @@ impl<'a, R, V> AsMut<Surface + 'a> for Box<Polygon<'a, R, V>> where R: Vertex + 
 }
 
 pub mod material {
-    use bsdf::{Diffuse, Phong, BsdfRef};
-    use super::vertex::{Vertex, BaseVertex, TexturedVertex};
+    use std::marker::PhantomData;
+    use bsdf::{Diffuse, Phong, CookTorrance, BsdfRef};
+    use super::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
     use color::{self, Color, Rgb, ColorChannel};
     use texture::{Tex, Texture};
     use std::sync::Arc;
     use math;
-    use math::{Real, Norm};
+    use math::{Real, Norm, Dot, Cross, Vector3f};
     use utils::consts;
-    use num::Float;
+    use num::{Float, NumCast};
 
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
@@ -211,7 +213,12 @@ pub mod material {
         fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
             None
         }
+
+        fn normal(&self, v0: &V, v1: &V, v2: &V, wuv: (Real, Real, Real)) -> Vector3f {
+            math::triangle_normal(&v0.position(), &v1.position(), &v2.position())
+        }
     }
+
 
     pub struct DiffuseMat {
         pub bsdf: Diffuse,
@@ -240,6 +247,8 @@ pub mod material {
         }
     }
 
+
+
     pub struct PhongMat {
         pub bsdf: Phong,
     }
@@ -257,7 +266,9 @@ pub mod material {
             BsdfRef::Ref(&self.bsdf)
         }
     }
-    use std::marker::PhantomData;
+    
+
+
     pub struct DiffuseTex<'a, T, C>
         where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
               Color: From<C>,
@@ -331,24 +342,168 @@ pub mod material {
                     u += dt;
                 }
                 let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
-                println!("texture integral calculated:");
-                println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
-                println!("  - texture total radiance: {:?}", sum);
+                // println!("texture integral calculated:");
+                // println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
+                // println!("  - texture total radiance: {:?}", sum);
                 Some(sum.into())
             } else {
                 None
             }
         }
     }
+
+    pub struct PbrMat {
+        pub bsdf: CookTorrance,
+    }
+
+
+    impl PbrMat {
+        pub fn new<C, F>(base_color: C, roughness: F, specular: F, metal: F) -> Self
+            where C: Into<Rgb<Real>>,
+                  F: Float,
+        {
+            use utils::clamp;
+            use color::ColorClamp;
+
+            let roughness = clamp(<Real as NumCast>::from(roughness).unwrap_or(1.0), 0.0, 1.0);
+            let spec = clamp(<Real as NumCast>::from(specular).unwrap_or(1.0), 0.0, 1.0);
+            let metal = clamp(<Real as NumCast>::from(metal).unwrap_or(1.0), 0.0, 1.0);
+            let c = (base_color.into() :Rgb<Real>).clamp();
+
+            let albedo = c * (1.0 - metal);
+            let f0 = c * metal * spec;
+
+            Self {
+                bsdf: CookTorrance::new(albedo, f0, roughness * roughness),
+            }
+        }
+    }
+
+    impl<V: Vertex> Material<V> for PbrMat {
+        fn bsdf<'s>(&'s self, _: &V) -> BsdfRef<'s> {
+            BsdfRef::Ref(&self.bsdf)
+        }
+
+        fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+            None
+        }
+    }
+
+
+    pub struct PbrTex<'a, Tx3, Tx1, C3, C1>
+        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+              C3: Into<Rgb<Real>> + Into<Color>,
+              Real: From<C1>,
+              C3: 'a + Send + Sync,
+              C1: 'a + Send + Sync,
+    {
+        pub base_color: Tx3,
+        pub normal: Tx3,
+        pub roughness: Tx1,
+        pub specular: Tx1,
+        pub metal: Tx1,        
+        _marker_t3: PhantomData<&'a (Tex<C3> + 'a)>,
+        _marker_t1: PhantomData<&'a (Tex<C1> + 'a)>,
+        _marker_c3: PhantomData<C3>,
+        _marker_c1: PhantomData<C1>,
+    }
+
+    impl<'a, Tx3, Tx1, C3, C1> PbrTex<'a, Tx3, Tx1, C3, C1> 
+        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+              C3: Into<Rgb<Real>> + Into<Color>,
+              Real: From<C1>,
+              C3: 'a + Send + Sync,
+              C1: 'a + Send + Sync,
+    {
+        pub fn new(base_color: Tx3, normal: Tx3, roughness: Tx1, specular: Tx1, metal: Tx1) -> Self {
+            Self {
+                base_color,
+                normal,
+                roughness,
+                specular,
+                metal,
+                _marker_t3: PhantomData,
+                _marker_t1: PhantomData,
+                _marker_c3: PhantomData,
+                _marker_c1: PhantomData,
+            }
+        }
+    }
+
+    impl<'a, Tx3, Tx1, C3, C1> Material<TbnVertex> for PbrTex<'a, Tx3, Tx1, C3, C1>
+        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+              C3: Into<Rgb<Real>> + Into<Color>,
+              Real: From<C1>,
+              C3: 'a + Send + Sync,
+              C1: 'a + Send + Sync,
+    {
+        fn bsdf<'s>(&'s self, v: &TbnVertex) -> BsdfRef<'s> {
+            let basecolor: Rgb<Real> = self.base_color.as_ref().sample(v.uv.x, v.uv.y).into();
+            let roughness: Real = self.roughness.as_ref().sample(v.uv.x, v.uv.y).into();
+            let spec: Real = self.specular.as_ref().sample(v.uv.x, v.uv.y).into();
+            let metal: Real = self.metal.as_ref().sample(v.uv.x, v.uv.y).into();
+
+            let albedo = basecolor * (1.0 - metal);
+            let f0 = basecolor * metal * spec;
+
+            BsdfRef::Shared(Arc::new(CookTorrance::new(albedo, f0, roughness * roughness)))
+        }
+
+        fn total_radiance(&self, _: &TbnVertex, _: &TbnVertex, _: &TbnVertex) -> Option<Color> {
+            None
+        }
+
+        fn normal(
+            &self,
+            v0: &TbnVertex,
+            v1: &TbnVertex,
+            v2: &TbnVertex,
+            wuv: (Real, Real, Real))
+            -> Vector3f
+        {
+            let p = Vertex::interpolate(v0, v1, v2, wuv);
+            let mut rgb_normal: Rgb<Real> = self.normal.as_ref().sample(p.uv.x, p.uv.y).into();
+            rgb_normal = rgb_normal * 2.0 - Rgb::<Real>::from(1.0);
+            let tex_normal = Vector3f::new(rgb_normal.r, rgb_normal.g, rgb_normal.b).normalize();
+
+            // let duv1 = v1.uv - v0.uv;
+            // let duv2 = v2.uv - v0.uv;
+            // let (t, b) = math::calc_tangent(
+            //     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
+            //     (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real));
+
+            // let n = t.cross(&b).normalize();
+
+            let t = p.tangent;
+            let b = p.bitangent;
+            let n = p.normal;
+
+            let normal = Vector3f::new(
+                tex_normal.x * t.x + tex_normal.y * b.x + tex_normal.z * n.x,
+                tex_normal.x * t.y + tex_normal.y * b.y + tex_normal.z * n.y,
+                tex_normal.x * t.z + tex_normal.y * b.z + tex_normal.z * n.z);
+
+            normal.normalize()
+
+            // let a = v1.position - v0.position;
+            // let b = v2.position - v0.position;
+            // b.cross(&a).normalize()
+        }
+    }
 }
 
 pub mod vertex {
-    use math::{Vector3f, Point2, Point3f, Real};
+    use math::{Vector3f, Vector2, Point3f, Real};
+    use math::{Cross, Norm};
+    use math;
     use color::{Color};
+    use utils::consts;
 
     pub trait Vertex: Copy + Clone + Sync + Send {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self where Self: Sized;
-        //fn normal(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Vector3f;
         fn position(&self) -> Point3f;
     }
 
@@ -402,14 +557,14 @@ pub mod vertex {
     #[repr(C)]
     pub struct TexturedVertex {
         pub position: Point3f,
-        pub uv: Point2<f32>,
+        pub uv: Vector2<f32>,
     }
 
     impl TexturedVertex {
-        pub fn new(pos: Point3f, uv: Point2<f32>) -> Self {
+        pub fn new(position: Point3f, uv: Vector2<f32>) -> Self {
             Self {
-                position: pos,
-                uv: uv,
+                position,
+                uv,
             }
         }
     }
@@ -421,10 +576,64 @@ pub mod vertex {
             let pos = v0.position.to_vector() * w + 
                       v1.position.to_vector() * u + 
                       v2.position.to_vector() * v;
-            let tex_uv = v0.uv.to_vector() * (w as f32) + 
-                         v1.uv.to_vector() * (u as f32) +
-                         v2.uv.to_vector() * (v as f32);
-            TexturedVertex::new(pos.to_point(), tex_uv.to_point())
+            let tex_uv = v0.uv * (w as f32) + 
+                         v1.uv * (u as f32) +
+                         v2.uv * (v as f32);
+
+            TexturedVertex::new(pos.to_point(), tex_uv)
+        }
+
+        #[inline]
+        fn position(&self) -> Point3f {
+            self.position
+        }
+    }
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    #[repr(C)]
+    pub struct TbnVertex {
+        pub position: Point3f,
+        pub tangent: Vector3f,
+        pub bitangent: Vector3f,
+        pub normal: Vector3f,
+        pub uv: Vector2<f32>,
+    }
+
+    impl TbnVertex {
+        pub fn new(
+            position: Point3f,
+            tangent: Vector3f,
+            bitangent: Vector3f,
+            normal: Vector3f,
+            uv: Vector2<f32>)
+            -> Self
+        {
+            Self {
+                position,
+                tangent,
+                bitangent,
+                normal,
+                uv,
+            }
+        }
+    }
+
+    impl_asref_for_vertex!(TbnVertex);
+
+    impl Vertex for TbnVertex {
+        fn interpolate(v0: &Self, v1: &Self, v2: &Self, (w, u, v): (Real, Real, Real)) -> Self {
+            let pos = v0.position.to_vector() * w + 
+                      v1.position.to_vector() * u + 
+                      v2.position.to_vector() * v;
+            let uv = v0.uv * (w as f32) + 
+                         v1.uv * (u as f32) +
+                         v2.uv * (v as f32);
+
+            let t = (v0.tangent * w + v1.tangent * u + v2.tangent * v).normalize();
+            let b = (v0.bitangent * w + v1.bitangent * u + v2.bitangent * v).normalize();
+            let n = (v0.normal * w  + v1.normal * u + v2.normal * v).normalize();
+
+            TbnVertex::new(pos.to_point(), t, b, n, uv)
         }
 
         #[inline]

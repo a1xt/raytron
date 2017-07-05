@@ -85,10 +85,18 @@ pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray
     Some((t, (u, v)))
 }
 
+#[inline]
 pub fn triangle_area(v0: &Point3f, v1: &Point3f, v2: &Point3f) -> Real {
     let b = *v1 - *v0;
     let c = *v2 - *v0;
     0.5 * b.cross(&c).norm()
+}
+
+#[inline]
+pub fn triangle_normal(v0: &Point3f, v1: &Point3f, v2: &Point3f) -> Vector3f {
+    let a = *v1 - *v0;
+    let b = *v2 - *v0;
+    b.cross(&a).normalize()
 }
 
 use rand;
@@ -170,6 +178,24 @@ pub fn reflect_vec(vec: &Vector3f, base: &Vector3f) -> Vector3f {
     let h = base * 2.0 * cos_theta;
     let res = h - vec;
     res
+}
+
+pub fn calc_tangent(
+    (e1, du1, dv1): (&Vector3f, Real, Real), 
+    (e2, du2, dv2): (&Vector3f, Real, Real)) 
+    -> (Vector3f, Vector3f)
+{
+    let d = 1.0 / (du1 * dv2 - du2 * dv1);
+    let t = d * Vector3f::new(
+        dv2 * e1.x - dv1 * e2.x,
+        dv2 * e1.y - dv1 * e2.y,
+        dv2 * e1.z - dv1 * e2.z);
+    let b = d * Vector3f::new(
+        du1 * e2.x - du2 * e1.x,
+        du1 * e2.y - du2 * e1.y,
+        du1 * e2.z - du2 * e1.z);
+
+    (t.normalize(), b.normalize())
 }
 
 

@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![feature(type_ascription)]
 
 extern crate pt_app;
 extern crate gfx;
@@ -24,6 +25,7 @@ use gfx::format::Float;
 
 //use pt_app::pt::rand;
 use pt_app::pt::color;
+use pt_app::pt::{Color};
 use std::string::{String, ToString};
 
 use glutin::{Event, ElementState, VirtualKeyCode};
@@ -82,15 +84,17 @@ fn main () {
     
 
 
-    use pt_app::pt::math::{Point3f, Vector3f, Point2};
+    use pt_app::pt::math::{Point3f, Vector3f, Point2, Vector2};
     use pt_app::pt::texture::Texture;
     use pt_app::pt::color::{self, Rgb, ColorBlend};
     use pt_app::pt::polygon::vertex::{TexturedVertex, BaseVertex };
     use pt_app::pt::polygon::material::{DiffuseTex};
     use std::sync::Arc;
 
-    let diftex_w = 128usize;
-    let diftex_h = 128usize;
+    // let diftex_w = 128usize;
+    // let diftex_h = 128usize;
+    let diftex_w = 1usize;
+    let diftex_h = 1usize;
     let mut dif_tex: Texture<Rgb, [f32; 3]> = Texture::new(diftex_w, diftex_h);
     for j in 0..dif_tex.height() {
         for i in 0..dif_tex.width() {
@@ -101,8 +105,8 @@ fn main () {
             let u = (i as f32) / (diftex_w - 1) as f32;
             let v = (j as f32) / (diftex_h - 1) as f32;
             let c = (u0v0 * (1.0 - u) + u1v0 * u) * (1.0 - v) + (u0v1 * (1.0 - u) + u1v1 * u) * v;
-            dif_tex.set_pixel(i, j, c);
-            //dif_tex.set_pixel(i, j, color::WHITE);
+            //dif_tex.set_pixel(i, j, c);
+            dif_tex.set_pixel(i, j, color::WHITE);
         }
     }
 
@@ -113,7 +117,7 @@ fn main () {
     //     TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
     // ];
 
-    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None));
+    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None): DiffuseTex<_, Color>);
 
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
@@ -126,42 +130,41 @@ fn main () {
     // let cube_mesh = cube.build_bv(false);
     // let polygons = cube_mesh.polygons();
 
-    // let plane_mesh = Plane::build(
-    //     Point3f::new(0.0, 0.0, 0.0),
-    //     Point3f::new(0.0, 0.0, 1.0),
-    //     Vector3f::new(0.0, 1.0, 0.0),
-    //     (20.0, 20.0),
-    //     difftex_mat.clone(),
-    //     Some((5, 5)),
-    //     None,
-    //     |quad| {
-    //         Quad {
-    //             v0: TexturedVertex::new(quad.v0, Point2::new(0.0, 0.0)),
-    //             v1: TexturedVertex::new(quad.v1, Point2::new(0.0, 1.0)),
-    //             v2: TexturedVertex::new(quad.v2, Point2::new(1.0, 1.0)),
-    //             v3: TexturedVertex::new(quad.v3, Point2::new(1.0, 0.0)),
-    //         }
-    //     });
-  
-
-    // let polygons = plane_mesh.polygons();
-    let green_mat = Arc::new(DiffuseMat::new(color::Color::new(0.5, 0.75, 0.5), None));
-    let cube_mesh = Cube::build(
+    let plane_mesh = Plane::build(
         Point3f::new(0.0, 0.0, 0.0),
-        Vector3f::new(20.0, 20.0, 20.0),
-        |_, quad| { 
+        Point3f::new(0.0, 0.0, 1.0),
+        Vector3f::new(0.0, 1.0, 0.0),
+        (40.0, 40.0),
+        difftex_mat.clone(),
+        Some((1, 1)),
+        None,
+        |quad| {
             Quad {
-                v0: BaseVertex::new(quad.v0),
-                v1: BaseVertex::new(quad.v1),
-                v2: BaseVertex::new(quad.v2),
-                v3: BaseVertex::new(quad.v3),
+                v0: TexturedVertex::new(quad.v0, Vector2::new(0.0, 0.0)),
+                v1: TexturedVertex::new(quad.v1, Vector2::new(0.0, 1.0)),
+                v2: TexturedVertex::new(quad.v2, Vector2::new(1.0, 1.0)),
+                v3: TexturedVertex::new(quad.v3, Vector2::new(1.0, 0.0)),
             }
-        },
-        |_| { green_mat.clone() },
-        |_| (1, 1),
-        false);
+        });
+    let polygons = plane_mesh.polygons();
 
-    let polygons = cube_mesh.polygons();
+    // let green_mat = Arc::new(DiffuseMat::new(color::Color::new(0.5, 0.75, 0.5), None));
+    // let cube_mesh = Cube::build(
+    //     Point3f::new(0.0, 0.0, 0.0),
+    //     Vector3f::new(20.0, 20.0, 20.0),
+    //     |_, quad| { 
+    //         Quad {
+    //             v0: BaseVertex::new(quad.v0),
+    //             v1: BaseVertex::new(quad.v1),
+    //             v2: BaseVertex::new(quad.v2),
+    //             v3: BaseVertex::new(quad.v3),
+    //         }
+    //     },
+    //     |_| { green_mat.clone() },
+    //     |_| (1, 1),
+    //     false);
+
+    // let polygons = cube_mesh.polygons();
 
     // let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, None);
     // let polygons = cube_mesh.polygons();
@@ -174,9 +177,9 @@ fn main () {
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
 
-    // for p in polygons.iter() {
-    //     scene_builder.add_shape(p);
-    // }
+    for p in polygons.iter() {
+        scene_builder.add_shape(p);
+    }
 
     let scene = Box::new(scene_builder.to_shape_list());
 

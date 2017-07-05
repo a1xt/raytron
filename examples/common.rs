@@ -5,19 +5,28 @@ pub extern crate glutin;
 pub extern crate time;
 pub extern crate image;
 pub extern crate rand;
+pub extern crate tobj;
 
 pub use pt_app::*;
 pub use pt_app::camera_controller::{CameraController, FPSCameraController};
 
 use pt_app::{App};
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::{Image, RenderSettings, Tex};
-use pt_app::pt::color::{self, Color, Rgb};
-use pt_app::pt::traits::{Renderer, SceneHandler};
+use pt_app::pt::{Image, RenderSettings, Tex, Texture, Mesh};
+use pt_app::pt::color::{self, Color, Rgb, Luma};
+use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
+use pt_app::pt::material::{PbrTex};
+use pt_app::pt::vertex::TbnVertex;
+use pt_app::pt::math::{Real, Norm, Cross, Vector3f, Point3f, Vector2};
+use pt_app::pt::math;
+use pt_app::pt::utils::consts;
 use image::hdr;
 
 use std;
 use std::mem;
+use std::sync::Arc;
+use std::path::Path;
+use std::io::Write;
 use std::string::{String, ToString};
 use gfx::format::{Formatted, ChannelTyped, Rgba32F};
 use gfx::{Factory, Device};
@@ -395,27 +404,188 @@ pub fn gamma_decoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     }
 }
 
+macro_rules! mono_texture {
+    ($color:expr) => {{
+        use pt_app::pt::texture::Texture;
+        let mut tex = Texture::new(1, 1);
+        tex.set_pixel(0, 0, $color);
+        tex
+    }};
+}
+
 pub fn load_hdr<T: Tex<Rgb>>(path: String) -> T {
     use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
-    //let img_path = "data/hdr/memorial.hdr".to_string();
-    //let img_file = File::open("data/hdr/grace_probe.hdr").unwrap();
+
+    print!("loading hdr image ...");
+    std::io::stdout().flush();
+
     let img_file = File::open(path).unwrap();
     let hdrdecoder = hdr::HDRDecoder::new(BufReader::new(img_file)).unwrap();
     let hdr_meta = hdrdecoder.metadata();
-    println!("img_width = {}", hdr_meta.width);
-    println!("img_height = {}", hdr_meta.height);
     let mut img = T::new(hdr_meta.width as usize, hdr_meta.height as usize);
     let hdr_data = hdrdecoder.read_image_hdr().unwrap();
+    let h = img.height();
     for j in 0..(hdr_meta.height as usize) {
         for i in 0..(hdr_meta.width as usize) {
             let p = hdr_data[j * (hdr_meta.width as usize) + i];
             let c = Rgb::new(p[0], p[1], p[2]);
-            img.set_pixel(i, j, c.into());
+            img.set_pixel(i, h - j - 1, c.into());
         }
     }
+    println!("done! (width: {}, height: {}", hdr_meta.width, hdr_meta.height);
     img        
+}
+
+pub fn load_texture<C, T: Tex<C>, F>(path: String, map_color: F) -> T
+    where C: Into<Rgb<Real>> + Into<Color>,
+          F: Fn(image::Rgba<u8>) -> C,
+{
+    use image::GenericImage;
+    use std::path::Path;
+
+    print!("loading texture: `{}` ... ", &path);
+    let _ = std::io::stdout().flush();
+
+    let img = image::open(&Path::new(&path)).unwrap();
+    let mut tex = T::new(img.width() as usize, img.height() as usize);
+    let h = tex.height();
+    for j in 0..img.height() {
+        for i in 0..img.width() {
+            let p = img.get_pixel(i, j);
+            let c = map_color(p);
+            tex.set_pixel(i as usize, h - (j as usize) - 1, c);
+        }
+    }
+    println!("done!");
+    tex
+}
+
+pub fn load_texture_rgb64<T: Tex<Rgb<Real>>>(path: String, srgb_encoded: bool) -> T {
+    load_texture::<Rgb<f64>, _, _>(path, move |c| {
+        let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into() :Rgb<f64>;
+        if srgb_encoded {
+            p.r = p.r.powf(2.2);
+            p.g = p.g.powf(2.2);
+            p.b = p.b.powf(2.2);
+        }
+        p
+    })
+}
+
+pub fn load_texture_luma64<T: Tex<Luma<Real>>>(path: String, srgb_encoded: bool) -> T {
+    load_texture::<Luma<f64>, _, _>(path, move |c| {
+        let mut p = Luma::<u8>::new(c[0]).into() :Luma<f64>;
+        if srgb_encoded {
+            p.luma = p.luma.powf(2.2);
+        }
+        p
+    })
+}
+
+type PbrTexMat = PbrTex<'static, Texture<Rgb<Real>, [Real; 3]>, Texture<Luma<Real>, [Real; 1]>, Rgb<Real>, Luma<Real>>;
+pub fn load_pbr(path: String) -> Arc<PbrTexMat> {
+    use std::sync::Arc;
+
+    let basecolor_tex: Texture<Rgb<f64>, [f64; 3]> = load_texture_rgb64(path.clone() + "basecolor.png", true);
+    let normal_tex: Texture<Rgb<f64>, [f64; 3]> = load_texture_rgb64(path.clone() + "normal.png", false);
+    let roughness_tex: Texture<Luma<f64>, [f64; 1]> = load_texture_luma64(path.clone() + "roughness.png", false);
+    let metal_tex: Texture<Luma<f64>, [f64; 1]> = load_texture_luma64(path.clone() + "metalness.png", false);
+    let spec_tex: Texture<Luma<f64>, [f64; 1]> = mono_texture!(Luma::from(1.0));
+
+    let pbrtex_mat: Arc<PbrTex<_, _, Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
+        basecolor_tex,
+        normal_tex,
+        roughness_tex,
+        spec_tex,
+        metal_tex));
+
+    pbrtex_mat
+}
+
+pub fn load_obj_pbr<'a, M, F>(
+    path: String,
+    mut material: M,
+    mut pos_transform: F)
+    -> Vec<Mesh<'a, TbnVertex>>
+    where M: FnMut(String) -> Arc<Material<TbnVertex> + 'a>,
+          F: FnMut(Point3f) -> Point3f,
+{
+    println!("loading model: `{}` ... ", &path);
+    let _ = std::io::stdout().flush();
+
+    let (models, _) = tobj::load_obj(&Path::new(&path)).unwrap();
+    let mut mvec = Vec::with_capacity(models.len());
+    let mut total_faces = 0;
+    let mut total_vertices = 0;
+
+    for (i, tobj::Model{ mesh: model_mesh, name: mesh_name}) in models.into_iter().enumerate() {
+        let mut vnum = 0;
+        let mut fnum = 0;
+        let mut mesh = Mesh::new();
+        let mat = material(mesh_name.clone());
+        if !model_mesh.texcoords.is_empty() {
+            let mut vertices = Vec::with_capacity(model_mesh.indices.len() / 3);
+
+            for (pos, uv) in model_mesh.positions.chunks(3).zip(model_mesh.texcoords.chunks(2)) {
+                let p = Point3f::new(pos[0] as Real, pos[1] as Real, pos[2] as Real);
+                vertices.push(TbnVertex::new(
+                    pos_transform(p),
+                    math::zero(),
+                    math::zero(),
+                    math::zero(),
+                    Vector2::new(uv[0], uv[1]),
+                ));
+            }
+
+            for ix in model_mesh.indices.chunks(3) {
+                let v0 = vertices[ix[0] as usize];
+                let v1 = vertices[ix[2] as usize];
+                let v2 = vertices[ix[1] as usize];
+                let duv1 = v1.uv - v0.uv;
+                let duv2 = v2.uv - v0.uv;
+                let (t, b) = math::calc_tangent(
+                    (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
+                    (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real));
+                let n = t.cross(&b).normalize();
+
+                vertices[ix[0] as usize].tangent += t;
+                vertices[ix[0] as usize].bitangent += b;
+                vertices[ix[0] as usize].normal += n;
+
+                vertices[ix[1] as usize].tangent += t;
+                vertices[ix[1] as usize].bitangent += b;
+                vertices[ix[1] as usize].normal += n;
+                
+                vertices[ix[2] as usize].tangent += t;
+                vertices[ix[2] as usize].bitangent += b;
+                vertices[ix[2] as usize].normal += n;
+            }
+
+            for mut v in vertices {
+                v.tangent = v.tangent.normalize();
+                v.bitangent = v.bitangent.normalize();
+                v.normal = v.normal.normalize();
+                mesh.add_vertex(v);
+                vnum += 1;
+            }
+
+            for ix in model_mesh.indices.chunks(3) {
+                mesh.add_face([ix[0], ix[2], ix[1]], mat.clone()).unwrap();
+                fnum += 1;
+            }
+            
+            println!(" -- mesh[{}] loaded - name: {}, vertices: {}, faces: {}", i, mesh_name, vnum, fnum);
+            total_faces += fnum;
+            total_vertices += vnum;
+        } else {
+            println!(" -- warning! [{}] mesh is skipped because texture coodinates are not found", mesh_name);
+        }
+        mvec.push(mesh);
+    }
+    println!("done! (total vertices: {}, total faces: {})", total_vertices, total_faces);
+    mvec
 }
 
 pub fn cast_slice<A: Copy, B: Copy>(slice: &[A]) -> &[B] {
