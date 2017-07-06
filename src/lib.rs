@@ -21,7 +21,7 @@ use gfx::memory::Usage;
 use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
 use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
 use gfx::Bundle;
-use glutin::{CursorState, GlRequest, Api};
+use glutin::{CursorState, Event, GlRequest, Api};
 
 use pt::math::{Real};
 
@@ -41,10 +41,11 @@ pub struct App<D: Device, F: Factory<D::Resources>> {
     device: D,
     factory: F,
     window: glutin::Window,
+    events_loop: glutin::EventsLoop,
     color_out: RenderTargetView<<D as Device>::Resources, ColorFormat>,
     depth_out: DepthStencilView<<D as Device>::Resources, DepthFormat>,
 
-    events: Vec<glutin::Event>,
+    events: Vec<glutin::WindowEvent>,
     cam_ctrl: FPSCameraController,
     fsquad: Bundle<D::Resources, pipe::Data<D::Resources>>
 }
@@ -63,8 +64,9 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
             .with_dimensions(screen_width, screen_height)
             .with_gl(gl_version);
 
+        let events_loop = glutin::EventsLoop::new();
         let (window, device, mut factory, rt_view, depth_view) =
-            gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder);
+            gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder, &events_loop);
 
         let encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
@@ -109,6 +111,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
 
         App {
             encoder: encoder,
+            events_loop,
             window: window,
             device: device,
             factory: factory,
@@ -133,15 +136,19 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         let mut quite: bool = false;
 
         self.events.clear();
-        for event in self.window.poll_events() {
-            self.events.push(event);
+        {
+            let events = &mut self.events;
+            self.events_loop.poll_events(|event| {
+                let Event::WindowEvent{event: e, ..} = event;
+                events.push(e);
+            });
         }
 
-        use glutin::{Event, VirtualKeyCode};
+        use glutin::{WindowEvent, VirtualKeyCode};
         for event in self.events.iter() {
             match *event {
-                Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) |
-                Event::Closed => {
+                WindowEvent::KeyboardInput(_, _, Some(VirtualKeyCode::Escape), _) |
+                WindowEvent::Closed => {
                     quite = true;
                     break;
                 },
@@ -224,7 +231,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         &mut self.window
     }
 
-    pub fn events(&self) -> &[glutin::Event] {
+    pub fn events(&self) -> &[glutin::WindowEvent] {
         self.events.as_slice()
     }
 

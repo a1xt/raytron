@@ -136,7 +136,8 @@ impl Materials {
         let path = "data/rusted_iron/".to_string();
         //let path = "data/rusted_iron2/".to_string();
         //let path = "data/cement/".to_string();
-        let pbrtex_mat = load_pbr(path);
+        //let pbrtex_mat = load_pbr(path);
+        let pbrtex_mat = Arc::new(DiffuseMat::new(color::WHITE, None)); 
         
         let plane_mesh = Plane::build(
             // Point3f::new(0.0, 0.0, 0.0),

@@ -1,4 +1,4 @@
-use glutin::{Event, ElementState, VirtualKeyCode, MouseButton};
+use glutin::{WindowEvent, ElementState, VirtualKeyCode, MouseButton};
 use std::time;
 use std::time::Instant;
 use std::ops::{FnMut};
@@ -10,8 +10,8 @@ use fpscamera::{FPSCamera};
 
 
 pub trait CameraController {
-    fn on_frame<'b, 'a, 'c, I: Iterator<Item = &'a Event>>(&mut self,
-                                                       event_iter: I,
+    fn on_frame<'b, 'a, 'c, I: Iterator<Item = &'a WindowEvent>>(&mut self,
+                                                       WindowEvent_iter: I,
                                                        set_cursor_pos: &'b mut FnMut(i32, i32),
                                                        cur_locker: &'c mut FnMut(bool));
 }
@@ -106,8 +106,8 @@ impl FPSCameraController {
 }
 
 impl CameraController for FPSCameraController {
-    fn on_frame<'b, 'c, 'a, I: Iterator<Item = &'a Event>>(&mut self,
-                                                       event_iter: I,
+    fn on_frame<'b, 'c, 'a, I: Iterator<Item = &'a WindowEvent>>(&mut self,
+                                                       WindowEvent_iter: I,
                                                        set_cursor_pos: &'b mut FnMut(i32, i32),
                                                        cur_locker: &'c mut FnMut(bool)) {
         let now = Instant::now();
@@ -115,9 +115,9 @@ impl CameraController for FPSCameraController {
         let delta_time = dt.as_secs() as Real + 0.1e-8 * (dt.subsec_nanos() as Real);
         self.last_tp = now;
 
-        for event in event_iter {
-            match *event {
-                Event::KeyboardInput(el_state, _, Some(key)) => {
+        for WindowEvent in WindowEvent_iter {
+            match *WindowEvent {
+                WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                     let pressed = el_state == ElementState::Pressed;
                     match key {
                         VirtualKeyCode::W | VirtualKeyCode::Up => self.move_forward = pressed,
@@ -129,7 +129,7 @@ impl CameraController for FPSCameraController {
                         _ => (),
                     }
                 }
-                Event::MouseMoved(x, y) => {
+                WindowEvent::MouseMoved(x, y) => {
                     if self.cursor_locked {
                         let cx = self.cam.width() / 2;
                         let cy = self.cam.height() / 2;
@@ -142,7 +142,7 @@ impl CameraController for FPSCameraController {
                         set_cursor_pos(cx as i32, cy as i32);
                     }
                 }
-                Event::MouseInput(pressed, MouseButton::Right) => {
+                WindowEvent::MouseInput(pressed, MouseButton::Right) => {
                     self.cursor_locked = pressed == ElementState::Pressed; 
                     cur_locker(self.cursor_locked);            
                     set_cursor_pos((self.cam.width() / 2) as i32,

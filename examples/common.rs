@@ -31,7 +31,7 @@ use std::string::{String, ToString};
 use gfx::format::{Formatted, ChannelTyped, Rgba32F};
 use gfx::{Factory, Device};
 
-use glutin::{Event, ElementState, VirtualKeyCode};
+use glutin::{WindowEvent, ElementState, VirtualKeyCode};
 
 type GLFactory = gfx_gl::Factory;
 type GLDevice = gfx_gl::Device;
@@ -101,7 +101,7 @@ impl ExampleApp {
 
                     for event in ex_app.app.events().iter() {
                         match *event {
-                            Event::KeyboardInput(el_state, _, Some(key)) => {
+                            WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                                 let pressed = el_state == ElementState::Pressed;
                                 match key {
                                     VirtualKeyCode::R if pressed => {
