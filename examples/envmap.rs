@@ -9,7 +9,7 @@ use scenes::spheres;
 use pt::traits::{SceneHandler, Renderer};
 use pt::renderer::PathTracer;
 use pt::scenehandler::{ShapeList, KdTreeS};
-use pt::{Image, Texture, Tex, Mesh, Polygon, PolygonS, RenderSettings};
+use pt::{Image, Texture, TexView, Mesh, Polygon, PolygonS, RenderSettings};
 use pt::bsdf::{Phong, Diffuse};
 use pt::sphere::Sphere;
 use pt::color;
@@ -46,8 +46,8 @@ impl Envmap {
     fn new() -> Self {
         //let hdr_img_path = "data/hdr/grace_cross.hdr".to_string();
         let hdr_img_path = "data/hdr/rnl_cross.hdr".to_string();
-        let hdr_img: Arc<Tex<Color>> = Arc::new(load_hdr(hdr_img_path) :Image);
-        let black_tex: Arc<Tex<Color>> = Arc::new(Image::new(1, 1));
+        let hdr_img: Arc<TexView<Color>> = Arc::new(load_hdr(hdr_img_path) :Image);
+        let black_tex: Arc<TexView<Color>> = Arc::new(Image::new(1, 1));
         let mat = Arc::new(DiffuseTex::new(black_tex, Some(hdr_img) ));
         let cube_size = 1000.0;
 

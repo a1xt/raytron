@@ -28,7 +28,7 @@ use pt_app::pt::color;
 use pt_app::pt::{Color};
 use std::string::{String, ToString};
 
-use glutin::{Event, ElementState, VirtualKeyCode};
+use glutin::{WindowEvent, ElementState, VirtualKeyCode};
 
 //use pt_app::scenes::meshes::Cube;
 use pt_app::scenes::{Quad, Plane, Cube};
@@ -95,7 +95,7 @@ fn main () {
     // let diftex_h = 128usize;
     let diftex_w = 1usize;
     let diftex_h = 1usize;
-    let mut dif_tex: Texture<Rgb, [f32; 3]> = Texture::new(diftex_w, diftex_h);
+    let mut dif_tex: Texture<Rgb> = Texture::new(diftex_w, diftex_h);
     for j in 0..dif_tex.height() {
         for i in 0..dif_tex.width() {
             let u0v0 = color::YELLOW;
@@ -117,7 +117,7 @@ fn main () {
     //     TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
     // ];
 
-    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None): DiffuseTex<_, Color>);
+    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None) :DiffuseTex<Color, _>);
 
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
@@ -289,7 +289,7 @@ fn main () {
 
         for event in app.events().iter() {
             match *event {
-                Event::KeyboardInput(el_state, _, Some(key)) => {
+                WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                     let pressed = el_state == ElementState::Pressed;
                     match key {
                         VirtualKeyCode::R if pressed => {

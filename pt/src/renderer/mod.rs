@@ -4,8 +4,8 @@ pub mod dbgraycaster;
 pub use self::pathtracer::PathTracer;
 pub use self::dbgraycaster::DbgRayCaster;
 
-use traits::{RenderCamera, SceneHandler};
-use {RenderSettings, Image};
+use traits::{RenderCamera, SceneHandler, TexView};
+use {RenderSettings, Color};
 use std::sync::{Arc, Mutex};
 use std::ops::DerefMut;
 
@@ -14,9 +14,9 @@ use scoped_threadpool::{Pool};
 use self::inner::RendererHelper;
 
 mod inner {
-    use traits::{RenderCamera, SceneHandler};
+    use traits::{RenderCamera, SceneHandler, TexView};
     use math::{self, Ray3f, Point3f, Vector3f, Real, Norm};
-    use {Image, RenderSettings, Color};
+    use {RenderSettings, Color};
     use rand::{self, Closed01};
     use color;
     
@@ -43,14 +43,13 @@ mod inner {
             
         }
 
-        fn add_to_pixel(&self, c: &Color, pnum: f32, x: u32, y: u32, out_image: &mut Image) {
+        fn add_to_pixel(&self, c: &Color, pnum: f32, x: u32, y: u32, out_image: &mut TexView<Color>) {
             let mut pixel = out_image.pixel(x as usize, y as usize);
             pixel = pixel * (pnum - 1.0);
             pixel = pixel + *c;
             pixel = pixel * (1.0 / pnum);
             out_image.set_pixel(x as usize, y as usize, pixel);
         }
-        
     }
 
     pub struct CameraRayGenerator {
@@ -132,21 +131,21 @@ pub trait Renderer<S = SceneHandler, C = RenderCamera> : RendererHelper<S, C> + 
 
     fn pre_render(&mut self, scene: &S, camera: &C, setup: &RenderSettings);
 
-    fn render_scene(&mut self, scene: &S, camera: &C, setup: &RenderSettings, out_image: &mut Image) {
+    fn render_scene(&mut self, scene: &S, camera: &C, setup: &RenderSettings, out_image: &mut TexView<Color>) {
         self.pre_render(scene, camera, setup);
         for p in 0..setup.samples_per_pixel {
             self.render_pass(scene, camera, setup, p, out_image);
         }
     }
 
-    fn render_scene_threaded(&mut self, scene: &S, camera: &C, setup: &RenderSettings, out_image: &mut Image) {
+    fn render_scene_threaded(&mut self, scene: &S, camera: &C, setup: &RenderSettings, out_image: &mut TexView<Color>) {
         self.pre_render(scene, camera, setup);
         for p in 0..setup.samples_per_pixel {
             self.render_pass_threaded(scene, camera, setup, p, out_image);
         }
     }
 
-    fn render_pass(&self, scene: &S, camera: &C, setup: &RenderSettings, pass_num: u32, out_image: &mut Image) {
+    fn render_pass(&self, scene: &S, camera: &C, setup: &RenderSettings, pass_num: u32, out_image: &mut TexView<Color>) {
         let pnum: f32 = if pass_num == 0 {
             1.0
         } else {
@@ -162,7 +161,7 @@ pub trait Renderer<S = SceneHandler, C = RenderCamera> : RendererHelper<S, C> + 
         }
     }
 
-    fn render_pass_threaded(&self, scene: &S, camera: &C, setup: &RenderSettings, pass_num: u32, out_image: &mut Image) {
+    fn render_pass_threaded(&self, scene: &S, camera: &C, setup: &RenderSettings, pass_num: u32, out_image: &mut TexView<Color>) {
 
         let pnum: f32 = if pass_num == 0 {
             1.0
@@ -198,7 +197,7 @@ pub trait Renderer<S = SceneHandler, C = RenderCamera> : RendererHelper<S, C> + 
                     for j in 0..chunk_h {
                         for i in 0..chunk_w {
                             let c = chunk[(j * chunk_w + i) as usize];
-                            self.add_to_pixel(&c, pnum, offset_x + i, offset_y + j, img.deref_mut());
+                            self.add_to_pixel(&c, pnum, offset_x + i, offset_y + j, *img.deref_mut());
                         }
                     }
                 });

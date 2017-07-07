@@ -200,7 +200,7 @@ pub mod material {
     use bsdf::{Diffuse, Phong, CookTorrance, BsdfRef};
     use super::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
     use color::{self, Color, Rgb, ColorChannel};
-    use texture::{Tex, Texture};
+    use texture::{TexView, Texture};
     use std::sync::Arc;
     use math;
     use math::{Real, Norm, Dot, Cross, Vector3f};
@@ -269,20 +269,20 @@ pub mod material {
     
 
 
-    pub struct DiffuseTex<'a, T, C>
-        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+    pub struct DiffuseTex<'a, C, T = Texture<C>>
+        where T: 'a + AsRef<TexView<C> + 'a> + Send + Sync,
               Color: From<C>,
               Rgb<Real>: From<C>,
               C: 'a + Send + Sync,
     {
         pub albedo: T,
         pub radiance: Option<T>,
-        _marker_r: PhantomData<&'a (Tex<Color> + 'a)>,
+        _marker_r: PhantomData<&'a (TexView<Color> + 'a)>,
         _marker_c: PhantomData<C>,
     }
 
-    impl<'a, T, C> DiffuseTex<'a, T, C> 
-        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+    impl<'a, C, T> DiffuseTex<'a, C, T> 
+        where T: 'a + AsRef<TexView<C> + 'a> + Send + Sync,
               Color: From<C>,
               Rgb<Real>: From<C>,
               C: 'a + Send + Sync,
@@ -297,8 +297,8 @@ pub mod material {
         }
     }
 
-    impl<'a, T, C> Material<TexturedVertex> for DiffuseTex<'a, T, C>
-        where T: 'a + AsRef<Tex<C> + 'a> + Send + Sync,
+    impl<'a, C, T> Material<TexturedVertex> for DiffuseTex<'a, C, T>
+        where T: 'a + AsRef<TexView<C> + 'a> + Send + Sync,
               Color: From<C>,
               Rgb<Real>: From<C>,
               C: 'a + Send + Sync,
@@ -390,9 +390,9 @@ pub mod material {
     }
 
 
-    pub struct PbrTex<'a, Tx3, Tx1, C3, C1>
-        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
-              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+    pub struct PbrTex<'a, C3, C1, Tx3 = Texture<C3>, Tx1 = Texture<C1>>
+        where Tx3: 'a + AsRef<TexView<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<TexView<C1> + 'a> + Sync + Send,
               C3: Into<Rgb<Real>> + Into<Color>,
               Real: From<C1>,
               C3: 'a + Send + Sync,
@@ -403,15 +403,15 @@ pub mod material {
         pub roughness: Tx1,
         pub specular: Tx1,
         pub metal: Tx1,        
-        _marker_t3: PhantomData<&'a (Tex<C3> + 'a)>,
-        _marker_t1: PhantomData<&'a (Tex<C1> + 'a)>,
+        _marker_t3: PhantomData<&'a (TexView<C3> + 'a)>,
+        _marker_t1: PhantomData<&'a (TexView<C1> + 'a)>,
         _marker_c3: PhantomData<C3>,
         _marker_c1: PhantomData<C1>,
     }
 
-    impl<'a, Tx3, Tx1, C3, C1> PbrTex<'a, Tx3, Tx1, C3, C1> 
-        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
-              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+    impl<'a, C3, C1, Tx3, Tx1> PbrTex<'a, C3, C1, Tx3, Tx1> 
+        where Tx3: 'a + AsRef<TexView<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<TexView<C1> + 'a> + Sync + Send,
               C3: Into<Rgb<Real>> + Into<Color>,
               Real: From<C1>,
               C3: 'a + Send + Sync,
@@ -432,9 +432,9 @@ pub mod material {
         }
     }
 
-    impl<'a, Tx3, Tx1, C3, C1> Material<TbnVertex> for PbrTex<'a, Tx3, Tx1, C3, C1>
-        where Tx3: 'a + AsRef<Tex<C3> + 'a> + Sync + Send,
-              Tx1: 'a + AsRef<Tex<C1> + 'a> + Sync + Send,
+    impl<'a, C3, C1, Tx3, Tx1> Material<TbnVertex> for PbrTex<'a, C3, C1, Tx3, Tx1>
+        where Tx3: 'a + AsRef<TexView<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<TexView<C1> + 'a> + Sync + Send,
               C3: Into<Rgb<Real>> + Into<Color>,
               Real: From<C1>,
               C3: 'a + Send + Sync,

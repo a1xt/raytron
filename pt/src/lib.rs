@@ -45,7 +45,7 @@ pub use self::mesh::Mesh;
 pub use self::scenehandler::{ShapeList};
 pub use self::color::{Color, Image};
 pub use self::bsdf::BsdfRef;
-pub use self::texture::{Tex, Texture};
+pub use self::texture::{TexView, Texture};
 
 use self::math::{Point3f, Vector3f};
 

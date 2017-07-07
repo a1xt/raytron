@@ -4,24 +4,25 @@ use color::{Pixel, RawColor};
 use std::rc::Rc;
 use std::sync::Arc;
 
-pub trait Tex<C>: Sync + Send {
+pub trait TexView<P>: Sync + Send {
     fn new(width: usize, height: usize) -> Self where Self: Sized;
-    fn pixel(&self, i: usize, j: usize) -> C;
-    fn set_pixel(&mut self, i: usize, j: usize, p: C);
+    fn pixel(&self, i: usize, j: usize) -> P;
+    fn set_pixel(&mut self, i: usize, j: usize, p: P);
     fn width(&self) -> usize;
     fn height(&self) -> usize;
-    fn sample(&self, u: f32, v: f32) -> C;
+    fn sample(&self, u: f32, v: f32) -> P;
 }
 
 #[derive(Clone, Debug)]
-pub struct Texture<P: Pixel<R>, R: RawColor<P::Channel>> {
-    data: Vec<R>,
+//pub struct Texture<P: Pixel<R>, R: RawColor<P::Channel>> {
+pub struct Texture<P: Pixel> {
+    data: Vec<P::Raw>,
     width: usize,
     height: usize,
-    _marker: PhantomData<P>,
+    //_marker: PhantomData<P>,
 }
 
-impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
+impl<P: Pixel> Texture<P> {
 
     pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::with_capacity(width * height);
@@ -31,13 +32,13 @@ impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
         Texture::from_data(data, width, height)
     }
     
-    pub fn from_data(data: Vec<R>, width: usize, height: usize) -> Self {
+    pub fn from_data(data: Vec<P::Raw>, width: usize, height: usize) -> Self {
         assert!(data.len() == width * height);
         Texture {
             data,
             width,
             height,
-            _marker: PhantomData,
+            //_marker: PhantomData,
         }
     }
 
@@ -47,8 +48,13 @@ impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
     }
 
     #[inline]
-    pub fn pixel_raw(&self, i: usize, j: usize) -> &R {
+    pub fn pixel_raw(&self, i: usize, j: usize) -> &P::Raw {
         &self.data[self.width * j + i]
+    }
+
+    #[inline]
+    pub fn set_pixel_raw(&mut self, i: usize, j: usize, p: P::Raw) {
+        self.data[self.width * j + i] = p;
     }
 
     #[inline]
@@ -64,7 +70,7 @@ impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
     }
 
     #[inline]
-    pub fn as_slice(&self) -> &[R] {
+    pub fn as_slice(&self) -> &[P::Raw] {
         self.data.as_slice()
     }
 
@@ -84,23 +90,22 @@ impl<P: Pixel<R>, R: RawColor<P::Channel>> Texture<P, R>  {
     }
 }
 
-impl<P, R, C> Tex<C> for Texture<P, R> 
-    where P: Pixel<R>, 
-          R: RawColor<P::Channel>,
-          C: Into<P::Color>,
-          P::Color: Into<C>
+impl<P, R> TexView<P> for Texture<R> 
+    where R: Pixel,
+          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
     fn new(width: usize, height: usize) -> Self where Self: Sized {
         Texture::new(width, height)
     }
+
     #[inline]
-    fn pixel(&self, i: usize, j: usize) -> C {
-        self.pixel(i, j).into()
+    fn pixel(&self, i: usize, j: usize) -> P {
+        P::from(*self.pixel_raw(i, j))
     }
     #[inline]
-    fn set_pixel(&mut self, i: usize, j: usize, p: C) {
-        self.set_pixel(i, j, p.into());
+    fn set_pixel(&mut self, i: usize, j: usize, p: P) {
+        self.set_pixel_raw(i, j, p.into());
     }
     #[inline]
     fn width(&self) -> usize {
@@ -111,69 +116,61 @@ impl<P, R, C> Tex<C> for Texture<P, R>
         self.height
     }
     #[inline]
-    fn sample(&self, u: f32, v: f32) -> C {
-        self.sample(u, v).into()
+    fn sample(&self, u: f32, v: f32) -> P {
+        P::from(self.sample(u, v))
     }
 }
 
-impl<'a, P, R, C> AsRef<Tex<C> + 'a> for Texture<P, R>
-    where P: Pixel<R> + 'a, 
-          R: RawColor<P::Channel> + 'a,
-          C: Into<P::Color> + 'a,
-          P::Color: Into<C> + 'a
+impl<'a, R, P> AsRef<TexView<P> + 'a> for Texture<R>
+    where R: Pixel + 'a,
+          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
-    fn as_ref(&self) -> &(Tex<C> + 'a) {
+    fn as_ref(&self) -> &(TexView<P> + 'a) {
         self
     }
 }
 
-impl<'a, P, R, C> AsMut<Tex<C> + 'a> for Texture<P, R>
-    where P: Pixel<R> + 'a, 
-          R: RawColor<P::Channel> + 'a,
-          C: Into<P::Color> + 'a,
-          P::Color: Into<C> + 'a
+impl<'a, P, R> AsMut<TexView<P> + 'a> for Texture<R>
+    where R: Pixel + 'a,
+          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
-    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+    fn as_mut(&mut self) -> &mut (TexView<P> + 'a) {
         self
     }
 }
 
-impl<'s, 'a: 's, C> AsRef<Tex<C> + 'a> for &'s (Tex<C> + 'a) {
+impl<'s, 'a: 's, P> AsRef<TexView<P> + 'a> for &'s (TexView<P> + 'a) {
     #[inline]
-    fn as_ref(&self) -> &(Tex<C> + 'a) {
+    fn as_ref(&self) -> &(TexView<P> + 'a) {
         *self
     }
 }
 
-impl<'s, 'a: 's, C> AsMut<Tex<C> + 'a> for &'s mut (Tex<C> + 'a) {
+impl<'s, 'a: 's, C> AsMut<TexView<C> + 'a> for &'s mut (TexView<C> + 'a) {
     #[inline]
-    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+    fn as_mut(&mut self) -> &mut (TexView<C> + 'a) {
         *self
     }
 }
 
-impl<'a, P, R, C> AsRef<Tex<C> + 'a> for Box<Texture<P, R>>
-    where P: Pixel<R> + 'a, 
-          R: RawColor<P::Channel> + 'a,
-          C: Into<P::Color> + 'a,
-          P::Color: Into<C> + 'a
+impl<'a, P, R> AsRef<TexView<P> + 'a> for Box<Texture<R>>
+    where R: Pixel + 'a,
+          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
-    fn as_ref(&self) -> &(Tex<C> + 'a) {
+    fn as_ref(&self) -> &(TexView<P> + 'a) {
         &**self
     }
 }
 
-impl<'a, P, R, C> AsMut<Tex<C> + 'a> for Box<Texture<P, R>>
-    where P: Pixel<R> + 'a, 
-          R: RawColor<P::Channel> + 'a,
-          C: Into<P::Color> + 'a,
-          P::Color: Into<C> + 'a
+impl<'a, P, R> AsMut<TexView<P> + 'a> for Box<Texture<R>>
+    where R: Pixel + 'a,
+          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
-    fn as_mut(&mut self) -> &mut (Tex<C> + 'a) {
+    fn as_mut(&mut self) -> &mut (TexView<P> + 'a) {
         &mut **self
     }
 }

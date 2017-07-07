@@ -10,7 +10,7 @@ use scenes::spheres;
 use pt::traits::{SceneHandler, Renderer};
 use pt::renderer::PathTracer;
 use pt::scenehandler::{ShapeList, KdTreeS};
-use pt::{Image, Texture, Tex, Mesh, Polygon, RenderSettings};
+use pt::{Image, Texture, TexView, Mesh, Polygon, RenderSettings};
 use pt::bsdf::{Bsdf, Phong, Diffuse, CookTorrance};
 use pt::bsdf::cooktorrance::*;
 use pt::sphere::Sphere;
@@ -109,7 +109,7 @@ impl Materials {
     {
         // let normaltex_w = 128usize;
         // let normaltex_h = 128usize;
-        // let mut normal_tex: Texture<Rgb, [f32; 3]> = Texture::new(normaltex_w, normaltex_h);
+        // let mut normal_tex: Texture<Rgb> = Texture::new(normaltex_w, normaltex_h);
         // for j in 0..normal_tex.height() {
         //     for i in 0..normal_tex.width() {
         //         let up = Vector3::new(0.0, 1.0, 1.2).normalize();
@@ -128,10 +128,10 @@ impl Materials {
         //         //normal_tex.set_pixel(i, j, u0v0);
         //     }
         // }
-        // let basecolor_tex: Texture<Rgb<f32>, [f32; 3]> = mono_texture!(color::WHITE.into());
-        // let roughness_tex: Texture<Luma<f32>, [f32; 1]> = mono_texture!(Luma::from(0.0));
-        // let spec_tex: Texture<Luma<f32>, [f32; 1]> = mono_texture!(Luma::from(1.0));
-        // let metal_tex: Texture<Luma<f32>, [f32; 1]> = mono_texture!(Luma::from(1.0));
+        // let basecolor_tex: Texture<Rgb<f32>> = mono_texture!(color::WHITE.into());
+        // let roughness_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(0.0));
+        // let spec_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(1.0));
+        // let metal_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(1.0));
 
         let path = "data/rusted_iron/".to_string();
         //let path = "data/rusted_iron2/".to_string();

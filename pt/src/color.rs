@@ -9,7 +9,7 @@ use utils::{clamp};
 pub use self::consts::*;
 
 pub type Color = Rgb;
-pub type Image = Texture<Rgb, [f32; 4]>;
+pub type Image = Texture<Rgba>;
 // pub type RgbTexture<T: ColorChannel = f32> = Texture<Rgb<T>, [T; 3]>;
 // pub type RgbTexture4<T: ColorChannel = f32> = Texture<Rgb<T>, [T; 4]>;
 
@@ -229,11 +229,11 @@ pub trait ColorBlend<T: ColorChannel> {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
 }
 
-pub trait Pixel<R>: Sync + Send
-    where R: RawColor<Self::Channel>,
+pub trait Pixel: Sync + Send
 {
     type Channel: ColorChannel;
-    type Color: Copy + ColorBlend<Self::Channel> + From<R> + Into<R> + Default;
+    type Raw: RawColor<Self::Channel>;
+    type Color: Copy + ColorBlend<Self::Channel> + From<Self::Raw> + Into<Self::Raw> + Default;
 }
 
 pub trait RawColor<Ch>: FixedSizeArray<Ch> + Copy + Sync + Send {}
@@ -349,8 +349,9 @@ macro_rules! impl_color {
 
 macro_rules! impl_pixel {
     ($c:ident, [$t:ident; $n:expr]) => {
-        impl<$t: ColorChannel> Pixel<[$t; $n]> for $c<$t> {
-            type Channel = T;
+        impl<$t: ColorChannel> Pixel for $c<$t> {
+            type Channel = $t;
+            type Raw = [$t; $n];
             type Color = Self;
         }
     }
@@ -647,7 +648,7 @@ macro_rules! impl_div {
 
 impl_color!(Rgb, r, g, b);
 
-impl_pixel!(Rgb, [T; 4]);
+//impl_pixel!(Rgb, [T; 4]);
 impl_pixel!(Rgb, [T; 3]);
 impl_colorblend!(Rgb, r, g, b);
 impl_colorclamp!(Rgb, r, g, b);
@@ -676,7 +677,7 @@ impl_div!(Rgb, r, g, b);
 impl_color!(Rgba, r, g, b, a);
 
 impl_pixel!(Rgba, [T; 4]);
-impl_pixel!(Rgba, [T; 3]);
+//impl_pixel!(Rgba, [T; 3]);
 impl_colorblend!(Rgba, r, g, b, a);
 impl_colorclamp!(Rgba, r, g, b, a);
 impl_from_arr!(Rgba, [T; 3], v, v[0], v[1], v[2], T::MAX_CHVAL);
@@ -704,7 +705,7 @@ impl_div!(Rgba, r, g, b, a);
 impl_color!(Luma, luma);
 
 impl_pixel!(Luma, [T; 1]);
-impl_pixel!(Luma, [T; 2]);
+//impl_pixel!(Luma, [T; 2]);
 impl_colorblend!(Luma, luma);
 impl_colorclamp!(Luma, luma);
 impl_from_arr!(Luma, [T; 1], v, v[0]);
@@ -744,7 +745,7 @@ luma_to_scalar!(f64);
 
 impl_color!(LumaA, luma, a);
 
-impl_pixel!(LumaA, [T; 1]);
+//impl_pixel!(LumaA, [T; 1]);
 impl_pixel!(LumaA, [T; 2]);
 impl_colorblend!(LumaA, luma, a);
 impl_colorclamp!(LumaA, luma, a);

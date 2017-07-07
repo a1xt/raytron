@@ -12,7 +12,7 @@ pub use pt_app::camera_controller::{CameraController, FPSCameraController};
 
 use pt_app::{App};
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::{Image, RenderSettings, Tex, Texture, Mesh};
+use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
 use pt_app::pt::color::{self, Color, Rgb, Luma};
 use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
 use pt_app::pt::material::{PbrTex};
@@ -348,7 +348,7 @@ pub trait AppState {
     fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's>;
 }
 
-pub fn tone_mapping_exp<'a, T: Tex<Color>>(img: &'a mut T, t: f32) {
+pub fn tone_mapping_exp<'a, T: TexView<Color>>(img: &'a mut T, t: f32) {
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
@@ -363,7 +363,7 @@ pub fn tone_mapping_exp<'a, T: Tex<Color>>(img: &'a mut T, t: f32) {
     }
 }
 
-pub fn tone_mapping_simple<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+pub fn tone_mapping_simple<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
@@ -378,7 +378,7 @@ pub fn tone_mapping_simple<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     }    
 }
 
-pub fn gamma_encoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+pub fn gamma_encoding<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
     let g = 1.0 / 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -391,7 +391,7 @@ pub fn gamma_encoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
     }
 }
 
-pub fn gamma_decoding<'a, T: Tex<Color> + 'a>(img: &'a mut T) {
+pub fn gamma_decoding<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
     let g = 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -413,7 +413,7 @@ macro_rules! mono_texture {
     }};
 }
 
-pub fn load_hdr<T: Tex<Rgb>>(path: String) -> T {
+pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
     use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
@@ -438,7 +438,7 @@ pub fn load_hdr<T: Tex<Rgb>>(path: String) -> T {
     img        
 }
 
-pub fn load_texture<C, T: Tex<C>, F>(path: String, map_color: F) -> T
+pub fn load_texture<C, T: TexView<C>, F>(path: String, map_color: F) -> T
     where C: Into<Rgb<Real>> + Into<Color>,
           F: Fn(image::Rgba<u8>) -> C,
 {
@@ -462,7 +462,7 @@ pub fn load_texture<C, T: Tex<C>, F>(path: String, map_color: F) -> T
     tex
 }
 
-pub fn load_texture_rgb64<T: Tex<Rgb<Real>>>(path: String, srgb_encoded: bool) -> T {
+pub fn load_texture_rgb64<T: TexView<Rgb<Real>>>(path: String, srgb_encoded: bool) -> T {
     load_texture::<Rgb<f64>, _, _>(path, move |c| {
         let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into() :Rgb<f64>;
         if srgb_encoded {
@@ -474,7 +474,7 @@ pub fn load_texture_rgb64<T: Tex<Rgb<Real>>>(path: String, srgb_encoded: bool) -
     })
 }
 
-pub fn load_texture_luma64<T: Tex<Luma<Real>>>(path: String, srgb_encoded: bool) -> T {
+pub fn load_texture_luma64<T: TexView<Luma<Real>>>(path: String, srgb_encoded: bool) -> T {
     load_texture::<Luma<f64>, _, _>(path, move |c| {
         let mut p = Luma::<u8>::new(c[0]).into() :Luma<f64>;
         if srgb_encoded {
@@ -484,17 +484,16 @@ pub fn load_texture_luma64<T: Tex<Luma<Real>>>(path: String, srgb_encoded: bool)
     })
 }
 
-type PbrTexMat = PbrTex<'static, Texture<Rgb<Real>, [Real; 3]>, Texture<Luma<Real>, [Real; 1]>, Rgb<Real>, Luma<Real>>;
-pub fn load_pbr(path: String) -> Arc<PbrTexMat> {
+pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
     use std::sync::Arc;
 
-    let basecolor_tex: Texture<Rgb<f64>, [f64; 3]> = load_texture_rgb64(path.clone() + "basecolor.png", true);
-    let normal_tex: Texture<Rgb<f64>, [f64; 3]> = load_texture_rgb64(path.clone() + "normal.png", false);
-    let roughness_tex: Texture<Luma<f64>, [f64; 1]> = load_texture_luma64(path.clone() + "roughness.png", false);
-    let metal_tex: Texture<Luma<f64>, [f64; 1]> = load_texture_luma64(path.clone() + "metalness.png", false);
-    let spec_tex: Texture<Luma<f64>, [f64; 1]> = mono_texture!(Luma::from(1.0));
+    let basecolor_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "basecolor.png", true);
+    let normal_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "normal.png", false);
+    let roughness_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "roughness.png", false);
+    let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metalness.png", false);
+    let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
 
-    let pbrtex_mat: Arc<PbrTex<_, _, Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
+    let pbrtex_mat: Arc<PbrTex< Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
         basecolor_tex,
         normal_tex,
         roughness_tex,
