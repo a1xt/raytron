@@ -59,8 +59,14 @@ impl<P: Pixel> Texture<P> {
 
     #[inline]
     pub fn sample(&self, u: f32, v: f32) -> P::Color {
-        let i = (clamp(u, 0.0, 1.0) * ((self.width - 1) as f32) + 0.5) as usize;
-        let j = (clamp(v, 0.0, 1.0) * ((self.height - 1) as f32) + 0.5) as usize;
+        let mut i = (clamp(u, 0.0, 1.0) * (self.width as f32)) as usize;
+        let mut j = (clamp(v, 0.0, 1.0) * (self.height as f32)) as usize;
+        if i >= self.width {
+            i = self.width - 1;
+        }
+        if j >= self.height {
+            j = self.height - 1;
+        }
         self.pixel(i, j)
     }
 
