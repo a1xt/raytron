@@ -136,18 +136,18 @@ impl Materials {
         let path = "data/rusted_iron/".to_string();
         //let path = "data/rusted_iron2/".to_string();
         //let path = "data/cement/".to_string();
-        //let pbrtex_mat = load_pbr(path);
-        let pbrtex_mat = Arc::new(DiffuseMat::new(color::WHITE, None)); 
+        let pbrtex_mat = load_pbr(path);
+        //let pbrtex_mat = Arc::new(DiffuseMat::new(color::WHITE, None)); 
         
         let plane_mesh = Plane::build(
+            Point3f::new(0.0, 0.0, -400.0),
+            Point3f::new(0.0, 0.0, 1.0),
+            Vector3f::new(0.0, 1.0, 0.0),
+            // Point3f::new(0.0, -150.0, 0.0),
             // Point3f::new(0.0, 0.0, 0.0),
-            // Point3f::new(0.0, 0.0, 1.0),
-            // Vector3f::new(0.0, 1.0, 0.0),
-            Point3f::new(0.0, -150.0, 0.0),
-            Point3f::new(0.0, 0.0, 0.0),
-            Vector3f::new(0.0, 0.0, -1.0),
-            (450.0, 450.0),
-            pbrtex_mat.clone(),
+            // Vector3f::new(0.0, 0.0, -1.0),
+            (700.0, 700.0),
+            pbrtex_mat,
             Some((1, 1)),
             None,
             |quad| {
@@ -213,10 +213,10 @@ impl AppState for Materials {
             scene.add_shape((box p) as Box<Surface>);
         }
 
-        // {
-        //     let scene_ref = &mut scene;
-        //     self.add_spheres(move |s| scene_ref.add_shape(s));
-        // }
+        {
+            let scene_ref = &mut scene;
+            self.add_spheres(move |s| scene_ref.add_shape(s));
+        }
 
         {
             let scene_ref = &mut scene;

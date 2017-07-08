@@ -195,7 +195,7 @@ pub mod material {
     use texture::{TexView, Texture};
     use std::sync::Arc;
     use math;
-    use math::{Real, Norm, Vector3f};
+    use math::{Real, Norm, Cross, Vector3f};
     use utils::consts;
     use num::{Float, NumCast};
 
@@ -421,6 +421,60 @@ pub mod material {
                 _marker_c3: PhantomData,
                 _marker_c1: PhantomData,
             }
+        }
+    }
+
+    impl<'a, C3, C1, Tx3, Tx1> Material<TexturedVertex> for PbrTex<'a, C3, C1, Tx3, Tx1>
+        where Tx3: 'a + AsRef<TexView<C3> + 'a> + Sync + Send,
+              Tx1: 'a + AsRef<TexView<C1> + 'a> + Sync + Send,
+              C3: Into<Rgb<Real>> + Into<Color>,
+              Real: From<C1>,
+              C3: 'a + Send + Sync,
+              C1: 'a + Send + Sync,
+    {
+        fn bsdf<'s>(&'s self, v: &TexturedVertex) -> BsdfRef<'s> {
+            let basecolor: Rgb<Real> = self.base_color.as_ref().sample(v.uv.x, v.uv.y).into();
+            let roughness: Real = self.roughness.as_ref().sample(v.uv.x, v.uv.y).into();
+            let spec: Real = self.specular.as_ref().sample(v.uv.x, v.uv.y).into();
+            let metal: Real = self.metal.as_ref().sample(v.uv.x, v.uv.y).into();
+
+            let albedo = basecolor * (1.0 - metal);
+            let f0 = basecolor * metal * spec;
+
+            BsdfRef::Shared(Arc::new(CookTorrance::new(albedo, f0, roughness * roughness)))
+        }
+
+        fn total_radiance(&self, _: &TexturedVertex, _: &TexturedVertex, _: &TexturedVertex) -> Option<Color> {
+            None
+        }
+
+        fn normal(
+            &self,
+            v0: &TexturedVertex,
+            v1: &TexturedVertex,
+            v2: &TexturedVertex,
+            wuv: (Real, Real, Real))
+            -> Vector3f
+        {
+            let p = Vertex::interpolate(v0, v1, v2, wuv);
+            let mut rgb_normal: Rgb<Real> = self.normal.as_ref().sample(p.uv.x, p.uv.y).into();
+            rgb_normal = rgb_normal * 2.0 - Rgb::<Real>::from(1.0);
+            let tex_normal = Vector3f::new(rgb_normal.r, rgb_normal.g, rgb_normal.b).normalize();
+
+            let duv1 = v1.uv - v0.uv;
+            let duv2 = v2.uv - v0.uv;
+            let (t, b) = math::calc_tangent(
+                (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
+                (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real));
+
+            let n = t.cross(&b).normalize();
+
+            let normal = Vector3f::new(
+                tex_normal.x * t.x + tex_normal.y * b.x + tex_normal.z * n.x,
+                tex_normal.x * t.y + tex_normal.y * b.y + tex_normal.z * n.y,
+                tex_normal.x * t.z + tex_normal.y * b.z + tex_normal.z * n.z);
+
+            normal.normalize()
         }
     }
 
