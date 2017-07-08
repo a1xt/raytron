@@ -176,8 +176,7 @@ pub fn transform_basis_y(up: &Vector3f, vec: &Vector3f) -> Vector3f {
 pub fn reflect_vec(vec: &Vector3f, base: &Vector3f) -> Vector3f {
     let cos_theta = vec.dot(base);
     let h = base * 2.0 * cos_theta;
-    let res = h - vec;
-    res
+    h - vec
 }
 
 pub fn calc_tangent(
@@ -221,7 +220,7 @@ pub fn sph_uniform_sampling() -> Vector3f {
 pub fn fresnel_schlick(normal: &Vector3f, light: &Vector3f, n1: Real, n2: Real) -> Real {
     let f0sqrt = (n1 - n2) / (n1 + n2);
     let f0 = f0sqrt * f0sqrt;
-    let cos_theta = light.dot(&normal);
+    let cos_theta = light.dot(normal);
     f0 + (1.0 - f0) * (1.0 - cos_theta).powi(5)
 }
 

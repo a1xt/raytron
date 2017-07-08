@@ -10,7 +10,6 @@ pub struct Aabb3 {
 
 impl Aabb3 {
     pub fn new(pmin: Point3f, pmax: Point3f) -> Aabb3 {
-        use math::Norm;
         assert!(math::partial_le(&pmin, &pmax));
         Aabb3 {
             pmin,

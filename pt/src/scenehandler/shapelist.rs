@@ -40,7 +40,7 @@ impl<'a, T, S> ShapeListBuilder<'a, T, S>
         }
     }
 
-    pub fn shape_list(&self) -> ShapeList<'a, T, S> where T: Clone {
+    pub fn to_shape_list(&self) -> ShapeList<'a, T, S> where T: Clone {
         ShapeList {
             shapes: self.shapes.clone(),
             light_sources: self.light_sources.clone(),
@@ -48,8 +48,8 @@ impl<'a, T, S> ShapeListBuilder<'a, T, S>
         }
     }
 
-    pub fn to_shape_list(self) -> ShapeList<'a, T, S> {
-        let sampler = unsafe { Arc::new(S::from(self.light_sources.as_slice())) };
+    pub fn into_shape_list(self) -> ShapeList<'a, T, S> {
+        let sampler = Arc::new(S::from(self.light_sources.as_slice()));
         ShapeList {
             shapes: self.shapes,
             light_sources: self.light_sources,
@@ -75,7 +75,7 @@ impl<'a, T, S> SceneHandler for ShapeList<'a, T, S>
         let mut t_min: Real = std::f32::MAX as Real;
         let mut sp = None;
 
-        for shape in self.shapes.iter() {
+        for shape in &self.shapes {
             if let Some((t, surf_point)) = shape.as_ref().intersection(ray) {
                 if t < t_min {
                     t_min = t;
@@ -95,7 +95,7 @@ impl<'a, T, S> SceneHandler for ShapeList<'a, T, S>
         box self.light_sources.iter().cloned()
     }
 
-    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
+    fn light_sources(&self) -> LightSourcesHandler {
         LightSourcesHandler {
             scene: self,
             sampler: super::lt_arc_trait_hack(self.sampler.clone()),

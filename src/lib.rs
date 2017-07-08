@@ -50,7 +50,7 @@ pub struct App<D: Device, F: Factory<D::Resources>> {
     fsquad: Bundle<D::Resources, pipe::Data<D::Resources>>
 }
 
-impl<D: Device, F: Factory<D::Resources>> App<D, F> {
+impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
     pub fn new(screen_width: u32,
            screen_height: u32,
            title: String)
@@ -131,7 +131,9 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         }
 
     }
+}
 
+impl<D: Device, F: Factory<D::Resources>> App<D, F> {
     pub fn run(&mut self) -> bool {
         let mut quite: bool = false;
 
@@ -145,7 +147,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         }
 
         use glutin::{WindowEvent, VirtualKeyCode};
-        for event in self.events.iter() {
+        for event in &self.events {
             match *event {
                 WindowEvent::KeyboardInput(_, _, Some(VirtualKeyCode::Escape), _) |
                 WindowEvent::Closed => {
@@ -156,9 +158,9 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
             }
         }
 
-        let ref events = self.events;
-        let ref window = self.window;
-        let ref mut cam_ctrl = self.cam_ctrl;
+        let events = &self.events;
+        let window = &self.window;
+        let cam_ctrl = &mut self.cam_ctrl;
 
         cam_ctrl.on_frame(
             events.iter(),

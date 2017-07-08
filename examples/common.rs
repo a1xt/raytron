@@ -90,7 +90,7 @@ impl ExampleApp {
                             rdr.render_pass_threaded(scene.as_ref(), app.cam_ctrl().camera(), &rdr_setup, pass_num, &mut img);
                             pass_num += 1;
                             let frame_time = time::precise_time_ns() - start_time;
-                            total_time = total_time + frame_time;
+                            total_time += frame_time;
                             println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
                                 pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
                         }
@@ -208,7 +208,7 @@ impl ExampleApp {
             self.resize((img.width(), img.height()));
         }
         self.app.clear_frame();
-        let _ = self.app.encoder_mut().update_texture::<<TexFormat as Formatted>::Surface, TexFormat >(
+        self.app.encoder_mut().update_texture::<<TexFormat as Formatted>::Surface, TexFormat >(
             &self.tex,
             None,
             gfx::texture::NewImageInfo {
@@ -221,9 +221,9 @@ impl ExampleApp {
                 format: (),
                 mipmap: 0,
             },
-            cast_slice(img.as_slice()),
-    
-        ).unwrap();
+            cast_slice(img.as_slice()))
+            .unwrap();
+
         self.app.draw_fullscreen_quad(self.tex_view.clone());
         self.app.post_frame();
     }
@@ -292,7 +292,7 @@ impl<'a> ExampleAppBuilder {
     }
 
     pub fn build(self) -> ExampleApp {
-        let name = self.name.unwrap_or("Example".to_string());
+        let name = self.name.unwrap_or_else(|| "Example".to_string());
         let (screen_width, screen_height) = self.size.unwrap_or((800, 600));
         let mut app = App::<GLDevice, GLFactory>::new(screen_width as u32, screen_height as u32, name);
 
@@ -348,11 +348,10 @@ pub trait AppState {
     fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's>;
 }
 
-pub fn tone_mapping_exp<'a, T: TexView<Color>>(img: &'a mut T, t: f32) {
+pub fn tone_mapping_exp<T: TexView<Color>>(img: &mut T, t: f32) {
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
-            let t = 1.125;
             let x = Rgb::new(
                 1.0 - ((-t) * c.r).exp(),
                 1.0 - ((-t) * c.g).exp(),
@@ -363,11 +362,10 @@ pub fn tone_mapping_exp<'a, T: TexView<Color>>(img: &'a mut T, t: f32) {
     }
 }
 
-pub fn tone_mapping_simple<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
+pub fn tone_mapping_simple<T: TexView<Color>>(img: &mut T) {
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
-            let t = 1.125;
             let x = Rgb::new(
                 c.r / (1.0 + c.r),
                 c.g / (1.0 + c.g),
@@ -378,7 +376,7 @@ pub fn tone_mapping_simple<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
     }    
 }
 
-pub fn gamma_encoding<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
+pub fn gamma_encoding<T: TexView<Color>>(img: &mut T) {
     let g = 1.0 / 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -391,7 +389,7 @@ pub fn gamma_encoding<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
     }
 }
 
-pub fn gamma_decoding<'a, T: TexView<Color> + 'a>(img: &'a mut T) {
+pub fn gamma_decoding<T: TexView<Color> >(img: &mut T) {
     let g = 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -419,7 +417,7 @@ pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
     use std::io::BufReader;
 
     print!("loading hdr image ...");
-    std::io::stdout().flush();
+    let _ = std::io::stdout().flush();
 
     let img_file = File::open(path).unwrap();
     let hdrdecoder = hdr::HDRDecoder::new(BufReader::new(img_file)).unwrap();
@@ -514,7 +512,7 @@ pub fn load_obj_pbr<'a, M, F>(
     println!("loading model: `{}` ... ", &path);
     let _ = std::io::stdout().flush();
 
-    let (models, _) = tobj::load_obj(&Path::new(&path)).unwrap();
+    let (models, _) = tobj::load_obj(Path::new(&path)).unwrap();
     let mut mvec = Vec::with_capacity(models.len());
     let mut total_faces = 0;
     let mut total_vertices = 0;

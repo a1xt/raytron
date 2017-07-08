@@ -1,15 +1,11 @@
-use pt::scenehandler::{ShapeList, ShapeListBuilder, LinearSampler};
+use pt::scenehandler::{ShapeListBuilder, LinearSampler};
 use pt::bsdf::{Diffuse, Phong};
 use pt::{Sphere, Color};
 use pt::traits::{Surface};
-use pt::math::{Vector3f, Point3f, Real};
+use pt::math::{Point3f, Real};
 use camera_controller::{FPSCameraController};
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::boxed::Box;
-
-    //use pt::polygon::*;
-    use pt::color;
 
 pub struct Room {
     pub spheres: BTreeMap<&'static str, Sphere>,  
@@ -115,9 +111,9 @@ impl Room {
         Room{spheres: btmap}
     }
 
-    pub fn shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
+    pub fn to_shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
         let mut l = ShapeListBuilder::new();
-        for (_, s) in self.spheres.iter() {
+        for (_, s) in &self.spheres {
             l.add_shape(s as &Surface);
         }
         l

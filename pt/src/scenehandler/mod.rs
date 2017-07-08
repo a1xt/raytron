@@ -15,20 +15,22 @@ pub trait SceneHandler: Sync {
     fn intersection(&self, ray: &Ray3f) -> Option<SurfacePoint>;
     
     fn light_sources_iter<'s>(&'s self) -> Box<Iterator<Item = &'s Surface> + 's>;
-    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s>;
+    fn light_sources(&self) -> LightSourcesHandler;
 }
 
+pub type SurfaceSamplerFn<'a> = fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real);
+pub type SurfaceSamplerPdfFn<'a> = fn(&'a Surface, (&Point3f, &Vector3f), (&Point3f, &Vector3f)) -> Real;
 pub trait LuminairesSampler<'a>: Sync + Send {
      fn sample(&self, 
                view_point: (&Point3f, &Vector3f), 
-               surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
+               surface_sampler: SurfaceSamplerFn<'a>)
                -> Option<(SurfacePoint<'a>, Real)>;
 
     fn pdf(&self, 
            surface: &'a Surface,
            point_at_surface: (&Point3f, &Vector3f), 
            view_point: (&Point3f, &Vector3f),
-           surface_pdf: fn(&'a Surface, (&Point3f, &Vector3f), (&Point3f, &Vector3f)) -> Real) 
+           surface_pdf: SurfaceSamplerPdfFn<'a>)
            -> Real;
 }
 
@@ -40,7 +42,7 @@ pub struct UniformSampler<'s> {
 impl<'a> LuminairesSampler<'a> for UniformSampler<'a> {
     fn sample(&self, 
               view_point: (&Point3f, &Vector3f), 
-              surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
+              surface_sampler: SurfaceSamplerFn<'a>)
               -> Option<(SurfacePoint<'a>, Real)>
     {
         let s_num = self.surfaces.len();
@@ -61,7 +63,7 @@ impl<'a> LuminairesSampler<'a> for UniformSampler<'a> {
            surface: &'a Surface,
            point_at_surface: (&Point3f, &Vector3f), 
            view_point: (&Point3f, &Vector3f),
-           surface_pdf: fn(&'a Surface, (&Point3f, &Vector3f), (&Point3f, &Vector3f)) -> Real) 
+           surface_pdf: SurfaceSamplerPdfFn<'a>)
            -> Real
     {
         let s_num = self.surfaces.len();
@@ -85,7 +87,7 @@ pub struct LinearSampler<'a> {
     sum: Real,
 }
 
-use color::{Color, Rgb, ColorChannel};
+use color::{Rgb, ColorChannel};
 fn color_norm<T: ColorChannel>(c: &Rgb<T>) -> Real where Rgb<Real>: From<Rgb<T>> {
     let c: Rgb<Real> = Rgb::from(*c);
     (c.r * c.r + c.g * c.g + c.b * c.b).sqrt() as Real
@@ -122,7 +124,7 @@ impl<'s, 'a> From<&'s [&'a Surface]> for LinearSampler<'a> {
 impl<'a> LuminairesSampler<'a> for LinearSampler<'a> {
     fn sample(&self, 
               view_point: (&Point3f, &Vector3f), 
-              surface_sampler: fn(&'a Surface, (&Point3f, &Vector3f)) -> (SurfacePoint<'a>, Real)) 
+              surface_sampler: SurfaceSamplerFn<'a>)
               -> Option<(SurfacePoint<'a>, Real)>
     {
         use rand::Closed01;
@@ -133,8 +135,7 @@ impl<'a> LuminairesSampler<'a> for LinearSampler<'a> {
             e *= self.sum;
 
             let ix = match self.partial_sum.binary_search_by(|&probe| probe.partial_cmp(&e).unwrap()) {
-                Ok(x) => x,
-                Err(x) => x,
+                Ok(x) | Err(x) => x,
             };
 
             let s = self.surfaces[ix];
@@ -155,7 +156,7 @@ impl<'a> LuminairesSampler<'a> for LinearSampler<'a> {
            surface: &'a Surface,
            point_at_surface: (&Point3f, &Vector3f), 
            view_point: (&Point3f, &Vector3f),
-           surface_pdf: fn(&'a Surface, (&Point3f, &Vector3f), (&Point3f, &Vector3f)) -> Real) 
+           surface_pdf: SurfaceSamplerPdfFn<'a>)
            -> Real
     {
         let pdf = surface_pdf(surface, point_at_surface, view_point);

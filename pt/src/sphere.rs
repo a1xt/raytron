@@ -1,9 +1,8 @@
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
-use math::{Dot};
 use {Surface, SurfacePoint, Bsdf};
 use bsdf::BsdfRef;
 use std::f64::consts::PI;
-use color::{self, Color};
+use color::{Color};
 use std::sync::Arc;
 use aabb::{Aabb3, HasBounds};
 use std::borrow::{Borrow, BorrowMut};
@@ -24,7 +23,7 @@ impl Sphere {
         }
     }
 
-    pub fn bsdf<'s>(&'s self) -> BsdfRef<'s> {
+    pub fn bsdf(&self) -> BsdfRef {
         BsdfRef::Ref(self.bsdf.as_ref())
     }
 
@@ -37,11 +36,7 @@ impl Surface for Sphere {
 
     #[inline]
     fn is_emitter(&self) -> bool {
-        if let Some(_) = self.bsdf.radiance() {
-            true
-        } else {
-            false
-        }
+        self.bsdf.radiance().is_some()
     }
 
     fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
@@ -64,7 +59,6 @@ impl Surface for Sphere {
 
     #[inline]
     fn area (&self) -> Real {
-        use std::f32::consts::PI;
         4.0 * (PI as Real) * self.radius * self.radius
     }
 

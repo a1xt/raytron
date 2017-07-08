@@ -72,8 +72,7 @@ pub trait Surface : Sync {
         let view_dir = *view_point.0 - *point_at_surface.0;
         let r2 = view_dir.norm_squared();
         let cos_theta_l = point_at_surface.1.dot(&view_dir.normalize());
-        let pdf_p = pdf_d * (cos_theta_l / r2);
-        pdf_p
+        pdf_d * (cos_theta_l / r2) // pdf_p
     }
 
     fn pdf_d(&self,  point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
@@ -81,16 +80,14 @@ pub trait Surface : Sync {
         let view_dir = *view_point.0 - *point_at_surface.0;
         let r2 = view_dir.norm_squared();
         let cos_theta_l = point_at_surface.1.dot(&view_dir.normalize());
-        let pdf_d = pdf_p * (r2 / cos_theta_l);
-        pdf_d
+        pdf_p * (r2 / cos_theta_l) // pdf_d
     }
 
     fn pdf_d_proj(&self,  point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
         let pdf_d = self.pdf_d(point_at_surface, view_point);
         let view_dir_inv = (*point_at_surface.0 - *view_point.0).normalize();
         let cos_theta = view_point.1.dot(&view_dir_inv);
-        let pdf_d_proj = pdf_d / cos_theta;
-        pdf_d_proj
+        pdf_d / cos_theta // pdf_d_proj
     }
 }
 

@@ -2,6 +2,7 @@ use traits::{Vertex, Material};
 use polygon::Polygon;
 use std::sync::Arc;
 
+#[derive(Default)]
 pub struct Mesh<'a, V>
     where V: Vertex
 {
@@ -83,25 +84,25 @@ impl<'a, V> Mesh<'a, V>
     pub fn polygon_iter<'s>(&'s self) -> impl Iterator<Item = Polygon<'s, V, &'s V>> + 's where V: AsRef<V> {
         let mat_iter = self.materials.iter();
         self.indices.iter().zip(mat_iter).map(move |(&[i0, i1, i2], mat)| {
-            Polygon::new(self.vertices.get(i0 as usize).unwrap(),
-                         self.vertices.get(i1 as usize).unwrap(),
-                         self.vertices.get(i2 as usize).unwrap(),
+            Polygon::new(&self.vertices[i0 as usize],
+                         &self.vertices[i1 as usize],
+                         &self.vertices[i2 as usize],
                          mat.clone())
         })
     }
 
-    pub fn polygons<'s>(&'s self) -> Vec<Polygon<'s, V, &'s V>> where V: Copy + Clone + AsRef<V> {
+    pub fn to_polygons(&self) -> Vec<Polygon<V, &V>> where V: Copy + Clone + AsRef<V> {
         let mut pols = Vec::new();
         for (&[i0, i1, i2], mat) in self.indices.iter().zip(self.materials.iter()) {
-            pols.push(Polygon::new(self.vertices.get(i0 as usize).unwrap(),
-                                   self.vertices.get(i1 as usize).unwrap(),
-                                   self.vertices.get(i2 as usize).unwrap(),
+            pols.push(Polygon::new(&self.vertices[i0 as usize],
+                                   &self.vertices[i1 as usize],
+                                   &self.vertices[i2 as usize],
                                    mat.clone()));
         }
         pols
     }
 
-    pub fn to_polygons(self) -> Vec<Polygon<'a, V, V>> where V: Copy + Clone + AsRef<V> {
+    pub fn into_polygons(self) -> Vec<Polygon<'a, V, V>> where V: Copy + Clone + AsRef<V> {
         let indices = self.indices;
         let vertices = self.vertices;
         let materials = self.materials;
@@ -109,9 +110,9 @@ impl<'a, V> Mesh<'a, V>
             .into_iter()
             .zip(materials.into_iter())
             .map(|([i0, i1, i2], mat)| {
-                Polygon::new(*vertices.get(i0 as usize).unwrap(),
-                             *vertices.get(i1 as usize).unwrap(),
-                             *vertices.get(i2 as usize).unwrap(),
+                Polygon::new(vertices[i0 as usize],
+                             vertices[i1 as usize],
+                             vertices[i2 as usize],
                              mat)
             })
             .collect()

@@ -2,7 +2,6 @@ use ::{RenderSettings, Color};
 use math::{Ray3f, Dot, Norm,ApproxEq, Real};
 use color;
 use traits::{Renderer, SceneHandler, RenderCamera, Surface};
-use utils;
 use utils::consts;
 use rand;
 use rand::{Closed01};
@@ -31,8 +30,8 @@ impl PathTracer {
         let mut ls_w = light_sources_weight;
         if brdf_w + ls_w > 1.0 {
             let sum = brdf_w + ls_w;
-            brdf_w = brdf_w / sum;
-            ls_w = ls_w / sum;
+            brdf_w /=  sum;
+            ls_w /= sum;
         }
         self.di_samples_weight = Some((brdf_w, ls_w));
         self
@@ -46,11 +45,7 @@ impl PathTracer {
                 return color::BLACK;
         }
 
-        let di_enable = if let Some(_) = self.di_samples_weight {
-            true
-        } else {
-            false
-        };
+        let di_enable = self.di_samples_weight.is_some();
 
         if let Some(sp) = scene.intersection(ray) {
             let mat = sp.bsdf.as_ref();
@@ -115,7 +110,7 @@ impl PathTracer {
                             let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
 
                             let res = (fr * le) * (pdf_sum_inv as f32);
-                            di = di + res;
+                            di += res;
                         }
                     }
                 } 
@@ -143,8 +138,7 @@ impl PathTracer {
 
 impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for PathTracer {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
-        let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
-        res        
+        self.trace_path_rec::<S>(scene, initial_ray, 0)      
     }
     
     fn get_ray(&self, _ : &C, x: u32, y: u32) -> Ray3f {

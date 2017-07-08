@@ -33,7 +33,7 @@ pub trait Bsdf : Sync + Send {
                  -> (Color, Real) {
 
         let (fr, pdf) = self.eval(surface_normal, in_dir, out_dir);
-        let cos_theta = surface_normal.dot(&out_dir);
+        let cos_theta = surface_normal.dot(out_dir);
         (fr, pdf / cos_theta)
     }  
 
@@ -60,9 +60,9 @@ impl<'a> Deref for BsdfRef<'a> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        match self {
-            &BsdfRef::Ref(r) => r,
-            &BsdfRef::Shared(ref rc) => rc.as_ref(),
+        match *self {
+            BsdfRef::Ref(r) => r,
+            BsdfRef::Shared(ref rc) => rc.as_ref(),
         }
     }
 }

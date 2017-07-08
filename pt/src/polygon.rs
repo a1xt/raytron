@@ -6,11 +6,8 @@ use std::marker::PhantomData;
 use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
 use {Surface, SurfacePoint, BsdfRef};
 use aabb::{Aabb3, HasBounds};
-use utils::consts;
-
-use color::{self, Color};
+use color::{Color};
 use rand::{self, Closed01};
-use num::Float;
 
 pub type PolygonR<'a, R> = Polygon<'a, R, &'a R>;
 pub type PolygonS<'a, R> = Polygon<'a, R, R>;
@@ -38,7 +35,7 @@ impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send
         }
     }
 
-    pub fn material<'s> (&'s self, coords: (Real, Real, Real)) -> BsdfRef<'s> {
+    pub fn material(&self, coords: (Real, Real, Real)) -> BsdfRef {
         //self.mat.bsdf(&Vertex::interpolate(self.v0, self.v1, self.v2, coords)) // [FIXME]
         self.mat.bsdf(&Vertex::interpolate(self.v0(), 
                                            self.v2(), 
@@ -99,18 +96,14 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
     }
 
     #[inline]
-    default fn normal_at(&self, p: &Point3f) -> Vector3f {
+    default fn normal_at(&self, _: &Point3f) -> Vector3f {
         unimplemented!()
         //V::normal(self.v0(), self.v1(), self.v2(), p)
     }
 
     #[inline]
     default fn is_emitter(&self) -> bool {
-        if let Some(_) = self.total_radiance {
-            true
-        } else {
-            false
-        }
+        self.total_radiance.is_some()
     }
 
     fn sample_surface_p(&self, (_, _): (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
@@ -148,7 +141,6 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
 
 impl<'a, R, V> HasBounds for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {  
     fn aabb(&self) -> Aabb3 {
-        use utils::consts::POSITION_EPSILON;
         let p0 = self.v0().position();
         let p1 = self.v1().position();
         let p2 = self.v2().position();
@@ -199,22 +191,22 @@ pub mod material {
     use std::marker::PhantomData;
     use bsdf::{Diffuse, Phong, CookTorrance, BsdfRef};
     use super::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
-    use color::{self, Color, Rgb, ColorChannel};
+    use color::{self, Color, Rgb};
     use texture::{TexView, Texture};
     use std::sync::Arc;
     use math;
-    use math::{Real, Norm, Dot, Cross, Vector3f};
+    use math::{Real, Norm, Vector3f};
     use utils::consts;
     use num::{Float, NumCast};
 
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
 
-        fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+        fn total_radiance(&self, _: &V, _: &V, _: &V) -> Option<Color> {
             None
         }
 
-        fn normal(&self, v0: &V, v1: &V, v2: &V, wuv: (Real, Real, Real)) -> Vector3f {
+        fn normal(&self, v0: &V, v1: &V, v2: &V, _: (Real, Real, Real)) -> Vector3f {
             math::triangle_normal(&v0.position(), &v1.position(), &v2.position())
         }
     }
@@ -316,8 +308,8 @@ pub mod material {
                 let da: Real = 2.0 * (math::triangle_area(&v0.position(), &v1.position(), &v2.position()) * dt * dt);
                 let mut sum: Rgb<Real> = color::BLACK.into();
                 let mut u = dt;
-                let mut v = dt;
-                let mut cl_area = 0.0;
+                let mut v;
+                //let mut cl_area = 0.0;
                 while u < 1.0 + consts::REAL_EPSILON {
                     v = dt;
                     while v < 1.0 +consts::REAL_EPSILON {
@@ -327,7 +319,7 @@ pub mod material {
                             let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
                             let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
                             sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
-                            cl_area += 0.5 * da;
+                            //cl_area += 0.5 * da;
                         }
                         if u + v - dt < 1.0 + consts::REAL_EPSILON {
                             let us = u - dt * 0.75;
@@ -335,13 +327,13 @@ pub mod material {
                             let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
                             let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
                             sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
-                            cl_area += 0.5 * da;
+                            //cl_area += 0.5 * da;
                         }
                         v += dt;
                     }
                     u += dt;
                 }
-                let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
+                // let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
                 // println!("texture integral calculated:");
                 // println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
                 // println!("  - texture total radiance: {:?}", sum);
@@ -384,7 +376,7 @@ pub mod material {
             BsdfRef::Ref(&self.bsdf)
         }
 
-        fn total_radiance(&self, v0: &V, v1: &V, v2: &V) -> Option<Color> {
+        fn total_radiance(&self, _: &V, _: &V, _: &V) -> Option<Color> {
             None
         }
     }
@@ -487,20 +479,13 @@ pub mod material {
                 tex_normal.x * t.z + tex_normal.y * b.z + tex_normal.z * n.z);
 
             normal.normalize()
-
-            // let a = v1.position - v0.position;
-            // let b = v2.position - v0.position;
-            // b.cross(&a).normalize()
         }
     }
 }
 
 pub mod vertex {
     use math::{Vector3f, Vector2, Point3f, Real};
-    use math::{Cross, Norm};
-    use math;
-    use color::{Color};
-    use utils::consts;
+    use math::{Norm};
 
     pub trait Vertex: Copy + Clone + Sync + Send {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self where Self: Sized;

@@ -1,15 +1,10 @@
 pub mod spheres;
 
 use pt::math::{Point3f, Vector3f, Real, Norm, Cross};
-use pt::polygon::{BaseVertex, Vertex, Material, DiffuseMat, TexturedVertex, DiffuseTex};
+use pt::polygon::{Vertex, Material};
 use pt::mesh::{Mesh};
-use pt::texture::Texture;
-use pt::color;
-use pt::color::Rgb;
 use pt::utils::consts;
 use std::sync::Arc;
-use std::cell::RefCell;
-use std::fmt::Debug;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum CubeSide {
@@ -179,7 +174,7 @@ impl Cube {
         let dz = (size * 0.5).z;
         let front_face = if !invert_normals { RotOrder::CW } else {RotOrder::CCW };
         let mut planes = Vec::with_capacity(sides.len());
-        for &side in sides.iter() {
+        for &side in &sides {
             let (origin, up, size) = match side {
                 CubeSide::Front => (Point3f::new(c.x, c.y, c.z + dz), Vector3f::new(0.0, 1.0, 0.0), (size.x, size.y)),
                 CubeSide::Back => (Point3f::new(c.x, c.y, c.z - dz), Vector3f::new(0.0, 1.0, 0.0), (size.x, size.y)),
@@ -204,7 +199,7 @@ impl Cube {
         }
 
         let mut mesh = Mesh::new();
-        for mut p in planes.into_iter() {
+        for mut p in planes {
             mesh.merge(&mut p);
         }
         

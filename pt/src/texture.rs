@@ -1,8 +1,5 @@
-use std::marker::PhantomData;
 use utils::{clamp};
-use color::{Pixel, RawColor};
-use std::rc::Rc;
-use std::sync::Arc;
+use color::{Pixel};
 
 pub trait TexView<P>: Sync + Send {
     fn new(width: usize, height: usize) -> Self where Self: Sized;
@@ -19,7 +16,6 @@ pub struct Texture<P: Pixel> {
     data: Vec<P::Raw>,
     width: usize,
     height: usize,
-    //_marker: PhantomData<P>,
 }
 
 impl<P: Pixel> Texture<P> {
@@ -33,12 +29,11 @@ impl<P: Pixel> Texture<P> {
     }
     
     pub fn from_data(data: Vec<P::Raw>, width: usize, height: usize) -> Self {
-        assert!(data.len() == width * height);
+        assert_eq!(data.len(), width * height);
         Texture {
             data,
             width,
             height,
-            //_marker: PhantomData,
         }
     }
 

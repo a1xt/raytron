@@ -54,10 +54,10 @@ impl Materials {
         let roughness_min = 0.05;
         let roughness_max = 1.0;
         let row_ior = [
-            Rgb::new(0.16761, 0.14462, 0.13536), // silver
-            //Vector3f::new(2.5355, 2.0745, 1.8131), // platinum
-            Rgb::new(0.16909, 0.44433, 1.4532),  // gold
-            Rgb::new(0.21258, 0.70391, 1.3370)]; // copper
+            Rgb::new(0.16761, 0.14462, 0.13536),
+            //Vector3f::new(2.5355, 2.0745, 1.8131),
+            Rgb::new(0.16909, 0.44433, 1.4532),
+            Rgb::new(0.21258, 0.70391, 1.3370)];
 
         let air_ior = Rgb::new(1.0, 1.0, 1.0);
 
@@ -68,8 +68,8 @@ impl Materials {
                 let roughness = roughness_min + (roughness_max - roughness_min) * (i as Real / (spheres_num - 1) as Real);
                 println!("roughness({}): {}",i, roughness);
                 let mat: Arc<Bsdf> = if r == 0 {
-                    Arc::new(Diffuse::new(color::WHITE, None))
-                   // Arc::new(CookTorrance::new(color::BLACK, math::calc3_f0(&air_ior, &row_ior[r]), roughness * roughness))
+                    //Arc::new(Diffuse::new(color::WHITE, None))
+                    Arc::new(CookTorrance::new(color::BLACK, math::calc3_f0(&air_ior, &row_ior[r]), roughness * roughness))
                     //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 10000.0))
                 } else if r == 1 {
                     Arc::new(CookTorrance::new(
@@ -159,7 +159,7 @@ impl Materials {
                 }
             });
 
-        let plane_pols = plane_mesh.to_polygons();
+        let plane_pols = plane_mesh.into_polygons();
         for p in plane_pols {
             add_shape(box p as Box<Surface>)
         }
@@ -169,13 +169,11 @@ impl Materials {
 
 impl AppState for Materials {
     fn new() -> Self {
-        let mut s = Self::new();
-        s
+        Self::new()
     }
 
     fn init(&mut self) -> ExampleAppBuilder {
-        let builder = ExampleAppBuilder::new().size(400, 300);
-        builder
+        ExampleAppBuilder::new().size(400, 300)
     }
 
     fn init_camera(&self, ctrl: &mut FPSCameraController) {
@@ -187,7 +185,7 @@ impl AppState for Materials {
     fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's> {
         let mut scene = ShapeListBuilder::<_, UniformSampler>::new();
         let cube_size = 1000.0;
-        let room_mesh = box Cube::build(
+        let room_mesh = Cube::build(
             Point3f::new(0.0, 0.0, 0.0),
             Vector3f::new(cube_size, cube_size, cube_size),
             |_, quad| {
@@ -209,7 +207,7 @@ impl AppState for Materials {
             |_| (1, 1),
             true);
 
-        let room_pols = room_mesh.to_polygons();
+        let room_pols = room_mesh.into_polygons();
 
         for p in room_pols {
             scene.add_shape((box p) as Box<Surface>);
@@ -225,7 +223,7 @@ impl AppState for Materials {
             self.add_plane(move |s| scene_ref.add_shape(s));
         }
         
-        box scene.to_shape_list()
+        box scene.into_shape_list()
     }
 
     fn post_process(&self, img: &mut Image) {

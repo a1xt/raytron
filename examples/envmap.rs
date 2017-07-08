@@ -70,7 +70,7 @@ impl Envmap {
             Point3f::new(0.0, 0.0, 0.0),
             Vector3f::new(cube_size, cube_size, cube_size),
             |side, quad| {
-                let uv = *tex_uv.get(&side).unwrap();
+                let uv = tex_uv[&side];
                 Quad {
                     v0: TexturedVertex::new(quad.v0, Vector2::new(uv[0].0, uv[0].1)),
                     v1: TexturedVertex::new(quad.v1, Vector2::new(uv[1].0, uv[1].1)),
@@ -83,8 +83,8 @@ impl Envmap {
             true);
 
         print!("creating envbox polygons ...");
-        std::io::stdout().flush();
-        let envbox_polygons = unsafe{ ::std::mem::transmute(envbox_mesh.polygons()) };
+        let _ = std::io::stdout().flush();
+        let envbox_polygons = unsafe{ ::std::mem::transmute(envbox_mesh.to_polygons()) };
         println!("done!");
 
         let model_mat = load_pbr("data/rusted_iron2/".to_string());
@@ -102,10 +102,10 @@ impl Envmap {
             .fold(Mesh::new(), |mut base, mut mesh| { base.merge(&mut mesh); base });
         
         
-        let model_polygons = model_mesh.to_polygons();
+        let model_polygons = model_mesh.into_polygons();
 
         
-        let mut envmap = Self {
+        Self {
             // hdr_img,
             // black_tex,
             envbox_mesh,
@@ -115,8 +115,7 @@ impl Envmap {
                                 Arc::new(Diffuse::new(color::WHITE, None))),
                                 //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 100.0)))
             model_polygons,
-        };
-        envmap
+        }
     }
 
     fn init(&mut self) {
@@ -126,15 +125,12 @@ impl Envmap {
 
 impl AppState for Envmap {
     fn new() -> Self {
-        let mut s = Self::new();
-        // s.init();
-        s
+         Self::new()
     }
 
     fn init(&mut self) -> ExampleAppBuilder {
         self.init();
-        let builder = ExampleAppBuilder::new().size(400, 300);
-        builder
+        ExampleAppBuilder::new().size(400, 300)
     }
 
     fn init_camera(&self, ctrl: &mut FPSCameraController) {
@@ -152,7 +148,7 @@ impl AppState for Envmap {
         //     scene.add_shape(p.as_ref());
         // }
         // scene.add_shape(&self.sphere);
-        // box scene.to_shape_list()
+        // box scene.into_shape_list()
 
         let pol_iter = self.envbox_polygons.iter().map(|r| r as &BoundedSurface);
         //let it = pol_iter.chain(once(&self.sphere as &BoundedSurface));

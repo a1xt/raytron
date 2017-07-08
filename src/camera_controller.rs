@@ -11,7 +11,7 @@ use fpscamera::{FPSCamera};
 
 pub trait CameraController {
     fn on_frame<'b, 'a, 'c, I: Iterator<Item = &'a WindowEvent>>(&mut self,
-                                                       WindowEvent_iter: I,
+                                                       event_iter: I,
                                                        set_cursor_pos: &'b mut FnMut(i32, i32),
                                                        cur_locker: &'c mut FnMut(bool));
 }
@@ -107,7 +107,7 @@ impl FPSCameraController {
 
 impl CameraController for FPSCameraController {
     fn on_frame<'b, 'c, 'a, I: Iterator<Item = &'a WindowEvent>>(&mut self,
-                                                       WindowEvent_iter: I,
+                                                       event_iter: I,
                                                        set_cursor_pos: &'b mut FnMut(i32, i32),
                                                        cur_locker: &'c mut FnMut(bool)) {
         let now = Instant::now();
@@ -115,8 +115,8 @@ impl CameraController for FPSCameraController {
         let delta_time = dt.as_secs() as Real + 0.1e-8 * (dt.subsec_nanos() as Real);
         self.last_tp = now;
 
-        for WindowEvent in WindowEvent_iter {
-            match *WindowEvent {
+        for event in event_iter {
+            match *event {
                 WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                     let pressed = el_state == ElementState::Pressed;
                     match key {

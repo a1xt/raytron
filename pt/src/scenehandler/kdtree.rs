@@ -2,7 +2,6 @@ use traits::{SceneHandler, HasBounds, Surface, BoundedSurface};
 use math::{Ray3f, Real};
 use aabb::{Aabb3, intersection_aabb};
 use num::Float;
-use std::borrow::Borrow;
 use std::cmp::max;
 use std::sync::Arc;
 use {SurfacePoint};
@@ -68,7 +67,7 @@ impl<'a, T> KdTree<'a, T>
     pub fn build(objs: Vec<(Aabb3, &'a T)>, setup: KdTreeSetup) -> Self
     {
         let mut bbox = objs[0].0;
-        for &(ref aabb, _) in objs.iter() {
+        for &(ref aabb, _) in &objs {
             bbox.merge(aabb);
         }
 
@@ -114,7 +113,7 @@ struct NodeData{
 }
 
 impl NodeData {
-    pub fn new(aabb: Aabb3, split_plane: (usize, Real)) -> NodeData {
+    pub fn new(_: Aabb3, split_plane: (usize, Real)) -> NodeData {
         assert!(split_plane.0 < 3);
         Self {
             //bbox: aabb,
@@ -152,7 +151,7 @@ impl<'a, T> Node<'a, T>
             if pos_step < consts::REAL_EPSILON {
                 continue;
             }
-            for &(ref aabb, _) in objs.iter() {
+            for &(ref aabb, _) in &objs {
                 let ix_l: Real = (aabb.mins()[i] - pos_min) / pos_step;
                 let ix_h: Real = splits_num as Real - ((pos_max - aabb.maxs()[i]) / pos_step);
 
@@ -202,14 +201,9 @@ impl<'a, T> Node<'a, T>
             let n_right = bins_h[bin_ix];
             let sah_i = sah.eval((&bbox_left, n_left), (&bbox_right, n_right), self_bbox);
 
-            if i == 0 {
+            if i == 0 || sah_i < split.0 {
                 split = (sah_i, (i, split_pos), (bbox_left, n_left), (bbox_right, n_right)); 
-            } else {
-                if sah_i < split.0 {
-                    split = (sah_i, (i, split_pos), (bbox_left, n_left), (bbox_right, n_right)); 
-                }
-            }
-                       
+            }     
         }
 
         // build node
@@ -217,7 +211,7 @@ impl<'a, T> Node<'a, T>
         if sah_min < setup.sah.cost_i * (objs.len() as Real) {
             let mut objs_l = Vec::with_capacity(n_left);
             let mut objs_r = Vec::with_capacity(n_right);
-            for &(ref bbox, obj) in objs.iter() {
+            for &(ref bbox, obj) in &objs {
                 if bbox_left.intersects(bbox) {
                     objs_l.push((*bbox, obj));
                 }
@@ -248,7 +242,7 @@ impl<'a, T> Node<'a, T>
             }
             
             let mut leaf_objs = Vec::with_capacity(objs.len());
-            for &(_,  o) in objs.iter() {
+            for &(_,  o) in &objs {
                 leaf_objs.push(o);
             }
 
@@ -258,9 +252,10 @@ impl<'a, T> Node<'a, T>
 
     }
 
+    #[allow(dead_code)]
     pub fn build_median(objs: Vec<(Aabb3, &'a T)>, self_bbox: &Aabb3, depth: usize, max_depth: usize) -> Self {
         if depth < max_depth && objs.len() > 5 {
-            let (axis, side_len) = (0..3).map(|i| (i, self_bbox.maxs()[i] - self_bbox.mins()[i]))
+            let (axis, _) = (0..3).map(|i| (i, self_bbox.maxs()[i] - self_bbox.mins()[i]))
                                          .max_by(|&(_, l0), &(_, l1)| l0.partial_cmp(&l1).unwrap()).unwrap();
             let split_pos =  0.5 * (self_bbox.maxs()[axis] + self_bbox.mins()[axis]);
         
@@ -273,7 +268,7 @@ impl<'a, T> Node<'a, T>
             let bbox_right = Aabb3::new(split_pos_right, *self_bbox.maxs());
             let mut objs_l = Vec::new();
             let mut objs_r = Vec::new();
-            for &(ref bbox, o) in objs.iter() {
+            for &(ref bbox, o) in &objs {
                 if bbox_left.intersects(bbox) {
                     objs_l.push((*bbox, o));
                 }
@@ -290,7 +285,7 @@ impl<'a, T> Node<'a, T>
         } else {
             // leaf
             let mut leaf_objs = Vec::with_capacity(objs.len());
-            for &(_,  o) in objs.iter() {
+            for &(_,  o) in &objs {
                 leaf_objs.push(o);
             }
             if leaf_objs.len() > 100 {
@@ -313,8 +308,8 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some((node, (t_min, t_max))) = self.nodes.pop() {
-            match node {
-                &Node::Tree(ref left_node, ref right_node, ref node_data) => {
+            match *node {
+                Node::Tree(ref left_node, ref right_node, ref node_data) => {
                     let (d, split_pos) = node_data.split;
                     let t_split = if self.ray.dir[d].abs() > Real::epsilon() {
                         (split_pos - self.ray.origin[d]) / self.ray.dir[d]
@@ -328,12 +323,10 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
                                                     } else {
                                                         (left_node, right_node)
                                                     }
+                                                } else if self.ray.origin[d] < split_pos {
+                                                    (left_node, right_node)
                                                 } else {
-                                                    if self.ray.origin[d] < split_pos {
-                                                        (left_node, right_node)
-                                                    } else {
-                                                        (right_node, left_node)
-                                                    }
+                                                    (right_node, left_node)  
                                                 };
                     if t_split > 0.0 && t_min < t_split && t_split < t_max {
                         self.nodes.push((snd_node, (t_split, t_max)));
@@ -343,7 +336,7 @@ impl<'a, T: HasBounds + ?Sized + 'a> Iterator for TraverseIter<'a, T> {
                         self.nodes.push((fst_node, (t_min, t_max)));
                     }                    
                 },
-                &Node::Leaf(ref objs) => {
+                Node::Leaf(ref objs) => {
                     return Some((objs, t_min, t_max));
                 },
             }
@@ -372,7 +365,7 @@ impl<'a, T, S> KdTreeS<'a, T, S>
     {
         let mut ls = Vec::new();
         let mut objs = Vec::new();
-        for s  in obj_iter.into_iter() {
+        for s  in obj_iter {
             if s.is_emitter() {
                 ls.push(s.as_surface());
             }
@@ -410,7 +403,7 @@ impl<'a, T, S> SceneHandler for KdTreeS<'a, T, S>
                     }
                 } 
             }
-            if let Some(_) = res {
+            if res.is_some() {
                 if t_min < t_far {
                     break 'outer;
                 }
@@ -429,7 +422,7 @@ impl<'a, T, S> SceneHandler for KdTreeS<'a, T, S>
         box self.light_sources.iter().cloned()
     }
 
-    fn light_sources<'s>(&'s self) -> LightSourcesHandler<'s> {
+    fn light_sources(&self) -> LightSourcesHandler {
         LightSourcesHandler {
             scene: self,
             //sampler: Arc::new(UniformSampler::from(self.light_sources.as_slice()))

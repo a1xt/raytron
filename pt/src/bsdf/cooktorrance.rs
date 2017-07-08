@@ -6,7 +6,6 @@ use rand;
 use rand::{Closed01};
 use rand::distributions::{Range, IndependentSample};
 use {Color};
-use color;
 use color::{Rgb};
 use utils::consts;
 use bsdf::diffuse;
@@ -70,7 +69,7 @@ pub fn eval(
 {
     let light = -vec_in;
     let cos_nl = normal.dot(&light);
-    let cos_nv = normal.dot(&vec_out);
+    let cos_nv = normal.dot(vec_out);
     let f = math::fresnel3_schlick_f0(cos_nl, f0);
     let Closed01(e) = rand::random::<Closed01<Real>>();
     let (ks, kd) = (0.5, 0.5);
@@ -79,7 +78,7 @@ pub fn eval(
         let half = calc_halfvec_refl(vec_in, vec_out);
         let cos_nh = normal.dot(&half);
         let cos_lh = half.dot(&light);
-        let cos_oh = half.dot(&vec_out);
+        let cos_oh = half.dot(vec_out);
         let (fr, pdf) = eval_reflection(cos_nl, cos_nv, cos_nh, cos_lh, cos_oh, f0, alpha);
         (fr, pdf * ks)
     } else { // diffuse
@@ -96,7 +95,7 @@ pub fn calc_halfvec_refl(vec_in: &Vector3f, vec_out: &Vector3f) -> Vector3f {
 
 #[inline]
 pub fn calc_view(light: &Vector3f, half: &Vector3f) -> Vector3f {
-    math::reflect_vec(&light, &half)
+    math::reflect_vec(light, half)
 }
 
 pub fn sample_halfvec(normal: &Vector3f, alpha: Real) -> Vector3f {
@@ -132,7 +131,7 @@ pub fn sample(
         let (ks, kd) = (0.5, 0.5);
         let Closed01(e) = rand::random::<Closed01<Real>>();
         if e <= ks { // specular
-            let half = sample_halfvec(&normal, alpha);
+            let half = sample_halfvec(normal, alpha);
             let vec_out = calc_view(&light, &half);
             let cos_nv = normal.dot(&vec_out);
             let cos_nh = normal.dot(&half);
@@ -195,7 +194,7 @@ impl Bsdf for CookTorrance {
         in_dir: &Vector3f) 
         -> (Vector3f, Color, Real)
     {
-        let (out_dir, fr, pdf) = sample(surface_normal, &in_dir, &self.f0, &self.albedo, self.alpha);
+        let (out_dir, fr, pdf) = sample(surface_normal, in_dir, &self.f0, &self.albedo, self.alpha);
         let spek = Color::new(fr.r.abs() as f32, fr.g.abs() as f32, fr.b.abs() as f32);
         (out_dir, spek, pdf)
            

@@ -36,7 +36,7 @@ impl DbgRayCaster {
                     //return color;
                     if let Some(lp) = scene.intersection(&shadow_ray){
                         
-                        if let Some(_) = lp.bsdf.radiance() {
+                        if lp.bsdf.radiance().is_some() {
                             let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
                             return color * (cos_theta as f32);
@@ -56,9 +56,7 @@ impl DbgRayCaster {
 
 impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> for DbgRayCaster {
     fn trace_path(&self, scene: &S, initial_ray: &Ray3f, _: &RenderSettings) -> Color {
-        let res = self.trace_path_rec::<S>(scene, &initial_ray, 0);
-
-        res        
+        self.trace_path_rec::<S>(scene, initial_ray, 0)
     }
 
     fn get_ray(&self, _ : &C, x: u32, y: u32) -> Ray3f {

@@ -1,5 +1,6 @@
 #![feature(box_syntax)]
 #![feature(type_ascription)]
+#![allow(unused_imports)]
 
 extern crate pt_app;
 extern crate gfx;
@@ -128,7 +129,7 @@ fn main () {
     //     *v = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE * 5.0)));
     // }
     // let cube_mesh = cube.build_bv(false);
-    // let polygons = cube_mesh.polygons();
+    // let polygons = cube_mesh.to_polygons();
 
     let plane_mesh = Plane::build(
         Point3f::new(0.0, 0.0, 0.0),
@@ -146,7 +147,7 @@ fn main () {
                 v3: TexturedVertex::new(quad.v3, Vector2::new(1.0, 0.0)),
             }
         });
-    let polygons = plane_mesh.polygons();
+    let polygons = plane_mesh.to_polygons();
 
     // let green_mat = Arc::new(DiffuseMat::new(color::Color::new(0.5, 0.75, 0.5), None));
     // let cube_mesh = Cube::build(
@@ -164,24 +165,24 @@ fn main () {
     //     |_| (1, 1),
     //     false);
 
-    // let polygons = cube_mesh.polygons();
+    // let polygons = cube_mesh.to_polygons();
 
     // let cube_mesh = cube_with_diffuse_tex(Point3f::new(0., 0., 0.), (20., 20., 20.), &dif_tex, None);
-    // let polygons = cube_mesh.polygons();
+    // let polygons = cube_mesh.to_polygons();
 
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
-    let mut scene_builder = s.shape_list();
+    let mut scene_builder = s.to_shape_list();
     
 
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
 
-    for p in polygons.iter() {
+    for p in &polygons {
         scene_builder.add_shape(p);
     }
 
-    let scene = Box::new(scene_builder.to_shape_list());
+    let scene = Box::new(scene_builder.into_shape_list());
 
     // use pt_app::pt::scenehandlerkdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()

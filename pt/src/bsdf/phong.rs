@@ -22,8 +22,8 @@ impl Phong {
         let mut s = ks;
         let mut d = kd;
         if ks + kd > 1.0 {
-            s = s / (ks + kd);
-            d = d / (ks + kd);
+            s /= ks + kd;
+            d /= ks + kd;
         }
         Phong {
             color: color,
@@ -47,8 +47,8 @@ impl Phong {
         let ys = alpha.cos();
         let zs = alpha.sin() * phi.sin();
 
-        let y = normal.clone();
-        let mut h = y.clone();
+        let y = *normal;
+        let mut h = y;
 
         if h.x.abs() <= h.y.abs() && h.x.abs() <= h.z.abs() {
             h.x = 1.0;
@@ -133,7 +133,7 @@ impl Bsdf for Phong {
     {
         let Closed01(e) = rand::random::<Closed01<f32>>();
         if e < self.kd {
-            let pdf = out_dir.dot(&surface_normal) / PI as Real;
+            let pdf = out_dir.dot(surface_normal) / PI as Real;
 
             (self.color * (1.0 / PI), pdf)
 
@@ -144,7 +144,7 @@ impl Bsdf for Phong {
             // let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
             let in_dir_refl = math::reflect_vec(&(-in_dir), surface_normal);
             
-            let cos_alpha = in_dir_refl.dot(&out_dir);
+            let cos_alpha = in_dir_refl.dot(out_dir);
             if cos_alpha > 0.0 {
                 let pdf = (n + 1.0) * cos_alpha.powf(n) / (2.0 * PI as Real);
 
@@ -165,8 +165,8 @@ impl Bsdf for Phong {
     fn sample(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Real) {
         let Closed01(e) = rand::random::<Closed01<f32>>();
         if e < self.kd {
-            let out_dir = math::hs_cosine_sampling(&surface_normal);
-            let pdf = out_dir.dot(&surface_normal);
+            let out_dir = math::hs_cosine_sampling(surface_normal);
+            let pdf = out_dir.dot(surface_normal);
 
             (out_dir, self.color, pdf)
 

@@ -18,7 +18,6 @@ mod inner {
     use math::{self, Ray3f, Point3f, Vector3f, Real, Norm};
     use {RenderSettings, Color};
     use rand::{self, Closed01};
-    use color;
     
     pub trait RendererHelper<S, C> : Sync 
         where S: SceneHandler + ?Sized, C: RenderCamera + ?Sized
@@ -28,7 +27,7 @@ mod inner {
         
         fn get_ray(&self, camera: &C, x: u32, y: u32) -> Ray3f;
 
-        fn render_job<'a>(&self, scene: &S, camera: &C, setup: &RenderSettings, img_rect: ((u32, u32), (u32, u32))) -> Vec<Color> {
+        fn render_job(&self, scene: &S, camera: &C, setup: &RenderSettings, img_rect: ((u32, u32), (u32, u32))) -> Vec<Color> {
             let ((x0, y0), (img_w, img_h))  = img_rect;
             let mut result = Vec::with_capacity((img_w * img_h) as usize);
             for y in 0..img_h {
@@ -45,9 +44,9 @@ mod inner {
 
         fn add_to_pixel(&self, c: &Color, pnum: f32, x: u32, y: u32, out_image: &mut TexView<Color>) {
             let mut pixel = out_image.pixel(x as usize, y as usize);
-            pixel = pixel * (pnum - 1.0);
-            pixel = pixel + *c;
-            pixel = pixel * (1.0 / pnum);
+            pixel *= pnum - 1.0;
+            pixel += *c;
+            pixel *= 1.0 / pnum;
             out_image.set_pixel(x as usize, y as usize, pixel);
         }
     }
@@ -78,6 +77,7 @@ mod inner {
                 dy: 0.0,
             }
         }
+
         pub fn with_camera <C: RenderCamera + ?Sized> (camera: &C) -> CameraRayGenerator {
 
             let origin = camera.pos();
@@ -115,11 +115,9 @@ mod inner {
 
             let rx = self.x0 + self.dx * (x as Real) + self.dx * (rnd_x - 0.5);
             let ry = self.y0 - self.dy * (y as Real) + self.dy * (rnd_y - 0.5);
-
             let ray_dir = self.forward + self.right * rx + self.up * ry;
-            let ray = Ray3f::new(&self.origin, &ray_dir.normalize());
 
-            ray
+            Ray3f::new(&self.origin, &ray_dir.normalize())
         }
     }
 }

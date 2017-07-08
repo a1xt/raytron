@@ -83,7 +83,7 @@ impl RenderCamera for FPSCamera {
     fn view_matrix(&self) -> Matrix4<Real> {
         self.trfm
             .inverse()
-            .unwrap_or(math::one())
+            .unwrap_or_else(math::one)
             .to_homogeneous()
     }
     fn proj_matrix(&self) -> Matrix4<Real> {
