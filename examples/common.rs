@@ -486,10 +486,16 @@ pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
     use std::sync::Arc;
 
     let basecolor_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "basecolor.png", true);
-    let normal_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "normal.png", false);
+    let mut normal_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "normal.png", false);
     let roughness_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "roughness.png", false);
     let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metalness.png", false);
     let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
+
+    for n in normal_tex.as_mut_slice() {
+        let dx_n: Rgb<Real> = Rgb::from(*n);
+        let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
+        *n = gl_n.into();
+    }
 
     let pbrtex_mat: Arc<PbrTex< Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
         basecolor_tex,

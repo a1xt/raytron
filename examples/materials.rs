@@ -107,48 +107,57 @@ impl Materials {
     fn add_plane<'a, F>(&self, mut add_shape: F) 
         where F: FnMut(Box<Surface + 'a>) ,
     {
-        // let normaltex_w = 128usize;
-        // let normaltex_h = 128usize;
-        // let mut normal_tex: Texture<Rgb> = Texture::new(normaltex_w, normaltex_h);
-        // for j in 0..normal_tex.height() {
-        //     for i in 0..normal_tex.width() {
-        //         let up = Vector3::new(0.0, 1.0, 1.2).normalize();
-        //         let down = Vector3::new(0.0, -1.0, 1.0).normalize();
-        //         let left = Vector3::new(-1.0, 0.0, 1.0).normalize();
-        //         let right = Vector3::new(1.0, 0.0, 1.0).normalize();
-        //         let u0v0 = color::Color::new(up.x, up.y, up.z);
-        //         let u0v1 = color::Color::new(down.x, down.y, down.z);
-        //         let u1v1 = color::Color::new(left.x, left.y, left.z);
-        //         let u1v0 = color::Color::new(right.x, right.y, right.z);
-        //         let u = (i as f32) / (normaltex_w - 1) as f32;
-        //         let v = (j as f32) / (normaltex_h - 1) as f32;
-        //         let c = (u0v0 * (1.0 - u) + u1v0 * u) * (1.0 - v) + (u0v1 * (1.0 - u) + u1v1 * u) * v;
-        //         //normal_tex.set_pixel(i, j, c);
-        //         normal_tex.set_pixel(i, j, color::BLUE);
-        //         //normal_tex.set_pixel(i, j, u0v0);
-        //     }
-        // }
-        // let basecolor_tex: Texture<Rgb<f32>> = mono_texture!(color::WHITE.into());
-        // let roughness_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(0.0));
-        // let spec_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(1.0));
-        // let metal_tex: Texture<Luma<f32>> = mono_texture!(Luma::from(1.0));
+        let gen_tex_w = 32usize;
+        let gen_tex_h = 32usize;
+        let mut gen_tex: Texture<Rgb> = Texture::new(gen_tex_w, gen_tex_h);
+        for j in 0..gen_tex.height() {
+            for i in 0..gen_tex.width() {
+                let black = (j % 2) ^ (i % 2) != 0;
+                if black {
+                    gen_tex.set_pixel(i, j, color::BLACK);
+                } else {
+                    gen_tex.set_pixel(i, j, color::WHITE);
+                }
+            }
+        }
 
-        let path = "data/rusted_iron/".to_string();
+        let basecolor_tex: Texture<Rgb<f64>> = mono_texture!(color::WHITE.into());
+        let roughness_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(0.0));
+        let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
+        let metal_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
+        let mut normal_tex: Texture<Rgb<f64>> = load_texture_rgb64("data/testnormal.png".to_string(), false);
+        for n in normal_tex.as_mut_slice() {
+            let dx_n: Rgb<Real> = Rgb::from(*n);
+            let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
+            *n = gl_n.into();
+        }
+
+        let plane_mat: Arc<PbrTex< Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
+            basecolor_tex,
+            normal_tex,
+            roughness_tex,
+            spec_tex,
+            metal_tex));
+            
+        // let tex = Arc::new(gen_tex) as Arc<TexView<Color>>;
+        // let plane_mat = Arc::new(DiffuseTex::new(tex.clone(), Some(tex.clone())));
+
+        // let path = "data/rusted_iron/".to_string();
         //let path = "data/rusted_iron2/".to_string();
-        //let path = "data/cement/".to_string();
-        let pbrtex_mat = load_pbr(path);
-        //let pbrtex_mat = Arc::new(DiffuseMat::new(color::WHITE, None)); 
+        // let path = "data/cement/".to_string();
+        // let plane_mat = load_pbr(path);
+        //let plane_mat = Arc::new(DiffuseMat::new(color::WHITE, None)); 
         
         let plane_mesh = Plane::build(
-            Point3f::new(0.0, 0.0, -400.0),
+            Point3f::new(0.0, 0.0, 0.0),
             Point3f::new(0.0, 0.0, 1.0),
             Vector3f::new(0.0, 1.0, 0.0),
             // Point3f::new(0.0, -150.0, 0.0),
             // Point3f::new(0.0, 0.0, 0.0),
             // Vector3f::new(0.0, 0.0, -1.0),
             (700.0, 700.0),
-            pbrtex_mat,
-            Some((1, 1)),
+            plane_mat,
+            Some((2, 2)),
             None,
             |quad| {
                 Quad {
@@ -213,10 +222,10 @@ impl AppState for Materials {
             scene.add_shape((box p) as Box<Surface>);
         }
 
-        {
-            let scene_ref = &mut scene;
-            self.add_spheres(move |s| scene_ref.add_shape(s));
-        }
+        // {
+        //     let scene_ref = &mut scene;
+        //     self.add_spheres(move |s| scene_ref.add_shape(s));
+        // }
 
         {
             let scene_ref = &mut scene;

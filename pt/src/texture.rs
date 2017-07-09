@@ -76,6 +76,11 @@ impl<P: Pixel> Texture<P> {
     }
 
     #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [P::Raw] {
+        self.data.as_mut_slice()
+    }
+
+    #[inline]
     pub fn pixels<'s>(&'s self) -> impl Iterator<Item = P::Color> + 's {
         self.data.iter().map(|&r| r.into())
     }
