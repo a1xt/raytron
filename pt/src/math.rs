@@ -8,12 +8,14 @@ pub type Ray3f = Ray3<Real>;
 pub type Matrix4f = Matrix4<Real>;
 pub type Vector3f = Vector3<Real>;
 pub type Vector4f = Vector4<Real>;
+pub type Point2f = Point2<Real>;
 pub type Point3f = Point3<Real>;
 pub type Point4f = Point4<Real>;
 
 use std::f32::EPSILON;
 pub const FLOAT_EPSILON: Real = EPSILON as Real;
 use color::Rgb;
+use utils::consts;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F> where F: Copy + Clone {
@@ -253,4 +255,110 @@ pub fn calc3_f0(n1: &Rgb<Real>, n2: &Rgb<Real>) -> Rgb<Real> {
         calc_f0(n1.g, n2.g),
         calc_f0(n1.b, n2.b),
     )
+}
+
+mod intersection_area_priv {
+    use super::*;
+    pub fn is_inside((plane_pos, axis, right_inside): (Real, usize, bool), p: &Point2f) -> bool {
+        ((p[axis] - plane_pos >= 0.0) && right_inside) ||
+        ((p[axis] - plane_pos <= 0.0) && !right_inside)
+    }
+
+    pub fn ix_next(vec: &Vec<(Point2f, bool)>, ix: usize) -> usize {
+        if ix + 1 >= vec.len() {
+            0
+        } else {
+            ix + 1
+        }
+    }
+
+    pub fn split_side(i: &Point2f, o: &Point2f, (plane_pos, axis, _): (Real, usize, bool)) -> Point2f {
+        let t = (plane_pos - o[axis]) / (i[axis] - o[axis]);
+        let dir = *i - *o;
+        *o + dir * t
+    }
+}
+
+pub fn intersection_area_tq(tr0: Point2f, tr1: Point2f, tr2: Point2f, q_min: Point2f, q_max: Point2f) -> Real {
+    use self::intersection_area_priv::*;
+    let max_vertex_num = 5;
+
+    // build union
+
+    let planes = [(q_min.x, 0, true), (q_min.y, 1, true), (q_max.x, 0, false), (q_max.y, 1, false)];
+    let mut vertices = vec![(tr0, true), (tr1, true), (tr2, true),];
+    for &plane in &planes {
+        for v in &mut vertices {
+            v.1 = is_inside(plane, &v.0);
+        }
+
+        let mut clipped = Vec::with_capacity(max_vertex_num);
+        for (v_ix, &(ref v, is_v_inside)) in vertices.iter().enumerate() {
+            if is_v_inside {
+                clipped.push((*v, is_v_inside));
+            }
+
+            let ixn = ix_next(&vertices, v_ix);
+            let (v_next, is_next_inside) = vertices[ixn];
+            if is_v_inside != is_next_inside {
+                let v_split = if is_v_inside {
+                    split_side(&v, &v_next, plane)
+                } else {
+                    split_side(&v_next, &v, plane)
+                };
+                clipped.push((v_split, is_next_inside));
+            }  
+        }
+
+        vertices = clipped;
+    }
+
+    //compute area
+
+    let mut area = 0.0;
+    if let Some(&(ref v_first, _)) = vertices.first() {
+        for v in vertices[1..].windows(2) {
+            let (ref v1, _) = v[0];
+            let (ref v2, _) = v[1];
+            area += triangle_area(
+                &Point3f::new(v_first.x, v_first.y, 0.0),
+                &Point3f::new(v1.x, v1.y, 0.0),
+                &Point3f::new(v2.x, v2.y, 0.0))
+        }
+    }
+
+    area
+
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn intersection_area_test() {
+        let quad = [Point2f::new(0.0, 0.0), Point2f::new(1.0, 1.0)];
+        
+        let tr0 = [Point2f::new(0.0, 0.0), Point2f::new(1.0, 1.0), Point2f::new(1.0, 0.0)];
+
+        let area = intersection_area_tq(tr0[0], tr0[1], tr0[2], quad[0], quad[1]);
+        assert_eq!(area, 0.5);
+
+        let tr1 = [Point2f::new(0.5, 2.0), Point2f::new(2.0, 0.5), Point2f::new(0.5, 0.5)];
+        let area = intersection_area_tq(tr1[0], tr1[1], tr1[2], quad[0], quad[1]);
+        assert_eq!(area, 0.25);
+
+        let tr2 = [Point2f::new(0.25, 0.25), Point2f::new(0.25, 0.75), Point2f::new(0.75, 0.25)];
+        let area = intersection_area_tq(tr2[0], tr2[1], tr2[2], quad[0], quad[1]);
+        assert_eq!(area, 0.125);
+
+        let tr3 = [Point2f::new(0.25, 0.5), Point2f::new(0.5, 1.5), Point2f::new(0.75, 0.5)];
+        let area = intersection_area_tq(tr3[0], tr3[1], tr3[2], quad[0], quad[1]);
+        assert_eq!(area, 0.1875);
+
+        let tr4 = [Point2f::new(2.0, 2.0), Point2f::new(2.0, 3.0), Point2f::new(3.0, 2.0)];
+        let area = intersection_area_tq(tr[0], tr4[1], t43[2], quad[0], quad[1]);
+        assert_eq!(area, 0.0);
+    }
+
 }

@@ -24,7 +24,7 @@ pub struct Polygon<'a, R, V = &'a R> where R: Vertex + 'a, V: AsRef<R> + Sync + 
 
 impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send + Clone + Copy + 'a {
     pub fn new (v0: V, v1: V, v2: V, mat: Arc<Material<R> + 'a>) -> Self {
-        let e = mat.total_radiance(v0.as_ref(), v2.as_ref(), v1.as_ref());
+        let e = mat.total_radiance(v0.as_ref(), v1.as_ref(), v2.as_ref());
         Polygon {
             v0: v0,
             v1: v1,
@@ -38,8 +38,8 @@ impl<'a, R, V> Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> + Sync + Send
     pub fn material(&self, coords: (Real, Real, Real)) -> BsdfRef {
         //self.mat.bsdf(&Vertex::interpolate(self.v0, self.v1, self.v2, coords)) // [FIXME]
         self.mat.bsdf(&Vertex::interpolate(self.v0(), 
-                                           self.v2(), 
                                            self.v1(), 
+                                           self.v2(), 
                                            coords))
     }
 
@@ -75,7 +75,7 @@ impl<'a, R, V> Surface for Polygon<'a, R, V> where R: Vertex + 'a, V: AsRef<R> +
                 SurfacePoint {
                     position: pos,
                     normal: norm,
-                    bsdf: self.material((1.0 - u - v, u, v)),
+                    bsdf: self.material((1.0 - u - v, v, u)),
                     surface: self,
                 }
             ))
@@ -195,7 +195,7 @@ pub mod material {
     use texture::{TexView, Texture};
     use std::sync::Arc;
     use math;
-    use math::{Real, Norm, Cross, Vector3f};
+    use math::{Real, Norm, Cross, Vector3f, Point2f};
     use utils::consts;
     use num::{Float, NumCast};
 
@@ -304,39 +304,50 @@ pub mod material {
 
         fn total_radiance(&self, v0: &TexturedVertex, v1: &TexturedVertex, v2: &TexturedVertex) -> Option<Color> {
             if let Some(e_tex) = self.radiance.as_ref() {
-                let dt = consts::TEXTURE_INTEGRAL_STEP;
-                let da: Real = 2.0 * (math::triangle_area(&v0.position(), &v1.position(), &v2.position()) * dt * dt);
+                let tex = e_tex.as_ref();
+                let u_min = v0.uv[0].min(v1.uv[0].min(v2.uv[0]));
+                let u_max = v0.uv[0].max(v1.uv[0].max(v2.uv[0]));
+                let v_min = v0.uv[1].min(v1.uv[1].min(v2.uv[1]));
+                let v_max = v0.uv[1].max(v1.uv[1].max(v2.uv[1]));
+
+                let u_start = (u_min as Real * tex.width() as Real) as usize;
+                let u_finish = (u_max as Real * tex.width() as Real + 0.5) as usize;
+                let v_start = (v_min as Real * tex.height() as Real) as usize;
+                let v_finish = (v_max as Real * tex.height() as Real + 0.5) as usize;
+
                 let mut sum: Rgb<Real> = color::BLACK.into();
-                let mut u = dt;
-                let mut v;
-                //let mut cl_area = 0.0;
-                while u < 1.0 + consts::REAL_EPSILON {
-                    v = dt;
-                    while v < 1.0 +consts::REAL_EPSILON {
-                        if u + v < 1.0 + consts::REAL_EPSILON {
-                            let us = u - dt * 0.25;
-                            let vs = v - dt * 0.25;
-                            let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
-                            let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
-                            sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
-                            //cl_area += 0.5 * da;
+                let mut uv_area: Real = 0.0;
+                for v in v_start .. v_finish {
+                    for u in u_start .. u_finish {
+                        let t_min = Point2f::new(
+                            u as Real / tex.width() as Real,
+                            v as Real / tex.height() as Real);
+                        let t_max = Point2f::new(
+                            (u + 1) as Real / tex.width() as Real,
+                            (v + 1) as Real / tex.height() as Real);
+                        let area = math::intersection_area_tq(
+                            Point2f::new(v0.uv.x as Real, v0.uv.y as Real), 
+                            Point2f::new(v1.uv.x as Real, v1.uv.y as Real), 
+                            Point2f::new(v2.uv.x as Real, v2.uv.y as Real),
+                            t_min, 
+                            t_max);
+                        if area > 0.0 {
+                            let c = (t_min.to_vector() + t_max.to_vector()) * 0.5;
+                            let e = tex.pixel(u, v);
+                            sum += Rgb::<Real>::from(e) * area;
+                            uv_area += area;
                         }
-                        if u + v - dt < 1.0 + consts::REAL_EPSILON {
-                            let us = u - dt * 0.75;
-                            let vs = v - dt * 0.75;
-                            let p = <TexturedVertex as Vertex>::interpolate(v0, v1, v2, (1.0 - us - vs, us, vs));
-                            let e = e_tex.as_ref().sample(p.uv.x, p.uv.y);
-                            sum += Into::<Rgb<Real>>::into(e) * (0.5 * da);
-                            //cl_area += 0.5 * da;
-                        }
-                        v += dt;
                     }
-                    u += dt;
                 }
-                // let area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
+
+                let tr_area = math::triangle_area(&v0.position(), &v1.position(), &v2.position());
+                let texel_area = tr_area / uv_area;
+                sum *= texel_area;
+
                 // println!("texture integral calculated:");
-                // println!("  - calc area: {:?}, true area: {:?}", cl_area, area);
+                // println!("  - calc area: {:?}, true area: {:?}", uv_area, tr_area);
                 // println!("  - texture total radiance: {:?}", sum);
+
                 Some(sum.into())
             } else {
                 None
