@@ -149,10 +149,10 @@ where
             self.vertices.append(&mut other.vertices);
             self.indices.append(&mut other.indices);
             self.materials.append(&mut other.materials);
-            for &mut [ref mut ix0, ref mut ix1, ref mut ix2] in &mut self.indices[ix_num..] {
-                *ix0 += ix_offset;
-                *ix1 += ix_offset;
-                *ix2 += ix_offset;
+            for ix in &mut self.indices[ix_num..] {
+                ix[0] += ix_offset;
+                ix[1] += ix_offset;
+                ix[2] += ix_offset;
             }
         }
     }
