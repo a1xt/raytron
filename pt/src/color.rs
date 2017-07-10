@@ -1,12 +1,13 @@
-use core::array::FixedSizeArray;
 
-use texture::{Texture};
+
+pub use self::consts::*;
+use core::array::FixedSizeArray;
 use num::{Num, FromPrimitive, ToPrimitive, Bounded};
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
 use std::u8;
-use utils::{clamp};
 
-pub use self::consts::*;
+use texture::Texture;
+use utils::clamp;
 
 pub type Color = Rgb;
 pub type Image = Texture<Rgba>;
@@ -176,8 +177,19 @@ mod consts {
 
 }
 
-pub trait ColorChannel: Copy + PartialOrd + Num + ChannelBounds + ChannelBlend + 
-                        FromPrimitive + ToPrimitive + Bounded + Default + Sync + Send {}
+pub trait ColorChannel
+    : Copy
+    + PartialOrd
+    + Num
+    + ChannelBounds
+    + ChannelBlend
+    + FromPrimitive
+    + ToPrimitive
+    + Bounded
+    + Default
+    + Sync
+    + Send {
+}
 impl ColorChannel for u8 {}
 impl ColorChannel for f32 {}
 impl ColorChannel for f64 {}
@@ -229,8 +241,7 @@ pub trait ColorBlend<T: ColorChannel> {
     fn blend(c0: Self, w0: f32, c1: Self, w1: f32) -> Self;
 }
 
-pub trait Pixel: Sync + Send
-{
+pub trait Pixel: Sync + Send {
     type Channel: ColorChannel;
     type Raw: RawColor<Self::Channel>;
     type Color: Copy + ColorBlend<Self::Channel> + From<Self::Raw> + Into<Self::Raw> + Default;
@@ -239,8 +250,11 @@ pub trait Pixel: Sync + Send
 pub trait RawColor<Ch>: FixedSizeArray<Ch> + Copy + Sync + Send {}
 
 impl<T, Ch> RawColor<Ch> for T
-    where T: FixedSizeArray<Ch> + Copy + Sync + Send,
-          Ch: ColorChannel { }
+where
+    T: FixedSizeArray<Ch> + Copy + Sync + Send,
+    Ch: ColorChannel,
+{
+}
 
 pub trait ChannelCast<T: ColorChannel>: ColorChannel {
     fn cast_from(other: T) -> Self;
@@ -268,7 +282,7 @@ impl<T: ColorChannel> ChannelCast<T> for T {
     fn cast_from(other: T) -> T {
         other
     }
-    
+
     #[inline]
     fn cast_into(self) -> T {
         self
@@ -280,7 +294,7 @@ impl ChannelCast<f32> for u8 {
     fn cast_from(other: f32) -> u8 {
         (clamp(other, f32::MIN_CHVAL, f32::MAX_CHVAL) * (u8::MAX_CHVAL as f32)) as u8
     }
-    
+
     #[inline]
     fn cast_into(self) -> f32 {
         (self as f32) / (u8::MAX_CHVAL as f32)
@@ -292,7 +306,7 @@ impl ChannelCast<f32> for f64 {
     fn cast_from(other: f32) -> f64 {
         other as f64
     }
-    
+
     #[inline]
     fn cast_into(self) -> f32 {
         self as f32
@@ -304,7 +318,7 @@ impl ChannelCast<f64> for u8 {
     fn cast_from(other: f64) -> u8 {
         (clamp(other, f64::MIN_CHVAL, f64::MAX_CHVAL) * (u8::MAX_CHVAL as f64)) as u8
     }
-    
+
     #[inline]
     fn cast_into(self) -> f64 {
         (self as f64) / (u8::MAX_CHVAL as f64)

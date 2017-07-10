@@ -1,10 +1,11 @@
-use traits::{Vertex, Material};
 use polygon::Polygon;
 use std::sync::Arc;
+use traits::{Vertex, Material};
 
 #[derive(Default)]
 pub struct Mesh<'a, V>
-    where V: Vertex
+where
+    V: Vertex,
 {
     vertices: Vec<V>,
     indices: Vec<[u32; 3]>,
@@ -12,7 +13,8 @@ pub struct Mesh<'a, V>
 }
 
 impl<'a, V> Mesh<'a, V>
-    where V: Vertex
+where
+    V: Vertex,
 {
     pub fn new() -> Self {
         Mesh {
@@ -30,22 +32,22 @@ impl<'a, V> Mesh<'a, V>
         }
     }
 
-    pub fn from_data(vertices: Vec<V>,
-                     indices: Vec<[u32; 3]>,
-                     materials: Vec<Arc<Material<V> + 'a>>)
-                     -> Result<Self, ()> {
+    pub fn from_data(
+        vertices: Vec<V>,
+        indices: Vec<[u32; 3]>,
+        materials: Vec<Arc<Material<V> + 'a>>,
+    ) -> Result<Self, ()> {
         let vnum = vertices.len() as u32;
-        let bounded = indices
-            .iter()
-            .fold(true,
-                  |b, &[i0, i1, i2]| b && i0 < vnum && i1 < vnum && i2 < vnum);
+        let bounded = indices.iter().fold(true, |b, &[i0, i1, i2]| {
+            b && i0 < vnum && i1 < vnum && i2 < vnum
+        });
 
         if bounded && indices.len() == materials.len() {
             Ok(Mesh {
-                   vertices,
-                   indices,
-                   materials,
-               })
+                vertices,
+                indices,
+                materials,
+            })
         } else {
             Err(())
         }
@@ -57,14 +59,19 @@ impl<'a, V> Mesh<'a, V>
     }
 
     pub fn add_vertices<I>(&mut self, iter: I)
-        where I: Iterator<Item = V>
+    where
+        I: Iterator<Item = V>,
     {
         for v in iter {
             self.vertices.push(v);
         }
     }
 
-    pub fn add_face(&mut self, indices: [u32; 3], material: Arc<Material<V> + 'a>) -> Result<(), ()> {
+    pub fn add_face(
+        &mut self,
+        indices: [u32; 3],
+        material: Arc<Material<V> + 'a>,
+    ) -> Result<(), ()> {
         let vnum = self.vertices.len() as u32;
         if indices[0] < vnum && indices[1] < vnum && indices[2] < vnum {
             self.indices.push(indices);
@@ -81,28 +88,43 @@ impl<'a, V> Mesh<'a, V>
     // {
     // }
 
-    pub fn polygon_iter<'s>(&'s self) -> impl Iterator<Item = Polygon<'s, V, &'s V>> + 's where V: AsRef<V> {
+    pub fn polygon_iter<'s>(&'s self) -> impl Iterator<Item = Polygon<'s, V, &'s V>> + 's
+    where
+        V: AsRef<V>,
+    {
         let mat_iter = self.materials.iter();
-        self.indices.iter().zip(mat_iter).map(move |(&[i0, i1, i2], mat)| {
-            Polygon::new(&self.vertices[i0 as usize],
-                         &self.vertices[i1 as usize],
-                         &self.vertices[i2 as usize],
-                         mat.clone())
-        })
+        self.indices.iter().zip(mat_iter).map(
+            move |(&[i0, i1, i2], mat)| {
+                Polygon::new(
+                    &self.vertices[i0 as usize],
+                    &self.vertices[i1 as usize],
+                    &self.vertices[i2 as usize],
+                    mat.clone(),
+                )
+            },
+        )
     }
 
-    pub fn to_polygons(&self) -> Vec<Polygon<V, &V>> where V: Copy + Clone + AsRef<V> {
+    pub fn to_polygons(&self) -> Vec<Polygon<V, &V>>
+    where
+        V: Copy + Clone + AsRef<V>,
+    {
         let mut pols = Vec::new();
         for (&[i0, i1, i2], mat) in self.indices.iter().zip(self.materials.iter()) {
-            pols.push(Polygon::new(&self.vertices[i0 as usize],
-                                   &self.vertices[i1 as usize],
-                                   &self.vertices[i2 as usize],
-                                   mat.clone()));
+            pols.push(Polygon::new(
+                &self.vertices[i0 as usize],
+                &self.vertices[i1 as usize],
+                &self.vertices[i2 as usize],
+                mat.clone(),
+            ));
         }
         pols
     }
 
-    pub fn into_polygons(self) -> Vec<Polygon<'a, V, V>> where V: Copy + Clone + AsRef<V> {
+    pub fn into_polygons(self) -> Vec<Polygon<'a, V, V>>
+    where
+        V: Copy + Clone + AsRef<V>,
+    {
         let indices = self.indices;
         let vertices = self.vertices;
         let materials = self.materials;
@@ -110,10 +132,12 @@ impl<'a, V> Mesh<'a, V>
             .into_iter()
             .zip(materials.into_iter())
             .map(|([i0, i1, i2], mat)| {
-                Polygon::new(vertices[i0 as usize],
-                             vertices[i1 as usize],
-                             vertices[i2 as usize],
-                             mat)
+                Polygon::new(
+                    vertices[i0 as usize],
+                    vertices[i1 as usize],
+                    vertices[i2 as usize],
+                    mat,
+                )
             })
             .collect()
     }

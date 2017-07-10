@@ -1,2 +1,2 @@
 reorder_imports = true
-write_mode = "diff"
+write_mode = "overwrite"

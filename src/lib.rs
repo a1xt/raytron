@@ -1,7 +1,8 @@
 #![feature(conservative_impl_trait)]
 #![feature(box_syntax)]
 
-#[macro_use] extern crate gfx;
+#[macro_use]
+extern crate gfx;
 pub extern crate gfx_window_glutin;
 pub extern crate gfx_device_gl;
 pub extern crate glutin;
@@ -14,19 +15,19 @@ pub mod fpscamera;
 pub mod camera_controller;
 pub mod scenes;
 
-use std::string::String;
-use gfx::{Device, Factory};
-
-use gfx::memory::Usage;
-use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
-use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
-use gfx::Bundle;
-use glutin::{CursorState, Event, GlRequest, Api};
-
-use pt::math::{Real};
 
 pub use camera_controller::{CameraController, FPSCameraController};
-pub use fpscamera::{FPSCamera};
+pub use fpscamera::FPSCamera;
+use gfx::{Device, Factory};
+use gfx::Bundle;
+use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
+use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
+
+use gfx::memory::Usage;
+use glutin::{CursorState, Event, GlRequest, Api};
+
+use pt::math::Real;
+use std::string::String;
 
 pub type ColorFormat = Rgba8;
 pub type DepthFormat = DepthStencil;
@@ -47,14 +48,15 @@ pub struct App<D: Device, F: Factory<D::Resources>> {
 
     events: Vec<glutin::WindowEvent>,
     cam_ctrl: FPSCameraController,
-    fsquad: Bundle<D::Resources, pipe::Data<D::Resources>>
+    fsquad: Bundle<D::Resources, pipe::Data<D::Resources>>,
 }
 
 impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
-    pub fn new(screen_width: u32,
-           screen_height: u32,
-           title: String)
-           -> App<gfx_device_gl::Device, gfx_device_gl::Factory> {
+    pub fn new(
+        screen_width: u32,
+        screen_height: u32,
+        title: String,
+    ) -> App<gfx_device_gl::Device, gfx_device_gl::Factory> {
 
         use gfx::traits::FactoryExt;
 
@@ -70,11 +72,13 @@ impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
 
         let encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
-        let pso = factory.create_pipeline_simple(
-            include_bytes!("shaders/default_120.glslv"),
-            include_bytes!("shaders/default_120.glslf"),
-            pipe::new()
-        ).unwrap();
+        let pso = factory
+            .create_pipeline_simple(
+                include_bytes!("shaders/default_120.glslv"),
+                include_bytes!("shaders/default_120.glslf"),
+                pipe::new(),
+            )
+            .unwrap();
 
         let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&VBUF_DATA, ());
 
@@ -84,23 +88,28 @@ impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
         //     gfx::texture::Kind::D2(1, 1, gfx::texture::AaMode::Single), &texels[..]
         //     ).unwrap();
 
-        let tex = factory.create_texture::<gfx::format::R32_G32_B32_A32> (
-            gfx::texture::Kind::D2(1, 1, gfx::texture::AaMode::Single),
-            1,
-            gfx::SHADER_RESOURCE,
-            Usage::Dynamic,
-            Some(gfx::format::ChannelType::Float)
-        ).unwrap();
+        let tex = factory
+            .create_texture::<gfx::format::R32_G32_B32_A32>(
+                gfx::texture::Kind::D2(1, 1, gfx::texture::AaMode::Single),
+                1,
+                gfx::SHADER_RESOURCE,
+                Usage::Dynamic,
+                Some(gfx::format::ChannelType::Float),
+            )
+            .unwrap();
 
-        let texture_view = factory.view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
-            &tex,
-            (0,0),
-            gfx::format::Swizzle::new()
-        ).unwrap();
+        let texture_view = factory
+            .view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
+                &tex,
+                (0, 0),
+                gfx::format::Swizzle::new(),
+            )
+            .unwrap();
 
         let sinfo = gfx::texture::SamplerInfo::new(
             gfx::texture::FilterMethod::Bilinear,
-            gfx::texture::WrapMode::Clamp);
+            gfx::texture::WrapMode::Clamp,
+        );
 
         let data = pipe::Data {
             vbuf: vbuf,
@@ -124,9 +133,11 @@ impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
                     screen_height,
                     (90.0 as Real).to_radians(),
                     1.0,
-                    10_000.0),
+                    10_000.0,
+                ),
                 0.5,
-                1.0),
+                1.0,
+            ),
             fsquad: Bundle::new(slice, pso, data),
         }
 
@@ -141,7 +152,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
         {
             let events = &mut self.events;
             self.events_loop.poll_events(|event| {
-                let Event::WindowEvent{event: e, ..} = event;
+                let Event::WindowEvent { event: e, .. } = event;
                 events.push(e);
             });
         }
@@ -153,7 +164,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
                 WindowEvent::Closed => {
                     quite = true;
                     break;
-                },
+                }
                 _ => (),
             }
         }
@@ -195,7 +206,8 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
     pub fn draw_fullscreen_quad(&mut self, tex_view: ShaderResourceView<D::Resources, [f32; 4]>) {
         let sinfo = gfx::texture::SamplerInfo::new(
             gfx::texture::FilterMethod::Bilinear,
-            gfx::texture::WrapMode::Clamp);
+            gfx::texture::WrapMode::Clamp,
+        );
 
         self.fsquad.data.tex = (tex_view, self.factory.create_sampler(sinfo));
         self.fsquad.encode(&mut self.encoder);
@@ -249,7 +261,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
 impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
     pub fn resize(&mut self, width: u32, height: u32, scale: f32) {
         let w = (width as f32 * scale) as u32;
-        let h = (height as f32 * scale) as u32;        
+        let h = (height as f32 * scale) as u32;
         self.window.set_inner_size(w, h);
         let (color, depth) = gfx_window_glutin::new_views(&self.window);
         self.color_out = color.clone();
@@ -261,13 +273,31 @@ impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
 }
 
 const VBUF_DATA: [Vertex; 6] = [
-    Vertex { pos: [-1.0, -1.0, 0.0], tex_coord: [0.0, 1.0]},
-    Vertex { pos: [-1.0,  1.0, 0.0], tex_coord: [0.0, 0.0]},
-    Vertex { pos: [ 1.0,  1.0, 0.0], tex_coord: [1.0, 0.0]},
+    Vertex {
+        pos: [-1.0, -1.0, 0.0],
+        tex_coord: [0.0, 1.0],
+    },
+    Vertex {
+        pos: [-1.0, 1.0, 0.0],
+        tex_coord: [0.0, 0.0],
+    },
+    Vertex {
+        pos: [1.0, 1.0, 0.0],
+        tex_coord: [1.0, 0.0],
+    },
 
-    Vertex { pos: [-1.0, -1.0, 0.0], tex_coord: [0.0, 1.0]},
-    Vertex { pos: [ 1.0,  1.0, 0.0], tex_coord: [1.0, 0.0]},
-    Vertex { pos: [ 1.0, -1.0, 0.0], tex_coord: [1.0, 1.0]},
+    Vertex {
+        pos: [-1.0, -1.0, 0.0],
+        tex_coord: [0.0, 1.0],
+    },
+    Vertex {
+        pos: [1.0, 1.0, 0.0],
+        tex_coord: [1.0, 0.0],
+    },
+    Vertex {
+        pos: [1.0, -1.0, 0.0],
+        tex_coord: [1.0, 1.0],
+    },
 ];
 
 gfx_defines!{

@@ -1,5 +1,5 @@
 use math::{self, Vector3f, Point3f, Ray3f, Real};
-use num::{Float};
+use num::Float;
 use utils::consts;
 
 #[derive(Copy, Clone, Debug)]
@@ -11,10 +11,7 @@ pub struct Aabb3 {
 impl Aabb3 {
     pub fn new(pmin: Point3f, pmax: Point3f) -> Aabb3 {
         assert!(math::partial_le(&pmin, &pmax));
-        Aabb3 {
-            pmin,
-            pmax,
-        }
+        Aabb3 { pmin, pmax }
     }
 
     pub fn mins(&self) -> &Point3f {
@@ -30,18 +27,15 @@ impl Aabb3 {
     }
 
     pub fn contains(&self, other: &Aabb3) -> bool {
-        math::partial_le(&self.pmin, &other.pmin) &&
-        math::partial_ge(&self.pmax, &other.pmax)
+        math::partial_le(&self.pmin, &other.pmin) && math::partial_ge(&self.pmax, &other.pmax)
     }
 
     pub fn intersects(&self, other: &Aabb3) -> bool {
-        math::partial_le(&self.pmin, &other.pmax) &&
-        math::partial_ge(&self.pmax, &other.pmin)
+        math::partial_le(&self.pmin, &other.pmax) && math::partial_ge(&self.pmax, &other.pmin)
     }
 
     pub fn contains_point(&self, point: &Point3f) -> bool {
-        math::partial_le(&self.pmin, point) &&
-        math::partial_ge(&self.pmax, point)
+        math::partial_le(&self.pmin, point) && math::partial_ge(&self.pmax, point)
     }
 
     pub fn volume(&self) -> Real {
@@ -107,31 +101,24 @@ mod tests {
 
     #[test]
     fn contains() {
-        let aabb0 = Aabb3::new(Point3f::new(-3.0, -3.0, -3.0),
-                               Point3f::new(3.0, 3.0, 3.0));
-        let aabb1 = Aabb3::new(Point3f::new(-1.0, -1.0, -1.0),
-                               Point3f::new(1.0, 1.0, 1.0));
-        let aabb2 = Aabb3::new(Point3f::new(-2.0, -2.0, -2.0),
-                               Point3f::new(4.0, 4.0, 4.0));
-        
+        let aabb0 = Aabb3::new(Point3f::new(-3.0, -3.0, -3.0), Point3f::new(3.0, 3.0, 3.0));
+        let aabb1 = Aabb3::new(Point3f::new(-1.0, -1.0, -1.0), Point3f::new(1.0, 1.0, 1.0));
+        let aabb2 = Aabb3::new(Point3f::new(-2.0, -2.0, -2.0), Point3f::new(4.0, 4.0, 4.0));
+
         assert!(aabb0.contains(&aabb1));
         assert!(!aabb0.contains(&aabb2));
         assert!(!aabb1.contains(&aabb0));
         assert!(!aabb1.contains(&aabb2));
-        assert!(aabb2.contains(&aabb1));        
-        assert!(!aabb2.contains(&aabb0));                            
+        assert!(aabb2.contains(&aabb1));
+        assert!(!aabb2.contains(&aabb0));
     }
 
     #[test]
     fn intersects() {
-        let aabb0 = Aabb3::new(Point3f::new(-3.0, -3.0, -3.0),
-                               Point3f::new(3.0, 3.0, 3.0));
-        let aabb1 = Aabb3::new(Point3f::new(-1.0, -1.0, -1.0),
-                               Point3f::new(1.0, 1.0, 1.0));
-        let aabb2 = Aabb3::new(Point3f::new(-2.0, -2.0, -2.0),
-                               Point3f::new(4.0, 4.0, 4.0));
-        let aabb3 = Aabb3::new(Point3f::new(3.5, 3.5, 3.5),
-                               Point3f::new(6.0, 6.0, 6.0));
+        let aabb0 = Aabb3::new(Point3f::new(-3.0, -3.0, -3.0), Point3f::new(3.0, 3.0, 3.0));
+        let aabb1 = Aabb3::new(Point3f::new(-1.0, -1.0, -1.0), Point3f::new(1.0, 1.0, 1.0));
+        let aabb2 = Aabb3::new(Point3f::new(-2.0, -2.0, -2.0), Point3f::new(4.0, 4.0, 4.0));
+        let aabb3 = Aabb3::new(Point3f::new(3.5, 3.5, 3.5), Point3f::new(6.0, 6.0, 6.0));
 
         assert!(aabb0.intersects(&aabb2));
         assert!(aabb2.intersects(&aabb0));
@@ -140,12 +127,10 @@ mod tests {
         assert!(aabb2.intersects(&aabb3));
         assert!(aabb3.intersects(&aabb2));
 
-        let aabb4 = Aabb3::new(Point3f::new(-1.0, 1.0, -1.0),
-                               Point3f::new(3.0, 5.0, 1.0));
-        let aabb5 = Aabb3::new(Point3f::new(-3.0, -5.0, -1.0),
-                               Point3f::new(1.0, -1.0, 1.0));
+        let aabb4 = Aabb3::new(Point3f::new(-1.0, 1.0, -1.0), Point3f::new(3.0, 5.0, 1.0));
+        let aabb5 = Aabb3::new(Point3f::new(-3.0, -5.0, -1.0), Point3f::new(1.0, -1.0, 1.0));
 
         assert!(!aabb4.intersects(&aabb5));
-        
+
     }
 }

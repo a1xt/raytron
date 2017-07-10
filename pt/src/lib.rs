@@ -29,25 +29,19 @@ pub mod mesh;
 pub mod texture;
 
 
-pub use self::traits::{
-    Bsdf,
-    Surface,
-    SceneHandler,
-    Renderer,
-    RenderCamera,
-};
+pub use self::bsdf::BsdfRef;
+pub use self::color::{Color, Image};
 
-pub use self::sphere::{Sphere};
+use self::math::{Point3f, Vector3f};
+pub use self::mesh::Mesh;
 pub use self::polygon::{Polygon, PolygonS, PolygonR};
 pub use self::polygon::material;
 pub use self::polygon::vertex;
-pub use self::mesh::Mesh;
-pub use self::scenehandler::{ShapeList};
-pub use self::color::{Color, Image};
-pub use self::bsdf::BsdfRef;
-pub use self::texture::{TexView, Texture};
+pub use self::scenehandler::ShapeList;
 
-use self::math::{Point3f, Vector3f};
+pub use self::sphere::Sphere;
+pub use self::texture::{TexView, Texture};
+pub use self::traits::{Bsdf, Surface, SceneHandler, Renderer, RenderCamera};
 
 
 pub struct SurfacePoint<'a> {
@@ -68,7 +62,7 @@ pub struct RenderSettings {
 }
 
 impl RenderSettings {
-    pub fn new (samples_per_pixel: u32, path_max_depth: u32) -> RenderSettings {
+    pub fn new(samples_per_pixel: u32, path_max_depth: u32) -> RenderSettings {
         RenderSettings {
             samples_per_pixel: samples_per_pixel,
             path_depth: path_max_depth,

@@ -1,19 +1,19 @@
-use pt::scenehandler::{ShapeListBuilder, LinearSampler};
-use pt::bsdf::{Diffuse, Phong};
+use camera_controller::FPSCameraController;
 use pt::{Sphere, Color};
-use pt::traits::{Surface};
+use pt::bsdf::{Diffuse, Phong};
 use pt::math::{Point3f, Real};
-use camera_controller::{FPSCameraController};
+use pt::scenehandler::{ShapeListBuilder, LinearSampler};
+use pt::traits::Surface;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 pub struct Room {
-    pub spheres: BTreeMap<&'static str, Sphere>,  
+    pub spheres: BTreeMap<&'static str, Sphere>,
 }
 
 impl Room {
     pub fn new() -> Self {
-        
+
         let mut btmap = BTreeMap::new();
 
         //Left
@@ -31,9 +31,9 @@ impl Room {
             Sphere::new(
                 Point3f::new(1.0e5 + 50.0, 0.0, 0.0),
                 1.0e5, ////
-                Arc::new(Diffuse::new(Color::new(0.25, 0.25, 0.75f32), None)),
+                Arc::new(Diffuse::new(Color::new(0.25, 0.25, 0.75f32), None)), 
                 //Arc::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 200.0)),
-            ),            
+            ),
         );
         //Back
         btmap.insert(
@@ -50,9 +50,14 @@ impl Room {
             "front",
             Sphere::new(
                 Point3f::new(0.0, 0.0, -1.0e5 - 50.0),
-                1.0e5,///////
+                1.0e5,
                 //Arc::new(Diffuse::new(Color::new(0.75, 0.75, 0.75f32), None)),
-                Arc::new(Phong::new(Color::new(0.999, 0.999, 0.999f32), 0.1, 0.9, 100000.0))
+                Arc::new(Phong::new(
+                    Color::new(0.999, 0.999, 0.999f32),
+                    0.1,
+                    0.9,
+                    100000.0,
+                )),
             ),
         );
         //Bottom
@@ -61,7 +66,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, -1.0e5 - 50.0, 0.0),
                 1.0e5,
-                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), None)),
+                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), None)), 
                 //Arc::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.2, 0.8, 3.0)),
             ),
         );
@@ -103,15 +108,18 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, 39.0, 0.0),
                 7.0,
-                Arc::new(Diffuse::new(Color::new(1.0, 1.0, 1.0f32), Some(Color::new(15.0, 15.0, 15.0f32)))),
+                Arc::new(Diffuse::new(
+                    Color::new(1.0, 1.0, 1.0f32),
+                    Some(Color::new(15.0, 15.0, 15.0f32)),
+                )), 
                 //Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
             ),
         );
-        
-        Room{spheres: btmap}
+
+        Room { spheres: btmap }
     }
 
-    pub fn to_shape_list<'s> (&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
+    pub fn to_shape_list<'s>(&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
         let mut l = ShapeListBuilder::new();
         for (_, s) in &self.spheres {
             l.add_shape(s as &Surface);
@@ -124,7 +132,7 @@ impl Room {
     }
 }
 
-pub fn setup_camera (ctrl: &mut FPSCameraController) {
+pub fn setup_camera(ctrl: &mut FPSCameraController) {
     //cam(Vec(50,52,295.6), Vec(0,-0.042612,-1).norm()); // cam pos, dir
     ctrl.camera_mut().set_pos(&Point3f::new(-25.0, -25.0, 49.0));
     ctrl.camera_mut().yaw_add((-30.0 as Real).to_radians());

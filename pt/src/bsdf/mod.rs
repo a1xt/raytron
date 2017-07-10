@@ -2,52 +2,46 @@ pub mod diffuse;
 pub mod phong;
 pub mod cooktorrance;
 
+pub use self::cooktorrance::*;
 pub use self::diffuse::Diffuse;
 pub use self::phong::Phong;
-pub use self::cooktorrance::*;
 
 use color::Color;
 use math::{Vector3f, Real, Dot};
-use std::sync::Arc;
 use std::ops::Deref;
+use std::sync::Arc;
 
-pub trait Bsdf : Sync + Send {
-
+pub trait Bsdf: Sync + Send {
     fn radiance(&self) -> Option<Color>;
 
-    fn eval(&self, 
-            surface_normal: &Vector3f,
-            in_dir: &Vector3f,
-            out_dir: &Vector3f)
-            -> (Color, Real);
+    fn eval(
+        &self,
+        surface_normal: &Vector3f,
+        in_dir: &Vector3f,
+        out_dir: &Vector3f,
+    ) -> (Color, Real);
 
-    fn sample(&self, 
-              surface_normal: &Vector3f, 
-              in_dir: &Vector3f)
-              -> (Vector3f, Color, Real);
+    fn sample(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Real);
 
-    fn eval_proj(&self, 
-                 surface_normal: &Vector3f, 
-                 in_dir: &Vector3f,
-                 out_dir: &Vector3f)
-                 -> (Color, Real) {
+    fn eval_proj(
+        &self,
+        surface_normal: &Vector3f,
+        in_dir: &Vector3f,
+        out_dir: &Vector3f,
+    ) -> (Color, Real) {
 
         let (fr, pdf) = self.eval(surface_normal, in_dir, out_dir);
         let cos_theta = surface_normal.dot(out_dir);
         (fr, pdf / cos_theta)
-    }  
+    }
 
-    fn sample_proj(&self, 
-                   surface_normal: &Vector3f, 
-                   in_dir: &Vector3f)
-                   -> (Vector3f, Color, Real) {
+    fn sample_proj(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Real) {
 
         let (ray, fr, pdf) = self.sample(surface_normal, in_dir);
         let cos_theta = surface_normal.dot(&ray);
 
         (ray, fr, pdf / cos_theta)
     }
-
 }
 
 pub enum BsdfRef<'a> {

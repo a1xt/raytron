@@ -7,31 +7,31 @@ pub extern crate image;
 pub extern crate rand;
 pub extern crate tobj;
 
-pub use pt_app::*;
-pub use pt_app::camera_controller::{CameraController, FPSCameraController};
-
-use pt_app::{App};
-use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
-use pt_app::pt::color::{self, Color, Rgb, Luma};
-use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
-use pt_app::pt::material::{PbrTex};
-use pt_app::pt::vertex::TbnVertex;
-use pt_app::pt::math::{Real, Norm, Cross, Vector3f, Point3f, Vector2};
-use pt_app::pt::math;
-use pt_app::pt::utils::consts;
-use image::hdr;
-
-use std;
-use std::mem;
-use std::sync::Arc;
-use std::path::Path;
-use std::io::Write;
-use std::string::{String, ToString};
-use gfx::format::{Formatted, ChannelTyped, Rgba32F};
 use gfx::{Factory, Device};
+use gfx::format::{Formatted, ChannelTyped, Rgba32F};
 
 use glutin::{WindowEvent, ElementState, VirtualKeyCode};
+use image::hdr;
+pub use pt_app::*;
+
+use pt_app::App;
+pub use pt_app::camera_controller::{CameraController, FPSCameraController};
+use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
+use pt_app::pt::color::{self, Color, Rgb, Luma};
+use pt_app::pt::material::PbrTex;
+use pt_app::pt::math;
+use pt_app::pt::math::{Real, Norm, Cross, Vector3f, Point3f, Vector2};
+use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
+use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
+use pt_app::pt::utils::consts;
+use pt_app::pt::vertex::TbnVertex;
+
+use std;
+use std::io::Write;
+use std::mem;
+use std::path::Path;
+use std::string::{String, ToString};
+use std::sync::Arc;
 
 type GLFactory = gfx_gl::Factory;
 type GLDevice = gfx_gl::Device;
@@ -45,12 +45,14 @@ pub struct ExampleApp {
     dbg_setup: RenderSettings,
     //img: Image,
     tex: gfx::handle::Texture<<GLDevice as Device>::Resources, <TexFormat as Formatted>::Surface>,
-    tex_view: gfx::handle::ShaderResourceView<<GLDevice as Device>::Resources, <TexFormat as Formatted>::View>,
+    tex_view: gfx::handle::ShaderResourceView<
+        <GLDevice as Device>::Resources,
+        <TexFormat as Formatted>::View,
+    >,
 }
 
 impl ExampleApp {
-
-    pub fn launch<T: AppState >(state: &mut T) {
+    pub fn launch<T: AppState>(state: &mut T) {
         //let mut state = T::new();
         let mut ex_app = {
             let builder = state.init();
@@ -69,10 +71,10 @@ impl ExampleApp {
                 let scene = state.create_scene();
                 let (mut rdr, rdr_setup) = state.create_renderer();
                 state.init_camera(ex_app.app.cam_ctrl_mut());
-            
-                while !state.need_update() && run {        
+
+                while !state.need_update() && run {
                     {
-                        let ExampleApp { 
+                        let ExampleApp {
                             ref mut app,
                             ref mut dbg_rdr,
                             dbg_setup,
@@ -80,19 +82,34 @@ impl ExampleApp {
                         } = ex_app;
 
                         if dbg {
-                            dbg_rdr.render_scene_threaded(scene.as_ref(), app.cam_ctrl().camera(), &dbg_setup, &mut img);
+                            dbg_rdr.render_scene_threads(
+                                scene.as_ref(),
+                                app.cam_ctrl().camera(),
+                                &dbg_setup,
+                                &mut img,
+                            );
                         } else {
                             let start_time = time::precise_time_ns();
                             if pass_num == 0 {
                                 rdr.pre_render(scene.as_ref(), app.cam_ctrl().camera(), &rdr_setup);
                                 total_time = 0;
                             }
-                            rdr.render_pass_threaded(scene.as_ref(), app.cam_ctrl().camera(), &rdr_setup, pass_num, &mut img);
+                            rdr.render_pass_threads(
+                                scene.as_ref(),
+                                app.cam_ctrl().camera(),
+                                &rdr_setup,
+                                pass_num,
+                                &mut img,
+                            );
                             pass_num += 1;
                             let frame_time = time::precise_time_ns() - start_time;
                             total_time += frame_time;
-                            println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
-                                pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
+                            println!(
+                                "pass_num: {}, frame time: {:.2}, average time: {:.2}",
+                                pass_num,
+                                (frame_time as f64) * 1.0e-9,
+                                (total_time as f64) / (pass_num as f64) * 1.0e-9
+                            );
                         }
                     }
 
@@ -111,11 +128,11 @@ impl ExampleApp {
                                         } else {
                                             dbg = true;
                                         }
-                                    },
+                                    }
 
                                     VirtualKeyCode::I if pressed => {
                                         ex_app.save_img(&res_img, None);
-                                    },
+                                    }
 
                                     _ => (),
                                 }
@@ -142,15 +159,15 @@ impl ExampleApp {
                     //         mipmap: 0,
                     //     },
                     //     cast_slice(img.as_slice()),
-                
+
                     // ).unwrap();
-                    
+
 
                     // app.draw_fullscreen_quad(tex_view.clone());
                     // app.post_frame();
                     ex_app.draw_tex(&res_img);
                     run = ex_app.app.run();
-                };
+                }
             }
             state.update();
         }
@@ -163,7 +180,7 @@ impl ExampleApp {
             let mut w1 = self.screen_width;
             let mut h1 = self.screen_height;
             if w != self.screen_width {
-                w1= self.screen_width;
+                w1 = self.screen_width;
                 h1 = (w1 as f32 / aspect) as usize;
             }
             let mut w2 = w1;
@@ -173,7 +190,7 @@ impl ExampleApp {
                 w2 = (h2 as f32 * aspect) as usize;
             }
             (w2 as u32, h2 as u32)
-        } ;
+        };
         let tex = self.app.factory_mut().create_texture::<<TexFormat as Formatted>::Surface> (
             gfx::texture::Kind::D2(tex_w, tex_h, gfx::texture::AaMode::Single),
             1,
@@ -182,10 +199,9 @@ impl ExampleApp {
             Some(<<TexFormat as Formatted>::Channel as ChannelTyped>::get_channel_type()))
             .unwrap();
 
-        let tex_view = self.app.factory_mut().view_texture_as_shader_resource::<TexFormat>(
-            &tex,
-            (0,0),
-            gfx::format::Swizzle::new())
+        let tex_view = self.app
+            .factory_mut()
+            .view_texture_as_shader_resource::<TexFormat>(&tex, (0, 0), gfx::format::Swizzle::new())
             .unwrap();
 
         self.tex = tex;
@@ -208,20 +224,23 @@ impl ExampleApp {
             self.resize((img.width(), img.height()));
         }
         self.app.clear_frame();
-        self.app.encoder_mut().update_texture::<<TexFormat as Formatted>::Surface, TexFormat >(
-            &self.tex,
-            None,
-            gfx::texture::NewImageInfo {
-                xoffset: 0,
-                yoffset: 0,
-                zoffset: 0,
-                width: img.width() as u16,
-                height: img.height() as u16,
-                depth: 0,
-                format: (),
-                mipmap: 0,
-            },
-            cast_slice(img.as_slice()))
+        self.app
+            .encoder_mut()
+            .update_texture::<<TexFormat as Formatted>::Surface, TexFormat>(
+                &self.tex,
+                None,
+                gfx::texture::NewImageInfo {
+                    xoffset: 0,
+                    yoffset: 0,
+                    zoffset: 0,
+                    width: img.width() as u16,
+                    height: img.height() as u16,
+                    depth: 0,
+                    format: (),
+                    mipmap: 0,
+                },
+                cast_slice(img.as_slice()),
+            )
             .unwrap();
 
         self.app.draw_fullscreen_quad(self.tex_view.clone());
@@ -244,14 +263,15 @@ impl ExampleApp {
             buf.push(cc.b);
         }
 
-        image::save_buffer(&std::path::Path::new(&image_name), 
-                            buf.as_ref(), 
-                            img.width() as u32, 
-                            img.height() as u32, 
-                            image::RGB(8)).unwrap();
+        image::save_buffer(
+            &std::path::Path::new(&image_name),
+            buf.as_ref(),
+            img.width() as u32,
+            img.height() as u32,
+            image::RGB(8),
+        ).unwrap();
         println!("image saved!");
     }
-
 }
 
 
@@ -263,7 +283,7 @@ pub struct ExampleAppBuilder {
 
 impl<'a> ExampleAppBuilder {
     pub fn new() -> ExampleAppBuilder {
-        ExampleAppBuilder{
+        ExampleAppBuilder {
             name: None,
             size: None,
             dbg_setup: None,
@@ -273,31 +293,32 @@ impl<'a> ExampleAppBuilder {
     pub fn name(self, name: String) -> ExampleAppBuilder {
         ExampleAppBuilder {
             name: Some(name),
-            .. self
+            ..self
         }
     }
 
     pub fn size(self, width: usize, height: usize) -> ExampleAppBuilder {
         ExampleAppBuilder {
             size: Some((width, height)),
-            .. self
+            ..self
         }
     }
 
     pub fn dbg_rdr_setup(self, dbg_setup: RenderSettings) -> ExampleAppBuilder {
         ExampleAppBuilder {
             dbg_setup: Some(dbg_setup),
-            .. self
+            ..self
         }
     }
 
     pub fn build(self) -> ExampleApp {
         let name = self.name.unwrap_or_else(|| "Example".to_string());
         let (screen_width, screen_height) = self.size.unwrap_or((800, 600));
-        let mut app = App::<GLDevice, GLFactory>::new(screen_width as u32, screen_height as u32, name);
+        let mut app =
+            App::<GLDevice, GLFactory>::new(screen_width as u32, screen_height as u32, name);
 
-        
-        let dbg_render_chunk = (100, 75);            
+
+        let dbg_render_chunk = (100, 75);
         let dbg_setup_d = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
         let dbg_setup = self.dbg_setup.unwrap_or(dbg_setup_d);
 
@@ -310,10 +331,8 @@ impl<'a> ExampleAppBuilder {
             Some(<<TexFormat as Formatted>::Channel as ChannelTyped>::get_channel_type()))
             .unwrap();
 
-        let tex_view = app.factory_mut().view_texture_as_shader_resource::<TexFormat>(
-            &tex,
-            (0,0),
-            gfx::format::Swizzle::new())
+        let tex_view = app.factory_mut()
+            .view_texture_as_shader_resource::<TexFormat>(&tex, (0, 0), gfx::format::Swizzle::new())
             .unwrap();
 
         ExampleApp {
@@ -330,17 +349,21 @@ impl<'a> ExampleAppBuilder {
 }
 
 pub trait AppState {
-    fn new() -> Self where Self: Sized;
+    fn new() -> Self
+    where
+        Self: Sized;
     fn init(&mut self) -> ExampleAppBuilder;
-    fn update(&mut self) { }
-    fn need_update(&self) -> bool { false }
-    fn post_process(&self, &mut Image) { }
-    fn init_camera(&self, &mut FPSCameraController) { }
+    fn update(&mut self) {}
+    fn need_update(&self) -> bool {
+        false
+    }
+    fn post_process(&self, &mut Image) {}
+    fn init_camera(&self, &mut FPSCameraController) {}
     //fn update_camera(&self, &mut CameraController) { }
 
     fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {
         let pt_render_chunk = (80, 60);
-        let rdr_setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);       
+        let rdr_setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);
         let rdr = box PathTracer::new(&rdr_setup).with_direct_illumination(0.75, 0.25);
         (rdr, rdr_setup)
     }
@@ -366,14 +389,10 @@ pub fn tone_mapping_simple<T: TexView<Color>>(img: &mut T) {
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
-            let x = Rgb::new(
-                c.r / (1.0 + c.r),
-                c.g / (1.0 + c.g),
-                c.b / (1.0 + c.b),
-            );
+            let x = Rgb::new(c.r / (1.0 + c.r), c.g / (1.0 + c.g), c.b / (1.0 + c.b));
             img.set_pixel(i, j, x);
         }
-    }    
+    }
 }
 
 pub fn gamma_encoding<T: TexView<Color>>(img: &mut T) {
@@ -389,7 +408,7 @@ pub fn gamma_encoding<T: TexView<Color>>(img: &mut T) {
     }
 }
 
-pub fn gamma_decoding<T: TexView<Color> >(img: &mut T) {
+pub fn gamma_decoding<T: TexView<Color>>(img: &mut T) {
     let g = 2.2;
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -432,13 +451,18 @@ pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
             img.set_pixel(i, h - j - 1, c.into());
         }
     }
-    println!("done! (width: {}, height: {}", hdr_meta.width, hdr_meta.height);
-    img        
+    println!(
+        "done! (width: {}, height: {}",
+        hdr_meta.width,
+        hdr_meta.height
+    );
+    img
 }
 
 pub fn load_texture<C, T: TexView<C>, F>(path: String, map_color: F) -> T
-    where C: Into<Rgb<Real>> + Into<Color>,
-          F: Fn(image::Rgba<u8>) -> C,
+where
+    C: Into<Rgb<Real>> + Into<Color>,
+    F: Fn(image::Rgba<u8>) -> C,
 {
     use image::GenericImage;
     use std::path::Path;
@@ -462,7 +486,7 @@ pub fn load_texture<C, T: TexView<C>, F>(path: String, map_color: F) -> T
 
 pub fn load_texture_rgb64<T: TexView<Rgb<Real>>>(path: String, srgb_encoded: bool) -> T {
     load_texture::<Rgb<f64>, _, _>(path, move |c| {
-        let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into() :Rgb<f64>;
+        let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into(): Rgb<f64>;
         if srgb_encoded {
             p.r = p.r.powf(2.2);
             p.g = p.g.powf(2.2);
@@ -474,7 +498,7 @@ pub fn load_texture_rgb64<T: TexView<Rgb<Real>>>(path: String, srgb_encoded: boo
 
 pub fn load_texture_luma64<T: TexView<Luma<Real>>>(path: String, srgb_encoded: bool) -> T {
     load_texture::<Luma<f64>, _, _>(path, move |c| {
-        let mut p = Luma::<u8>::new(c[0]).into() :Luma<f64>;
+        let mut p = Luma::<u8>::new(c[0]).into(): Luma<f64>;
         if srgb_encoded {
             p.luma = p.luma.powf(2.2);
         }
@@ -487,7 +511,8 @@ pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
 
     let basecolor_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "basecolor.png", true);
     let mut normal_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "normal.png", false);
-    let roughness_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "roughness.png", false);
+    let roughness_tex: Texture<Luma<f64>> =
+        load_texture_luma64(path.clone() + "roughness.png", false);
     let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metalness.png", false);
     let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
 
@@ -497,12 +522,13 @@ pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
         *n = gl_n.into();
     }
 
-    let pbrtex_mat: Arc<PbrTex< Rgb<Real>, Luma<Real> >> = Arc::new(PbrTex::new(
+    let pbrtex_mat: Arc<PbrTex<Rgb<Real>, Luma<Real>>> = Arc::new(PbrTex::new(
         basecolor_tex,
         normal_tex,
         roughness_tex,
         spec_tex,
-        metal_tex));
+        metal_tex,
+    ));
 
     pbrtex_mat
 }
@@ -510,10 +536,11 @@ pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
 pub fn load_obj_pbr<'a, M, F>(
     path: String,
     mut material: M,
-    mut pos_transform: F)
-    -> Vec<Mesh<'a, TbnVertex>>
-    where M: FnMut(String) -> Arc<Material<TbnVertex> + 'a>,
-          F: FnMut(Point3f) -> Point3f,
+    mut pos_transform: F,
+) -> Vec<Mesh<'a, TbnVertex>>
+where
+    M: FnMut(String) -> Arc<Material<TbnVertex> + 'a>,
+    F: FnMut(Point3f) -> Point3f,
 {
     println!("loading model: `{}` ... ", &path);
     let _ = std::io::stdout().flush();
@@ -523,7 +550,12 @@ pub fn load_obj_pbr<'a, M, F>(
     let mut total_faces = 0;
     let mut total_vertices = 0;
 
-    for (i, tobj::Model{ mesh: model_mesh, name: mesh_name}) in models.into_iter().enumerate() {
+    for (i, model) in models.into_iter().enumerate() {
+        let tobj::Model {
+            mesh: model_mesh,
+            name: mesh_name,
+        } = model;
+
         let mut vnum = 0;
         let mut fnum = 0;
         let mut mesh = Mesh::new();
@@ -531,7 +563,11 @@ pub fn load_obj_pbr<'a, M, F>(
         if !model_mesh.texcoords.is_empty() {
             let mut vertices = Vec::with_capacity(model_mesh.indices.len() / 3);
 
-            for (pos, uv) in model_mesh.positions.chunks(3).zip(model_mesh.texcoords.chunks(2)) {
+            for (pos, uv) in model_mesh
+                .positions
+                .chunks(3)
+                .zip(model_mesh.texcoords.chunks(2))
+            {
                 let p = Point3f::new(pos[0] as Real, pos[1] as Real, pos[2] as Real);
                 vertices.push(TbnVertex::new(
                     pos_transform(p),
@@ -550,7 +586,8 @@ pub fn load_obj_pbr<'a, M, F>(
                 let duv2 = v2.uv - v0.uv;
                 let (t, b) = math::calc_tangent(
                     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
-                    (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real));
+                    (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real),
+                );
                 let n = t.cross(&b).normalize();
 
                 vertices[ix[0] as usize].tangent += t;
@@ -560,7 +597,7 @@ pub fn load_obj_pbr<'a, M, F>(
                 vertices[ix[1] as usize].tangent += t;
                 vertices[ix[1] as usize].bitangent += b;
                 vertices[ix[1] as usize].normal += n;
-                
+
                 vertices[ix[2] as usize].tangent += t;
                 vertices[ix[2] as usize].bitangent += b;
                 vertices[ix[2] as usize].normal += n;
@@ -578,16 +615,29 @@ pub fn load_obj_pbr<'a, M, F>(
                 mesh.add_face([ix[0], ix[2], ix[1]], mat.clone()).unwrap();
                 fnum += 1;
             }
-            
-            println!(" -- mesh[{}] loaded - name: {}, vertices: {}, faces: {}", i, mesh_name, vnum, fnum);
+
+            println!(
+                " -- mesh[{}] loaded - name: {}, vertices: {}, faces: {}",
+                i,
+                mesh_name,
+                vnum,
+                fnum
+            );
             total_faces += fnum;
             total_vertices += vnum;
         } else {
-            println!(" -- warning! [{}] mesh is skipped because texture coodinates are not found", mesh_name);
+            println!(
+                " -- warning! [{}] mesh is skipped because texture coodinates are not found",
+                mesh_name
+            );
         }
         mvec.push(mesh);
     }
-    println!("done! (total vertices: {}, total faces: {})", total_vertices, total_faces);
+    println!(
+        "done! (total vertices: {}, total faces: {})",
+        total_vertices,
+        total_faces
+    );
     mvec
 }
 
@@ -596,7 +646,5 @@ pub fn cast_slice<A: Copy, B: Copy>(slice: &[A]) -> &[B] {
     let raw_len = mem::size_of::<A>().wrapping_mul(slice.len());
     let len = raw_len / mem::size_of::<B>();
     assert_eq!(raw_len, mem::size_of::<B>().wrapping_mul(len));
-    unsafe {
-        slice::from_raw_parts(slice.as_ptr() as *const B, len)
-    }
+    unsafe { slice::from_raw_parts(slice.as_ptr() as *const B, len) }
 }

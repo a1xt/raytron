@@ -10,38 +10,38 @@ extern crate time;
 extern crate image;
 extern crate rand;
 
-use pt_app::{App};
-use pt_app::scenes::spheres;
-use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::scenehandler::{ShapeList};
-use pt_app::pt::{Image, RenderSettings};
-use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHandler};
-use image::hdr;
-
-use std::mem;
+use gfx::format::Float;
 
 use gfx::format::R32_G32_B32_A32;
-use gfx::format::Float;
+
+use glutin::{WindowEvent, ElementState, VirtualKeyCode};
+use image::hdr;
+use pt_app::App;
+use pt_app::pt::{Image, RenderSettings};
+use pt_app::pt::Color;
 
 
 //use pt_app::pt::rand;
 use pt_app::pt::color;
-use pt_app::pt::{Color};
-use std::string::{String, ToString};
-
-use glutin::{WindowEvent, ElementState, VirtualKeyCode};
+use pt_app::pt::mesh::Mesh;
+use pt_app::pt::polygon::Polygon;
+use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
+use pt_app::pt::scenehandler::ShapeList;
+use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHandler};
 
 //use pt_app::scenes::meshes::Cube;
 use pt_app::scenes::{Quad, Plane, Cube};
-use pt_app::pt::mesh::{Mesh};
-use pt_app::pt::polygon::{Polygon};
+use pt_app::scenes::spheres;
+
+use std::mem;
+use std::string::{String, ToString};
 
 type TexFormat = Rgba32F;
 
-use gfx::{Factory};
-use gfx::format::{Rgba32F};
+use gfx::Factory;
+use gfx::format::Rgba32F;
 
-fn main () {
+fn main() {
     let width = 400u32;
     let height = 300u32;
 
@@ -50,7 +50,7 @@ fn main () {
     let pt_render_chunk = (80, 60);
     let dbg_render_chunk = (100, 75);
 
-    let setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);    
+    let setup = RenderSettings::new(128, 6).with_threads(4, pt_render_chunk);
     let dbg_setup = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
 
     let tex_w = width as u16;
@@ -60,36 +60,45 @@ fn main () {
 
     let texels = [[0xA0, 0x20, 0xC0, 0x00]];
     //let tf32 = [[0.7125, 0.6f32, 0.75]];//,  0.0]];
-    let tf32 = [[1.0, 0.0f32, 0.0, 1.0], [0.5, 1.0f32, 1.0, 1.0], [1.0, 0.0f32, 0.5, 1.0], [0.0, 0.5f32, 1.0, 1.0]];
+    let tf32 = [
+        [1.0, 0.0f32, 0.0, 1.0],
+        [0.5, 1.0f32, 1.0, 1.0],
+        [1.0, 0.0f32, 0.5, 1.0],
+        [0.0, 0.5f32, 1.0, 1.0],
+    ];
     //let tf32 = [[1.0, 0.0f32, 0.0, 1.0], [0.0, 1.0f32, 0.0, 1.0], [0.0, 0.0f32, 1.0, 1.0], [0.0, 0.0f32, 0.0, 1.0]];
     // let (tex0, texture_view) = app.factory_mut().create_texture_const::<gfx::format::Rgba32F>(
     //     gfx::texture::Kind::D2(1, 1, gfx::texture::AaMode::Single), &[&texels]
     //     ).unwrap();
 
-    let tex = app.factory_mut().create_texture::<gfx::format::R32_G32_B32_A32> (
-        gfx::texture::Kind::D2(tex_w, tex_h, gfx::texture::AaMode::Single),
-        1,
-        gfx::SHADER_RESOURCE,
-        gfx::memory::Usage::Dynamic,
-        Some(gfx::format::ChannelType::Float)
-    ).unwrap();
+    let tex = app.factory_mut()
+        .create_texture::<gfx::format::R32_G32_B32_A32>(
+            gfx::texture::Kind::D2(tex_w, tex_h, gfx::texture::AaMode::Single),
+            1,
+            gfx::SHADER_RESOURCE,
+            gfx::memory::Usage::Dynamic,
+            Some(gfx::format::ChannelType::Float),
+        )
+        .unwrap();
 
-    let tex_view = app.factory_mut().view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
-        &tex,
-        (0,0),
-        gfx::format::Swizzle::new()
-    ).unwrap();
+    let tex_view = app.factory_mut()
+        .view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
+            &tex,
+            (0, 0),
+            gfx::format::Swizzle::new(),
+        )
+        .unwrap();
 
 
     // RenderSettings::new(samples, depth);
-    
+
 
 
     use pt_app::pt::math::{Point3f, Vector3f, Point2, Vector2};
     use pt_app::pt::texture::Texture;
     use pt_app::pt::color::{self, Rgb, ColorBlend};
-    use pt_app::pt::polygon::vertex::{TexturedVertex, BaseVertex };
-    use pt_app::pt::polygon::material::{DiffuseTex};
+    use pt_app::pt::polygon::vertex::{TexturedVertex, BaseVertex};
+    use pt_app::pt::polygon::material::DiffuseTex;
     use std::sync::Arc;
 
     // let diftex_w = 128usize;
@@ -118,7 +127,7 @@ fn main () {
     //     TexturedVertex::new(Point3f::new(30.0, -30.0, -30.0), Point2::new(1.0, 0.0)),
     // ];
 
-    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None) :DiffuseTex<Color, _>);
+    let difftex_mat = Arc::new(DiffuseTex::new(&dif_tex, None): DiffuseTex<Color, _>);
 
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
@@ -153,7 +162,7 @@ fn main () {
     // let cube_mesh = Cube::build(
     //     Point3f::new(0.0, 0.0, 0.0),
     //     Vector3f::new(20.0, 20.0, 20.0),
-    //     |_, quad| { 
+    //     |_, quad| {
     //         Quad {
     //             v0: BaseVertex::new(quad.v0),
     //             v1: BaseVertex::new(quad.v1),
@@ -173,7 +182,7 @@ fn main () {
     //let (scene, _) = spheres::create_scene();
     let s = spheres::Room::new();
     let mut scene_builder = s.to_shape_list();
-    
+
 
     // scene.add_shape(&pol0);
     // scene.add_shape(&pol1);
@@ -201,15 +210,15 @@ fn main () {
     spheres::setup_camera(app.cam_ctrl_mut());
     let mut rdr = PathTracer::new(&setup).with_direct_illumination(0.75, 0.25);
     let x = app.cam_ctrl().camera().pos().x;
-        let y = app.cam_ctrl().camera().pos().y;
-        let z = app.cam_ctrl().camera().pos().z;
-        println!("camera pos: ({:.1}, {:.1}, {:.1})", x, y, z);
+    let y = app.cam_ctrl().camera().pos().y;
+    let z = app.cam_ctrl().camera().pos().z;
+    println!("camera pos: ({:.1}, {:.1}, {:.1})", x, y, z);
 
 
     let mut dbg_rdr = DbgRayCaster::new();
-    
+
     let mut img: Image = Image::new(width as usize, height as usize);
-    
+
     use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
@@ -245,26 +254,34 @@ fn main () {
     //         } else {
     //             c = c.powf(1.0 / 2.2);
     //         }
-            
-            
+
+
     //         let p = Rgb::new(c, c, c);
     //         img.set_pixel(i, j, p);
     //     }
     // }
 
-    let tex = app.factory_mut().create_texture::<gfx::format::R32_G32_B32_A32> (
-        gfx::texture::Kind::D2(img.width() as u16, img.height() as u16, gfx::texture::AaMode::Single),
-        1,
-        gfx::SHADER_RESOURCE,
-        gfx::memory::Usage::Dynamic,
-        Some(gfx::format::ChannelType::Float)
-    ).unwrap();
+    let tex = app.factory_mut()
+        .create_texture::<gfx::format::R32_G32_B32_A32>(
+            gfx::texture::Kind::D2(
+                img.width() as u16,
+                img.height() as u16,
+                gfx::texture::AaMode::Single,
+            ),
+            1,
+            gfx::SHADER_RESOURCE,
+            gfx::memory::Usage::Dynamic,
+            Some(gfx::format::ChannelType::Float),
+        )
+        .unwrap();
 
-    let tex_view = app.factory_mut().view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
-        &tex,
-        (0,0),
-        gfx::format::Swizzle::new()
-    ).unwrap();
+    let tex_view = app.factory_mut()
+        .view_texture_as_shader_resource::<(R32_G32_B32_A32, Float)>(
+            &tex,
+            (0, 0),
+            gfx::format::Swizzle::new(),
+        )
+        .unwrap();
 
     let mut dbg = true;
     let mut pass_num = 0;
@@ -273,19 +290,23 @@ fn main () {
     while app.run() {
         let scn = scene.as_ref() as &SceneHandler;
         if dbg {
-            dbg_rdr.render_scene_threaded(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
+            dbg_rdr.render_scene_threads(scn, app.cam_ctrl().camera(), &dbg_setup, &mut img);
         } else {
             start_time = time::precise_time_ns();
             if pass_num == 0 {
                 rdr.pre_render(scn, app.cam_ctrl().camera(), &setup);
                 total_time = 0;
             }
-            rdr.render_pass_threaded(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
+            rdr.render_pass_threads(scn, app.cam_ctrl().camera(), &setup, pass_num, &mut img);
             pass_num += 1;
             let frame_time = time::precise_time_ns() - start_time;
             total_time = total_time + frame_time;
-            println!("pass_num: {}, frame time: {:.2}, average time: {:.2}", 
-                pass_num, (frame_time as f64) * 1.0e-9, (total_time as f64) / (pass_num as f64) * 1.0e-9);
+            println!(
+                "pass_num: {}, frame time: {:.2}, average time: {:.2}",
+                pass_num,
+                (frame_time as f64) * 1.0e-9,
+                (total_time as f64) / (pass_num as f64) * 1.0e-9
+            );
         }
 
         for event in app.events().iter() {
@@ -300,10 +321,12 @@ fn main () {
                             } else {
                                 dbg = true;
                             }
-                        },
+                        }
 
                         VirtualKeyCode::I if pressed => {
-                            let image_name: String = "res_img/".to_string() + rand::random::<u16>().to_string().as_ref() + ".png";
+                            let image_name: String = "res_img/".to_string() +
+                                rand::random::<u16>().to_string().as_ref() +
+                                ".png";
                             println!("img_name: {}", image_name);
 
                             let mut buf: Vec<u8> = Vec::new();
@@ -324,13 +347,15 @@ fn main () {
                                 buf.push(cc.b);
                             }
 
-                            image::save_buffer(&std::path::Path::new(&image_name), 
-                                               buf.as_ref(),
-                                               img.width() as u32,
-                                               img.height() as u32,
-                                               image::RGB(8)).unwrap();
+                            image::save_buffer(
+                                &std::path::Path::new(&image_name),
+                                buf.as_ref(),
+                                img.width() as u32,
+                                img.height() as u32,
+                                image::RGB(8),
+                            ).unwrap();
                             println!("image saved!");
-                        },
+                        }
 
                         _ => (),
                     }
@@ -339,7 +364,7 @@ fn main () {
                 _ => {}
             }
         }
-        
+
         // let mut himg = img.clone();
         // for j in 0..himg.height() {
         //     for i in 0..himg.width() {
@@ -353,29 +378,30 @@ fn main () {
 
         app.clear_frame();
 
-        let _ = app.encoder_mut().update_texture::<R32_G32_B32_A32, (R32_G32_B32_A32, Float) >(
-            &tex,
-            None,
-            gfx::texture::NewImageInfo {
-                xoffset: 0,
-                yoffset: 0,
-                zoffset: 0,
-                // width: tex_w,
-                // height: tex_h,
-                width: img.width() as u16,
-                height: img.height() as u16,
-                depth: 0,
-                format: (),
-                mipmap: 0,
-            },
-            cast_slice(img.as_slice()),
-      
-        ).unwrap();
-        
+        let _ = app.encoder_mut()
+            .update_texture::<R32_G32_B32_A32, (R32_G32_B32_A32, Float)>(
+                &tex,
+                None,
+                gfx::texture::NewImageInfo {
+                    xoffset: 0,
+                    yoffset: 0,
+                    zoffset: 0,
+                    // width: tex_w,
+                    // height: tex_h,
+                    width: img.width() as u16,
+                    height: img.height() as u16,
+                    depth: 0,
+                    format: (),
+                    mipmap: 0,
+                },
+                cast_slice(img.as_slice()),
+            )
+            .unwrap();
+
 
         app.draw_fullscreen_quad(tex_view.clone());
         app.post_frame();
-    };
+    }
 }
 
 pub fn cast_slice<A: Copy, B: Copy>(slice: &[A]) -> &[B] {
@@ -383,7 +409,5 @@ pub fn cast_slice<A: Copy, B: Copy>(slice: &[A]) -> &[B] {
     let raw_len = mem::size_of::<A>().wrapping_mul(slice.len());
     let len = raw_len / mem::size_of::<B>();
     assert_eq!(raw_len, mem::size_of::<B>().wrapping_mul(len));
-    unsafe {
-        slice::from_raw_parts(slice.as_ptr() as *const B, len)
-    }
+    unsafe { slice::from_raw_parts(slice.as_ptr() as *const B, len) }
 }

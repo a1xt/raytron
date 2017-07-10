@@ -18,12 +18,18 @@ use color::Rgb;
 use utils::consts;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Ray3<F> where F: Copy + Clone {
+pub struct Ray3<F>
+where
+    F: Copy + Clone,
+{
     pub origin: Point3<F>,
     pub dir: Vector3<F>,
 }
 
-impl<F> Ray3<F> where F: Copy + Clone {
+impl<F> Ray3<F>
+where
+    F: Copy + Clone,
+{
     pub fn new(origin: &Point3<F>, dir: &Vector3<F>) -> Ray3<F> {
         Ray3 {
             origin: *origin,
@@ -51,8 +57,7 @@ pub fn intersection_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: &Ray3
 
         if t_min >= 0.0 {
             return Some(t_min);
-        } 
-        else if t_max > 0.0 {
+        } else if t_max > 0.0 {
             return Some(t_max);
         }
     }
@@ -60,10 +65,16 @@ pub fn intersection_sphere(sphere_pos: &Point3f, sphere_radius: Real, ray: &Ray3
 }
 
 /// return (t, (u, v))
-pub fn intersection_triangle(v0: &Point3f, v1: &Point3f, v2: &Point3f, ray: &Ray3f, culling: bool) -> Option<(Real, (Real, Real))> {
+pub fn intersection_triangle(
+    v0: &Point3f,
+    v1: &Point3f,
+    v2: &Point3f,
+    ray: &Ray3f,
+    culling: bool,
+) -> Option<(Real, (Real, Real))> {
 
     let e1 = *v2 - *v0;
-    let e2 = *v1 - *v0;    
+    let e2 = *v1 - *v0;
     let p = ray.dir.cross(&e2);
     let det = p.dot(&e1);
 
@@ -119,7 +130,7 @@ pub fn hs_uniform_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
 
 pub fn hs_cosine_sampling(n: &Vector3f) -> Vector3f {
     //use std::f32::{cos, sin};
-    use std::f64::consts::{PI};
+    use std::f64::consts::PI;
 
     let mut rng = rand::thread_rng();
     let r01 = Range::new(0.0, 1.0 as Real);
@@ -182,19 +193,22 @@ pub fn reflect_vec(vec: &Vector3f, base: &Vector3f) -> Vector3f {
 }
 
 pub fn calc_tangent(
-    (e1, du1, dv1): (&Vector3f, Real, Real), 
-    (e2, du2, dv2): (&Vector3f, Real, Real)) 
-    -> (Vector3f, Vector3f)
-{
+    (e1, du1, dv1): (&Vector3f, Real, Real),
+    (e2, du2, dv2): (&Vector3f, Real, Real),
+) -> (Vector3f, Vector3f) {
     let d = 1.0 / (du1 * dv2 - du2 * dv1);
-    let t = d * Vector3f::new(
-        dv2 * e1.x - dv1 * e2.x,
-        dv2 * e1.y - dv1 * e2.y,
-        dv2 * e1.z - dv1 * e2.z);
-    let b = d * Vector3f::new(
-        du1 * e2.x - du2 * e1.x,
-        du1 * e2.y - du2 * e1.y,
-        du1 * e2.z - du2 * e1.z);
+    let t = d *
+        Vector3f::new(
+            dv2 * e1.x - dv1 * e2.x,
+            dv2 * e1.y - dv1 * e2.y,
+            dv2 * e1.z - dv1 * e2.z,
+        );
+    let b = d *
+        Vector3f::new(
+            du1 * e2.x - du2 * e1.x,
+            du1 * e2.y - du2 * e1.y,
+            du1 * e2.z - du2 * e1.z,
+        );
 
     (t.normalize(), b.normalize())
 }
@@ -226,11 +240,17 @@ pub fn fresnel_schlick(normal: &Vector3f, light: &Vector3f, n1: Real, n2: Real) 
     f0 + (1.0 - f0) * (1.0 - cos_theta).powi(5)
 }
 
-pub fn fresnel3_schlick(normal: &Vector3f, light: &Vector3f, n1: &Vector3f, n2: &Vector3f) -> Vector3f {
+pub fn fresnel3_schlick(
+    normal: &Vector3f,
+    light: &Vector3f,
+    n1: &Vector3f,
+    n2: &Vector3f,
+) -> Vector3f {
     Vector3f::new(
         fresnel_schlick(normal, light, n1.x, n2.x),
         fresnel_schlick(normal, light, n1.y, n2.y),
-        fresnel_schlick(normal, light, n1.z, n2.z))
+        fresnel_schlick(normal, light, n1.z, n2.z),
+    )
 }
 
 pub fn fresnel_schlick_f0(cos_nl: Real, f0: Real) -> Real {
@@ -241,7 +261,8 @@ pub fn fresnel3_schlick_f0(cos_nl: Real, f0: &Rgb<Real>) -> Rgb<Real> {
     Rgb::new(
         fresnel_schlick_f0(cos_nl, f0.r),
         fresnel_schlick_f0(cos_nl, f0.g),
-        fresnel_schlick_f0(cos_nl, f0.b))
+        fresnel_schlick_f0(cos_nl, f0.b),
+    )
 }
 
 pub fn calc_f0(n1: Real, n2: Real) -> Real {
@@ -261,7 +282,7 @@ mod intersection_area_priv {
     use super::*;
     pub fn is_inside((plane_pos, axis, right_inside): (Real, usize, bool), p: &Point2f) -> bool {
         ((p[axis] - plane_pos >= 0.0) && right_inside) ||
-        ((p[axis] - plane_pos <= 0.0) && !right_inside)
+            ((p[axis] - plane_pos <= 0.0) && !right_inside)
     }
 
     pub fn ix_next(vec: &Vec<(Point2f, bool)>, ix: usize) -> usize {
@@ -272,21 +293,36 @@ mod intersection_area_priv {
         }
     }
 
-    pub fn split_side(i: &Point2f, o: &Point2f, (plane_pos, axis, _): (Real, usize, bool)) -> Point2f {
+    pub fn split_side(
+        i: &Point2f,
+        o: &Point2f,
+        (plane_pos, axis, _): (Real, usize, bool),
+    ) -> Point2f {
         let t = (plane_pos - o[axis]) / (i[axis] - o[axis]);
         let dir = *i - *o;
         *o + dir * t
     }
 }
 
-pub fn intersection_area_tq(tr0: Point2f, tr1: Point2f, tr2: Point2f, q_min: Point2f, q_max: Point2f) -> Real {
+pub fn intersection_area_tq(
+    tr0: Point2f,
+    tr1: Point2f,
+    tr2: Point2f,
+    q_min: Point2f,
+    q_max: Point2f,
+) -> Real {
     use self::intersection_area_priv::*;
     let max_vertex_num = 5;
 
     // build union
 
-    let planes = [(q_min.x, 0, true), (q_min.y, 1, true), (q_max.x, 0, false), (q_max.y, 1, false)];
-    let mut vertices = vec![(tr0, true), (tr1, true), (tr2, true),];
+    let planes = [
+        (q_min.x, 0, true),
+        (q_min.y, 1, true),
+        (q_max.x, 0, false),
+        (q_max.y, 1, false),
+    ];
+    let mut vertices = vec![(tr0, true), (tr1, true), (tr2, true)];
     for &plane in &planes {
         for v in &mut vertices {
             v.1 = is_inside(plane, &v.0);
@@ -307,7 +343,7 @@ pub fn intersection_area_tq(tr0: Point2f, tr1: Point2f, tr2: Point2f, q_min: Poi
                     split_side(&v_next, &v, plane)
                 };
                 clipped.push((v_split, is_next_inside));
-            }  
+            }
         }
 
         vertices = clipped;
@@ -323,7 +359,8 @@ pub fn intersection_area_tq(tr0: Point2f, tr1: Point2f, tr2: Point2f, q_min: Poi
             area += triangle_area(
                 &Point3f::new(v_first.x, v_first.y, 0.0),
                 &Point3f::new(v1.x, v1.y, 0.0),
-                &Point3f::new(v2.x, v2.y, 0.0))
+                &Point3f::new(v2.x, v2.y, 0.0),
+            )
         }
     }
 
@@ -338,25 +375,45 @@ mod test {
     #[test]
     fn intersection_area_test() {
         let quad = [Point2f::new(0.0, 0.0), Point2f::new(1.0, 1.0)];
-        
-        let tr0 = [Point2f::new(0.0, 0.0), Point2f::new(1.0, 1.0), Point2f::new(1.0, 0.0)];
+
+        let tr0 = [
+            Point2f::new(0.0, 0.0),
+            Point2f::new(1.0, 1.0),
+            Point2f::new(1.0, 0.0),
+        ];
 
         let area = intersection_area_tq(tr0[0], tr0[1], tr0[2], quad[0], quad[1]);
         assert_eq!(area, 0.5);
 
-        let tr1 = [Point2f::new(0.5, 2.0), Point2f::new(2.0, 0.5), Point2f::new(0.5, 0.5)];
+        let tr1 = [
+            Point2f::new(0.5, 2.0),
+            Point2f::new(2.0, 0.5),
+            Point2f::new(0.5, 0.5),
+        ];
         let area = intersection_area_tq(tr1[0], tr1[1], tr1[2], quad[0], quad[1]);
         assert_eq!(area, 0.25);
 
-        let tr2 = [Point2f::new(0.25, 0.25), Point2f::new(0.25, 0.75), Point2f::new(0.75, 0.25)];
+        let tr2 = [
+            Point2f::new(0.25, 0.25),
+            Point2f::new(0.25, 0.75),
+            Point2f::new(0.75, 0.25),
+        ];
         let area = intersection_area_tq(tr2[0], tr2[1], tr2[2], quad[0], quad[1]);
         assert_eq!(area, 0.125);
 
-        let tr3 = [Point2f::new(0.25, 0.5), Point2f::new(0.5, 1.5), Point2f::new(0.75, 0.5)];
+        let tr3 = [
+            Point2f::new(0.25, 0.5),
+            Point2f::new(0.5, 1.5),
+            Point2f::new(0.75, 0.5),
+        ];
         let area = intersection_area_tq(tr3[0], tr3[1], tr3[2], quad[0], quad[1]);
         assert_eq!(area, 0.1875);
 
-        let tr4 = [Point2f::new(2.0, 2.0), Point2f::new(2.0, 3.0), Point2f::new(3.0, 2.0)];
+        let tr4 = [
+            Point2f::new(2.0, 2.0),
+            Point2f::new(2.0, 3.0),
+            Point2f::new(3.0, 2.0),
+        ];
         let area = intersection_area_tq(tr[0], tr4[1], t43[2], quad[0], quad[1]);
         assert_eq!(area, 0.0);
     }

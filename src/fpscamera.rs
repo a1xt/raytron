@@ -1,9 +1,9 @@
-use pt::{RenderCamera};
-use pt::utils::consts;
+use pt::RenderCamera;
 use pt::math;
+use pt::math::{ToHomogeneous, Rotation, Rotate, Inverse};
 use pt::math::{Matrix4, Vector3, Isometry3, Rotation3, PerspectiveMatrix3};
 use pt::math::{Vector3f, Point3f, Real};
-use pt::math::{ToHomogeneous, Rotation, Rotate, Inverse};
+use pt::utils::consts;
 
 #[derive(Debug, Clone, Copy)]
 pub struct FPSCamera {
@@ -28,7 +28,8 @@ impl FPSCamera {
     }
 
     pub fn look_at(&mut self, target: &Point3f) {
-        self.trfm.rotation = Rotation3::look_at_lh(&(*target - *self.pos()), &Vector3f::from(&consts::UP_VEC));
+        self.trfm.rotation =
+            Rotation3::look_at_lh(&(*target - *self.pos()), &Vector3f::from(&consts::UP_VEC));
     }
 
     pub fn transform(&self) -> &Isometry3<Real> {
@@ -64,7 +65,7 @@ impl FPSCamera {
     pub fn yaw_add(&mut self, angle: Real) -> &mut FPSCamera {
         let up = Vector3::from(&consts::UP_VEC);
         self.trfm.rotation.append_rotation_mut(&(up * angle));
-        self        
+        self
     }
 
     pub fn pitch_add(&mut self, angle: Real) -> &mut FPSCamera {
@@ -87,11 +88,12 @@ impl RenderCamera for FPSCamera {
             .to_homogeneous()
     }
     fn proj_matrix(&self) -> Matrix4<Real> {
-        PerspectiveMatrix3::new(self.width as Real / self.height as Real,
-                                self.fovx,
-                                self.znear,
-                                self.zfar)
-            .to_matrix()
+        PerspectiveMatrix3::new(
+            self.width as Real / self.height as Real,
+            self.fovx,
+            self.znear,
+            self.zfar,
+        ).to_matrix()
     }
 
     fn height(&self) -> u32 {

@@ -1,4 +1,4 @@
-use math::{Real};
+use math::Real;
 
 pub const UP_VEC: [Real; 3] = [0.0, 1.0, 0.0];
 pub const FORWARD_VEC: [Real; 3] = [0.0, 0.0, -1.0];

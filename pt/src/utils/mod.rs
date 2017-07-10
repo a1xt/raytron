@@ -11,7 +11,7 @@ pub fn clamp<T: Copy + PartialOrd>(val: T, left_bound: T, right_bound: T) -> T {
     } else {
         val
     }
-    
+
 }
 
 pub fn normal_dx_to_ogl(n: &Rgb<Real>) -> Rgb<Real> {

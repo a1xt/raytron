@@ -1,8 +1,10 @@
-use utils::{clamp};
-use color::{Pixel};
+use color::Pixel;
+use utils::clamp;
 
 pub trait TexView<P>: Sync + Send {
-    fn new(width: usize, height: usize) -> Self where Self: Sized;
+    fn new(width: usize, height: usize) -> Self
+    where
+        Self: Sized;
     fn pixel(&self, i: usize, j: usize) -> P;
     fn set_pixel(&mut self, i: usize, j: usize, p: P);
     fn width(&self) -> usize;
@@ -19,7 +21,6 @@ pub struct Texture<P: Pixel> {
 }
 
 impl<P: Pixel> Texture<P> {
-
     pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::with_capacity(width * height);
         for _ in 0..(width * height) {
@@ -27,7 +28,7 @@ impl<P: Pixel> Texture<P> {
         }
         Texture::from_data(data, width, height)
     }
-    
+
     pub fn from_data(data: Vec<P::Raw>, width: usize, height: usize) -> Self {
         assert_eq!(data.len(), width * height);
         Texture {
@@ -96,12 +97,16 @@ impl<P: Pixel> Texture<P> {
     }
 }
 
-impl<P, R> TexView<P> for Texture<R> 
-    where R: Pixel,
-          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
+impl<P, R> TexView<P> for Texture<R>
+where
+    R: Pixel,
+    P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
-    fn new(width: usize, height: usize) -> Self where Self: Sized {
+    fn new(width: usize, height: usize) -> Self
+    where
+        Self: Sized,
+    {
         Texture::new(width, height)
     }
 
@@ -128,8 +133,9 @@ impl<P, R> TexView<P> for Texture<R>
 }
 
 impl<'a, R, P> AsRef<TexView<P> + 'a> for Texture<R>
-    where R: Pixel + 'a,
-          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
+where
+    R: Pixel + 'a,
+    P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
     fn as_ref(&self) -> &(TexView<P> + 'a) {
@@ -138,8 +144,9 @@ impl<'a, R, P> AsRef<TexView<P> + 'a> for Texture<R>
 }
 
 impl<'a, P, R> AsMut<TexView<P> + 'a> for Texture<R>
-    where R: Pixel + 'a,
-          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
+where
+    R: Pixel + 'a,
+    P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
     fn as_mut(&mut self) -> &mut (TexView<P> + 'a) {
@@ -162,8 +169,9 @@ impl<'s, 'a: 's, C> AsMut<TexView<C> + 'a> for &'s mut (TexView<C> + 'a) {
 }
 
 impl<'a, P, R> AsRef<TexView<P> + 'a> for Box<Texture<R>>
-    where R: Pixel + 'a,
-          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
+where
+    R: Pixel + 'a,
+    P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
     fn as_ref(&self) -> &(TexView<P> + 'a) {
@@ -172,8 +180,9 @@ impl<'a, P, R> AsRef<TexView<P> + 'a> for Box<Texture<R>>
 }
 
 impl<'a, P, R> AsMut<TexView<P> + 'a> for Box<Texture<R>>
-    where R: Pixel + 'a,
-          P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
+where
+    R: Pixel + 'a,
+    P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
     #[inline]
     fn as_mut(&mut self) -> &mut (TexView<P> + 'a) {

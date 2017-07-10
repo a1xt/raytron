@@ -1,19 +1,21 @@
+use fpscamera::FPSCamera;
 use glutin::{WindowEvent, ElementState, VirtualKeyCode, MouseButton};
-use std::time;
-use std::time::Instant;
-use std::ops::{FnMut};
+use pt::RenderCamera;
 use pt::math;
 use pt::math::{Vector3, ApproxEq, Norm, Real};
 use pt::utils::consts;
-use pt::RenderCamera;
-use fpscamera::{FPSCamera};
+use std::ops::FnMut;
+use std::time;
+use std::time::Instant;
 
 
 pub trait CameraController {
-    fn on_frame<'b, 'a, 'c, I: Iterator<Item = &'a WindowEvent>>(&mut self,
-                                                       event_iter: I,
-                                                       set_cursor_pos: &'b mut FnMut(i32, i32),
-                                                       cur_locker: &'c mut FnMut(bool));
+    fn on_frame<'b, 'a, 'c, I: Iterator<Item = &'a WindowEvent>>(
+        &mut self,
+        event_iter: I,
+        set_cursor_pos: &'b mut FnMut(i32, i32),
+        cur_locker: &'c mut FnMut(bool),
+    );
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -101,15 +103,18 @@ impl FPSCameraController {
         if !mdir.approx_eq(&math::zero()) {
             mdir = mdir.normalize();
         }
-        self.cam.pos_add(&(mdir * self.move_speed * (delta_time as Real) ));
+        self.cam
+            .pos_add(&(mdir * self.move_speed * (delta_time as Real)));
     }
 }
 
 impl CameraController for FPSCameraController {
-    fn on_frame<'b, 'c, 'a, I: Iterator<Item = &'a WindowEvent>>(&mut self,
-                                                       event_iter: I,
-                                                       set_cursor_pos: &'b mut FnMut(i32, i32),
-                                                       cur_locker: &'c mut FnMut(bool)) {
+    fn on_frame<'b, 'c, 'a, I: Iterator<Item = &'a WindowEvent>>(
+        &mut self,
+        event_iter: I,
+        set_cursor_pos: &'b mut FnMut(i32, i32),
+        cur_locker: &'c mut FnMut(bool),
+    ) {
         let now = Instant::now();
         let dt = now.duration_since(self.last_tp);
         let delta_time = dt.as_secs() as Real + 0.1e-8 * (dt.subsec_nanos() as Real);
@@ -135,18 +140,22 @@ impl CameraController for FPSCameraController {
                         let cy = self.cam.height() / 2;
                         let dx = cx as i32 - x;
                         let dy = cy as i32 - y;
-                        let rx = dx as Real / self.cam.width() as Real * self.mouse_sens * self.cam.fovx();
-                        let ry = dy as Real / self.cam.height() as Real * self.mouse_sens * self.cam.fovx();
+                        let rx = dx as Real / self.cam.width() as Real * self.mouse_sens *
+                            self.cam.fovx();
+                        let ry = dy as Real / self.cam.height() as Real * self.mouse_sens *
+                            self.cam.fovx();
 
                         self.cam.yaw_add(rx).pitch_add(ry);
                         set_cursor_pos(cx as i32, cy as i32);
                     }
                 }
                 WindowEvent::MouseInput(pressed, MouseButton::Right) => {
-                    self.cursor_locked = pressed == ElementState::Pressed; 
-                    cur_locker(self.cursor_locked);            
-                    set_cursor_pos((self.cam.width() / 2) as i32,
-                                   (self.cam.height() / 2) as i32);                    
+                    self.cursor_locked = pressed == ElementState::Pressed;
+                    cur_locker(self.cursor_locked);
+                    set_cursor_pos(
+                        (self.cam.width() / 2) as i32,
+                        (self.cam.height() / 2) as i32,
+                    );
                 }
 
                 _ => {}

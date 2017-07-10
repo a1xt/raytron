@@ -1,12 +1,12 @@
 use {Bsdf, Color};
-use math::{Vector3f, Real};
-use math::{Cross, Norm, Dot};
-use math;
 use color;
-use std::f32::consts::{PI};
+use math;
+use math::{Cross, Norm, Dot};
+use math::{Vector3f, Real};
 use rand;
-use rand::{Closed01};
+use rand::Closed01;
 use rand::distributions::{Range, IndependentSample};
+use std::f32::consts::PI;
 
 
 #[derive(Clone, Copy, Debug)]
@@ -18,7 +18,7 @@ pub struct Phong {
 }
 
 impl Phong {
-    pub fn new (color: Color, kd: f32, ks: f32, n: f32) -> Phong {
+    pub fn new(color: Color, kd: f32, ks: f32, n: f32) -> Phong {
         let mut s = ks;
         let mut d = kd;
         if ks + kd > 1.0 {
@@ -79,7 +79,7 @@ impl Bsdf for Phong {
     //     // } else {
 
     //     // }
-  
+
     //     let k = (self.n as Real + 2.0) / (self.n as Real + 1.0) * normal.dot(reflected_ray);
     //     color::mul_s(&self.color, k as f32)
     // }
@@ -102,7 +102,7 @@ impl Bsdf for Phong {
     //             },
     //             self.color
     //         )
-            
+
     //     } else if e < self.kd + self.ks {
     //         let cos_theta = surface_normal.dot(&(-ray_dir)).abs();
     //         let ir = (surface_normal * 2.0 + ((-ray_dir) / cos_theta) * (-1.0)).normalize();
@@ -110,7 +110,7 @@ impl Bsdf for Phong {
     //             origin: *surface_point,
     //             dir: self.random_vector(&ir),
     //         };
-     
+
     //         let cos_theta = surface_normal.dot(&r.dir).abs();
     //         let k = ((self.n as Real + 2.0) / (self.n as Real + 1.0)) * cos_theta;// * (1.0 / ps);
     //         let c = color::mul_s(&self.color, k as f32);
@@ -120,17 +120,16 @@ impl Bsdf for Phong {
 
     //     } else {
     //         (Ray3f{origin: *surface_point, dir: math::zero()}, color::BLACK)
-    //     } 
+    //     }
 
     // }
 
     fn eval(
-        &self, 
+        &self,
         surface_normal: &Vector3f,
         in_dir: &Vector3f,
-        out_dir: &Vector3f,        
-    ) -> (Color, Real)
-    {
+        out_dir: &Vector3f,
+    ) -> (Color, Real) {
         let Closed01(e) = rand::random::<Closed01<f32>>();
         if e < self.kd {
             let pdf = out_dir.dot(surface_normal) / PI as Real;
@@ -143,7 +142,7 @@ impl Bsdf for Phong {
             // let cos_theta_in = surface_normal.dot(&(-in_dir));
             // let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
             let in_dir_refl = math::reflect_vec(&(-in_dir), surface_normal);
-            
+
             let cos_alpha = in_dir_refl.dot(out_dir);
             if cos_alpha > 0.0 {
                 let pdf = (n + 1.0) * cos_alpha.powf(n) / (2.0 * PI as Real);
@@ -159,7 +158,7 @@ impl Bsdf for Phong {
         } else {
             (color::BLACK, 1.0)
         }
-    }      
+    }
 
 
     fn sample(&self, surface_normal: &Vector3f, in_dir: &Vector3f) -> (Vector3f, Color, Real) {
@@ -177,7 +176,7 @@ impl Bsdf for Phong {
             // let in_dir_refl = (surface_normal * 2.0 + ((-in_dir) / cos_theta_in) * (-1.0)).normalize();
             let in_dir_refl = math::reflect_vec(&(-in_dir), surface_normal);
             let out_dir = self.random_vector(&in_dir_refl);
-            
+
             let f = (n + 2.0) / (n + 1.0);
             let fr = self.color * (f as f32);
 

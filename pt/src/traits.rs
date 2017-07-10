@@ -1,11 +1,11 @@
-use math::{Ray3f, Matrix4f, Vector3f, Point3f, Real, Dot, Norm};
 use super::{SurfacePoint, Color};
+pub use aabb::HasBounds;
+pub use bsdf::Bsdf;
+use math::{Ray3f, Matrix4f, Vector3f, Point3f, Real, Dot, Norm};
+pub use polygon::{Vertex, Material};
 
 pub use renderer::Renderer;
 pub use scenehandler::SceneHandler;
-pub use bsdf::Bsdf;
-pub use polygon::{Vertex, Material};
-pub use aabb::{HasBounds};
 pub use texture::TexView;
 
 pub trait RenderCamera: Sync {
@@ -25,7 +25,7 @@ pub trait RenderCamera: Sync {
     fn right_vec(&self) -> Vector3f;
 }
 
-pub trait Surface : Sync {
+pub trait Surface: Sync {
     /// return (t, sp)
     fn intersection(&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)>;
 
@@ -34,13 +34,13 @@ pub trait Surface : Sync {
     /// ∫ Le dA
     fn total_radiance(&self) -> Option<Color>;
 
-    fn area (&self) -> Real;
+    fn area(&self) -> Real;
     fn normal_at(&self, pos: &Point3f) -> Vector3f;
 
     // return (random point, pdf)
     // fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Real);
     // fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Real;
-    
+
     fn sample_surface_p(&self, view_point: (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
         let (sp, pdf_d) = self.sample_surface_d(view_point);
         let view_dir = *view_point.0 - sp.position;
@@ -67,7 +67,11 @@ pub trait Surface : Sync {
         (sp, pdf_d_proj)
     }
 
-    fn pdf_p(&self,  point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
+    fn pdf_p(
+        &self,
+        point_at_surface: (&Point3f, &Vector3f),
+        view_point: (&Point3f, &Vector3f),
+    ) -> Real {
         let pdf_d = self.pdf_d(point_at_surface, view_point);
         let view_dir = *view_point.0 - *point_at_surface.0;
         let r2 = view_dir.norm_squared();
@@ -75,7 +79,11 @@ pub trait Surface : Sync {
         pdf_d * (cos_theta_l / r2) // pdf_p
     }
 
-    fn pdf_d(&self,  point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
+    fn pdf_d(
+        &self,
+        point_at_surface: (&Point3f, &Vector3f),
+        view_point: (&Point3f, &Vector3f),
+    ) -> Real {
         let pdf_p = self.pdf_p(point_at_surface, view_point);
         let view_dir = *view_point.0 - *point_at_surface.0;
         let r2 = view_dir.norm_squared();
@@ -83,7 +91,11 @@ pub trait Surface : Sync {
         pdf_p * (r2 / cos_theta_l) // pdf_d
     }
 
-    fn pdf_d_proj(&self,  point_at_surface: (&Point3f, &Vector3f), view_point: (&Point3f, &Vector3f)) -> Real {
+    fn pdf_d_proj(
+        &self,
+        point_at_surface: (&Point3f, &Vector3f),
+        view_point: (&Point3f, &Vector3f),
+    ) -> Real {
         let pdf_d = self.pdf_d(point_at_surface, view_point);
         let view_dir_inv = (*point_at_surface.0 - *view_point.0).normalize();
         let cos_theta = view_point.1.dot(&view_dir_inv);
@@ -106,11 +118,19 @@ impl<'s, 'a: 's> AsMut<Surface + 'a> for &'s mut (Surface + 'a) {
 }
 
 pub trait BoundedSurface: Surface + HasBounds {
-    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where Self: 'a;
+    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a)
+    where
+        Self: 'a;
 }
-impl<T> BoundedSurface for T where T: Surface + HasBounds {
+impl<T> BoundedSurface for T
+where
+    T: Surface + HasBounds,
+{
     #[inline]
-    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a) where T: 'a {
+    fn as_surface<'s, 'a: 's>(&'s self) -> &'s (Surface + 'a)
+    where
+        T: 'a,
+    {
         self as &Surface
     }
 }

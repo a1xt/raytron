@@ -1,11 +1,11 @@
-use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
 use {Surface, SurfacePoint, Bsdf};
-use bsdf::BsdfRef;
-use std::f64::consts::PI;
-use color::{Color};
-use std::sync::Arc;
 use aabb::{Aabb3, HasBounds};
+use bsdf::BsdfRef;
+use color::Color;
+use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
 use std::borrow::{Borrow, BorrowMut};
+use std::f64::consts::PI;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Sphere {
@@ -33,13 +33,12 @@ impl Sphere {
 }
 
 impl Surface for Sphere {
-
     #[inline]
     fn is_emitter(&self) -> bool {
         self.bsdf.radiance().is_some()
     }
 
-    fn intersection (&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
+    fn intersection(&self, ray: &Ray3f) -> Option<(Real, SurfacePoint)> {
         if let Some(t) = math::intersection_sphere(&self.position, self.radius, ray) {
             let pos = ray.origin + ray.dir * t;
             let norm = self.normal_to(&pos);
@@ -50,7 +49,7 @@ impl Surface for Sphere {
                     normal: norm,
                     bsdf: self.bsdf(),
                     surface: self,
-                }
+                },
             ))
         } else {
             None
@@ -58,7 +57,7 @@ impl Surface for Sphere {
     }
 
     #[inline]
-    fn area (&self) -> Real {
+    fn area(&self) -> Real {
         4.0 * (PI as Real) * self.radius * self.radius
     }
 
@@ -83,17 +82,19 @@ impl Surface for Sphere {
         let pdf = 2.0 / self.area();
         let pos = self.position + (normal * self.radius);
 
-        (SurfacePoint {
-            position: pos,
-            normal: normal,
-            bsdf: self.bsdf(),
-            surface: self,
-        },
-        pdf)
+        (
+            SurfacePoint {
+                position: pos,
+                normal: normal,
+                bsdf: self.bsdf(),
+                surface: self,
+            },
+            pdf,
+        )
     }
 
     #[inline]
-    fn pdf_p(&self, _: (&Point3f, &Vector3f), _ : (&Point3f, &Vector3f)) -> Real {      
+    fn pdf_p(&self, _: (&Point3f, &Vector3f), _: (&Point3f, &Vector3f)) -> Real {
         2.0 / self.area()
     }
 
@@ -101,7 +102,7 @@ impl Surface for Sphere {
     //     let view_dir = (*view_point.0 - self.position);
     //     let d = view_dir.norm();
     //     let r = self.radius;
-    //     let normal = math::hs_uniform_sampling(&view_dir.normalize());    
+    //     let normal = math::hs_uniform_sampling(&view_dir.normalize());
     //     let pdf = 1.0 / (2.0 * (PI as Real) * (1.0 - d / (d*d + r*r).sqrt()));
     //     let pos = self.position + (normal * self.radius);
 
@@ -126,10 +127,7 @@ impl Surface for Sphere {
 impl HasBounds for Sphere {
     fn aabb(&self) -> Aabb3 {
         let dpos = Vector3f::new(self.radius, self.radius, self.radius);
-        Aabb3::new(
-            self.position - dpos,
-            self.position + dpos,
-        )
+        Aabb3::new(self.position - dpos, self.position + dpos)
     }
 }
 
