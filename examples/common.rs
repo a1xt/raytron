@@ -20,7 +20,7 @@ use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
 use pt_app::pt::color::{self, Color, Rgb, Luma};
 use pt_app::pt::material::PbrTex;
 use pt_app::pt::math;
-use pt_app::pt::math::{Real, Norm, Cross, Vector3f, Point3f, Vector2};
+use pt_app::pt::math::{Real, Norm, Dot, Cross, Vector3f, Point3f, Vector2};
 use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
 use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
 use pt_app::pt::utils::consts;
@@ -506,21 +506,30 @@ pub fn load_texture_luma64<T: TexView<Luma<Real>>>(path: String, srgb_encoded: b
     })
 }
 
-pub fn load_pbr(path: String) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
+pub fn load_pbr(path: String, normal_opengl: bool) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
     use std::sync::Arc;
 
     let basecolor_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "basecolor.png", true);
-    let mut normal_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "normal.png", false);
     let roughness_tex: Texture<Luma<f64>> =
         load_texture_luma64(path.clone() + "roughness.png", false);
-    let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metalness.png", false);
+    let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metallic.png", false);
+    // let roughness_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(0.0));
+    // let metal_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
     let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
 
-    for n in normal_tex.as_mut_slice() {
-        let dx_n: Rgb<Real> = Rgb::from(*n);
-        let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
-        *n = gl_n.into();
-    }
+    let normal_tex = {
+        let ogl = if normal_opengl { "_opengl" } else { "" };
+        let mut tex: Texture<Rgb<f64>> =
+            load_texture_rgb64(path.clone() + "normal" + ogl + ".png", false);
+        if !normal_opengl {
+            for n in tex.as_mut_slice() {
+                let dx_n: Rgb<Real> = Rgb::from(*n);
+                let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
+                *n = gl_n.into();
+            }
+        }
+        tex
+    };
 
     let pbrtex_mat: Arc<PbrTex<Rgb<Real>, Luma<Real>>> = Arc::new(PbrTex::new(
         basecolor_tex,
@@ -588,7 +597,14 @@ where
                     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
                     (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real),
                 );
+                let pol_normal =
+                    math::triangle_normal(&v0.position(), &v1.position(), &v2.position());
                 let n = t.cross(&b).normalize();
+                let n = if pol_normal.dot(&n) < 0.0 {
+                    b.cross(&t).normalize()
+                } else {
+                    n
+                };
 
                 vertices[ix[0] as usize].tangent += t;
                 vertices[ix[0] as usize].bitangent += b;
