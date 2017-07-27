@@ -44,7 +44,7 @@ pub fn ggx_chi(v: Real) -> Real {
     }
 }
 
-pub fn eval_reflection(
+pub fn eval_reflectance(
     cos_nl: Real,
     cos_nv: Real,
     cos_nh: Real,
@@ -53,7 +53,7 @@ pub fn eval_reflection(
     f0: &Rgb<Real>,
     alpha: Real,
 ) -> (Rgb<Real>, Real) {
-    let f = math::fresnel3_schlick_f0(cos_nl, f0);
+    let f = math::fresnel3_schlick_f0(cos_lh, f0);
     let g = ggx_g(cos_nl, cos_nv, cos_lh, cos_vh, alpha);
     let d = ggx_d(cos_nh, alpha);
     let fr = f * (g * d / (4.0 * cos_nl * cos_nv));
@@ -70,26 +70,19 @@ pub fn eval(
     alpha: Real,
 ) -> (Rgb<Real>, Real) {
     let light = -vec_in;
+    let half = calc_halfvec_refl(vec_in, vec_out);
     let cos_nl = normal.dot(&light);
     let cos_nv = normal.dot(vec_out);
-    let f = math::fresnel3_schlick_f0(cos_nl, f0);
-    let Closed01(e) = rand::random::<Closed01<Real>>();
-    let (ks, kd) = (0.5, 0.5);
+    let cos_nh = normal.dot(&half);
+    let cos_lh = half.dot(&light);
+    let cos_oh = half.dot(vec_out);
+    let f = math::fresnel3_schlick_f0(cos_lh, f0);
 
-    if e <= ks {
-        // specular
-        let half = calc_halfvec_refl(vec_in, vec_out);
-        let cos_nh = normal.dot(&half);
-        let cos_lh = half.dot(&light);
-        let cos_oh = half.dot(vec_out);
-        let (fr, pdf) = eval_reflection(cos_nl, cos_nv, cos_nh, cos_lh, cos_oh, f0, alpha);
-        (fr, pdf * ks)
-    } else {
-        // diffuse
-        let diff_f = Rgb::<Real>::from(1.0) - f;
-        let (fr, pdf) = diffuse::eval(cos_nv, albedo);
-        (fr * diff_f, pdf * kd)
-    }
+    let (spec, spec_pdf) = eval_reflectance(cos_nl, cos_nv, cos_nh, cos_lh, cos_oh, f0, alpha);
+    let diff_f = Rgb::<Real>::from(1.0) - f;
+    let diff = diff_f * (1.0 / PI) * (*albedo);
+    let diff_pdf = cos_nv / PI;
+    (spec + diff, 0.5 * (spec_pdf + diff_pdf))
 }
 
 #[inline]
@@ -128,36 +121,36 @@ pub fn sample(
     albedo: &Rgb<Real>,
     alpha: Real,
 ) -> (Vector3f, Rgb<Real>, Real) {
-    let no_res = (*normal, Rgb::new(0.0, 0.0, 0.0), 1.0);
     let light = -vec_in;
     let cos_nl = normal.dot(&light);
-    if cos_nl > 0.0 {
-        let f = math::fresnel3_schlick_f0(cos_nl, f0);
-        let (ks, kd) = (0.5, 0.5);
-        let Closed01(e) = rand::random::<Closed01<Real>>();
-        if e <= ks {
-            // specular
-            let half = sample_halfvec(normal, alpha);
-            let vec_out = calc_view(&light, &half);
-            let cos_nv = normal.dot(&vec_out);
-            let cos_nh = normal.dot(&half);
-            let cos_lh = half.dot(&light);
-            let cos_vh = half.dot(&vec_out);
-            if cos_lh > 0.0 && cos_vh > 0.0 && cos_nv > 0.0 {
-                let (fr, pdf) = eval_reflection(cos_nl, cos_nv, cos_nh, cos_lh, cos_vh, f0, alpha);
-                (vec_out, fr, pdf * ks)
-            } else {
-                no_res
-            }
-        } else {
-            // diffuse
-            let diff_f = Rgb::<Real>::from(1.0) - f;
-            let (vec_out, fr, pdf) = diffuse::sample(normal, albedo);
-            (vec_out, fr * diff_f, pdf * kd)
+
+    let (half, vec_out, cos_vh, cos_lh, cos_nv, cos_nh) = loop {
+
+        let half = sample_halfvec(normal, alpha);
+        let vec_out = calc_view(&light, &half);
+        let cos_vh = half.dot(&vec_out);
+        let cos_lh = half.dot(&light);
+        let cos_nv = normal.dot(&vec_out);
+        let cos_nh = normal.dot(&half);
+
+        if cos_lh > 0.0 && cos_vh > 0.0 && cos_nv > 0.0 {
+            break (half, vec_out, cos_vh, cos_lh, cos_nv, cos_nh);
         }
+    };
+
+    let f = math::fresnel3_schlick_f0(cos_lh, f0);
+    let (ks, kd) = (0.5, 0.5);
+    let Closed01(e) = rand::random::<Closed01<Real>>();
+
+    let vec_out = if e <= ks {
+        vec_out
     } else {
-        no_res
-    }
+        math::hs_cosine_sampling(normal)
+    };
+
+    let (fr, pdf) = eval(normal, vec_in, &vec_out, f0, albedo, alpha);
+    (vec_out, fr, pdf)
+
 }
 
 pub fn pdf_refl(cos_nh: Real, cos_oh: Real, alpha: Real) -> Real {
@@ -181,6 +174,7 @@ impl CookTorrance {
         } else {
             alpha
         };
+
         Self {
             albedo: albedo.into(),
             f0: f0.into(),
@@ -207,6 +201,7 @@ impl Bsdf for CookTorrance {
         in_dir: &Vector3f,
         out_dir: &Vector3f,
     ) -> (Color, Real) {
+
         let (fr, pdf) = eval(
             surface_normal,
             in_dir,
@@ -215,6 +210,7 @@ impl Bsdf for CookTorrance {
             &self.albedo,
             self.alpha,
         );
+
         (
             Color::new(fr.r.abs() as f32, fr.g.abs() as f32, fr.b.abs() as f32),
             pdf,
