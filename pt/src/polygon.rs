@@ -591,22 +591,24 @@ pub mod material {
             v2: &TbnVertex,
             wuv: (Real, Real, Real),
         ) -> Vector3f {
-            let p = Vertex::interpolate(v0, v1, v2, wuv);
+            let p = TbnVertex::interpolate(v0, v1, v2, wuv);
             let mut rgb_normal: Rgb<Real> = self.normal.as_ref().sample(p.uv.x, p.uv.y).into();
             rgb_normal = rgb_normal * 2.0 - Rgb::<Real>::from(1.0);
             let tex_normal = Vector3f::new(rgb_normal.r, rgb_normal.g, rgb_normal.b).normalize();
 
-            // let duv1 = v1.uv - v0.uv;
-            // let duv2 = v2.uv - v0.uv;
-            // let (t, b) = math::calc_tangent(
-            //     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
-            //     (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real));
-
-            // let n = t.cross(&b).normalize();
-
             let t = p.tangent;
             let b = p.bitangent;
             let n = p.normal;
+
+            // assert!((t.norm() - 1.0).abs() < consts::REAL_EPSILON);
+            // assert!((b.norm() - 1.0).abs() < consts::REAL_EPSILON);
+            // assert!((n.norm() - 1.0).abs() < consts::REAL_EPSILON);
+
+            // if (t.norm() - 1.0).abs() > consts::REAL_EPSILON ||
+            //     (b.norm() - 1.0).abs() > consts::REAL_EPSILON ||
+            //     (n.norm() - 1.0).abs() > consts::REAL_EPSILON {
+            //         println!("t norm: {:?}\nb norm: {:?}\nn norm: {:?}", t.norm(), b.norm(), n.norm());
+            //     }
 
             let normal = Vector3f::new(
                 tex_normal.x * t.x + tex_normal.y * b.x + tex_normal.z * n.x,
@@ -627,6 +629,7 @@ pub mod vertex {
         fn interpolate(v0: &Self, v1: &Self, v2: &Self, p: (Real, Real, Real)) -> Self
         where
             Self: Sized;
+
         fn position(&self) -> Point3f;
     }
 
