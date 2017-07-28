@@ -2,9 +2,6 @@ use color::Pixel;
 use utils::clamp;
 
 pub trait TexView<P>: Sync + Send {
-    fn new(width: usize, height: usize) -> Self
-    where
-        Self: Sized;
     fn pixel(&self, i: usize, j: usize) -> P;
     fn set_pixel(&mut self, i: usize, j: usize, p: P);
     fn width(&self) -> usize;
@@ -102,14 +99,6 @@ where
     R: Pixel,
     P: From<R::Raw> + Into<R::Raw> + From<R::Color>,
 {
-    #[inline]
-    fn new(width: usize, height: usize) -> Self
-    where
-        Self: Sized,
-    {
-        Texture::new(width, height)
-    }
-
     #[inline]
     fn pixel(&self, i: usize, j: usize) -> P {
         P::from(*self.pixel_raw(i, j))
