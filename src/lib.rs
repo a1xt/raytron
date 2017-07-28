@@ -131,7 +131,7 @@ impl App<gfx_device_gl::Device, gfx_device_gl::Factory> {
                 FPSCamera::new(
                     screen_width,
                     screen_height,
-                    (90.0 as Real).to_radians(),
+                    (45.0 as Real).to_radians(),
                     1.0,
                     10_000.0,
                 ),

@@ -143,7 +143,7 @@ impl CameraController for FPSCameraController {
                         let rx = dx as Real / self.cam.width() as Real * self.mouse_sens *
                             self.cam.fovx();
                         let ry = dy as Real / self.cam.height() as Real * self.mouse_sens *
-                            self.cam.fovx();
+                            self.cam.fovy();
 
                         self.cam.yaw_add(rx).pitch_add(ry);
                         set_cursor_pos(cx as i32, cy as i32);

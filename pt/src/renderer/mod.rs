@@ -100,14 +100,13 @@ mod inner {
             let right = camera.right_vec().normalize();
 
             let ratio = camera.height() as Real / camera.width() as Real;
-            let x = 2.0 * (0.5 * camera.fovx()).tan();
-            let y = ratio * x;
+            let fovy = camera.fovy();
+            let y = 2.0 * (0.5 * fovy).tan();
+            let x = y / ratio;
             let dx = x / (camera.width() as Real);
             let dy = dx;
-
             let x0 = (-0.5) * x + dx * 0.5;
             let y0 = 0.5 * y - dy * 0.5;
-
 
             CameraRayGenerator {
                 origin: origin,

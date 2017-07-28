@@ -9,18 +9,18 @@ use pt::utils::consts;
 pub struct FPSCamera {
     width: u32,
     height: u32,
-    fovx: Real,
+    fovy: Real,
     znear: Real,
     zfar: Real,
     trfm: Isometry3<Real>,
 }
 
 impl FPSCamera {
-    pub fn new(width: u32, height: u32, fovx: Real, znear: Real, zfar: Real) -> FPSCamera {
+    pub fn new(width: u32, height: u32, fovy: Real, znear: Real, zfar: Real) -> FPSCamera {
         FPSCamera {
             width: width,
             height: height,
-            fovx: fovx,
+            fovy: fovy,
             znear: znear,
             zfar: zfar,
             trfm: math::one(),
@@ -90,7 +90,7 @@ impl RenderCamera for FPSCamera {
     fn proj_matrix(&self) -> Matrix4<Real> {
         PerspectiveMatrix3::new(
             self.width as Real / self.height as Real,
-            self.fovx,
+            self.fovy,
             self.znear,
             self.zfar,
         ).to_matrix()
@@ -111,10 +111,13 @@ impl RenderCamera for FPSCamera {
     fn zfar(&self) -> Real {
         self.zfar
     }
-    fn fovx(&self) -> Real {
-        self.fovx
+    fn fovy(&self) -> Real {
+        self.fovy
     }
-
+    fn fovx(&self) -> Real {
+        let ratio = self.width as Real / self.height as Real;
+        2.0 * (ratio * (0.5 * self.fovy).tan()).atan()
+    }
     fn pos(&self) -> Point3f {
         *self.pos()
     }

@@ -18,6 +18,7 @@ pub trait RenderCamera: Sync {
     fn znear(&self) -> Real;
     fn zfar(&self) -> Real;
     fn fovx(&self) -> Real;
+    fn fovy(&self) -> Real;
 
     fn pos(&self) -> Point3f;
     fn up_vec(&self) -> Vector3f;
@@ -36,10 +37,6 @@ pub trait Surface: Sync {
 
     fn area(&self) -> Real;
     fn normal_at(&self, pos: &Point3f) -> Vector3f;
-
-    // return (random point, pdf)
-    // fn sample_surface(&self, view_point: &Point3f) -> (SurfacePoint, Real);
-    // fn pdf(&self,  point_at_surface: &Point3f, view_point: &Point3f) -> Real;
 
     fn sample_surface_p(&self, view_point: (&Point3f, &Vector3f)) -> (SurfacePoint, Real) {
         let (sp, pdf_d) = self.sample_surface_d(view_point);
