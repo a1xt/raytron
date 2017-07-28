@@ -17,7 +17,7 @@ pub use pt_app::*;
 use pt_app::App;
 pub use pt_app::camera_controller::{CameraController, FPSCameraController};
 use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
-use pt_app::pt::color::{self, Color, Rgb, Luma};
+use pt_app::pt::color::{self, Color, ColorChannel, ChannelCast, Rgb, Luma};
 use pt_app::pt::material::PbrTex;
 use pt_app::pt::math;
 use pt_app::pt::math::{Real, Norm, Dot, Cross, Vector3f, Point3f, Vector2};
@@ -430,7 +430,7 @@ macro_rules! mono_texture {
     }};
 }
 
-pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
+pub fn load_hdr (path: String) -> Texture<Rgb> {
     use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
@@ -441,7 +441,7 @@ pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
     let img_file = File::open(path).unwrap();
     let hdrdecoder = hdr::HDRDecoder::new(BufReader::new(img_file)).unwrap();
     let hdr_meta = hdrdecoder.metadata();
-    let mut img = T::new(hdr_meta.width as usize, hdr_meta.height as usize);
+    let mut img = Texture::new(hdr_meta.width as usize, hdr_meta.height as usize);
     let hdr_data = hdrdecoder.read_image_hdr().unwrap();
     let h = img.height();
     for j in 0..(hdr_meta.height as usize) {
@@ -459,10 +459,10 @@ pub fn load_hdr<T: TexView<Rgb>>(path: String) -> T {
     img
 }
 
-pub fn load_texture<C, T: TexView<C>, F>(path: String, map_color: F) -> T
+pub fn load_texture<P, F>(path: String, map_color: F) -> Texture<P>
 where
-    C: Into<Rgb<Real>> + Into<Color>,
-    F: Fn(image::Rgba<u8>) -> C,
+    P: color::Pixel,
+    F: Fn(image::Rgba<u8>) -> P::Color,
 {
     use image::GenericImage;
     use std::path::Path;
@@ -471,7 +471,7 @@ where
     let _ = std::io::stdout().flush();
 
     let img = image::open(&Path::new(&path)).unwrap();
-    let mut tex = T::new(img.width() as usize, img.height() as usize);
+    let mut tex = Texture::new(img.width() as usize, img.height() as usize);
     let h = tex.height();
     for j in 0..img.height() {
         for i in 0..img.width() {
@@ -484,54 +484,71 @@ where
     tex
 }
 
-pub fn load_texture_rgb64<T: TexView<Rgb<Real>>>(path: String, srgb_encoded: bool) -> T {
-    load_texture::<Rgb<f64>, _, _>(path, move |c| {
-        let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into(): Rgb<f64>;
+pub fn load_texture_rgb<C>(path: String, srgb_encoded: bool) -> Texture<Rgb<C>>
+where
+    C: ColorChannel + ChannelCast<Real>,
+    Rgb<C>: From<Rgb<u8>>,
+{
+    load_texture(path, move |c| {
+        let mut p = Rgb::<u8>::new(c[0], c[1], c[2]).into(): Rgb<C>;
         if srgb_encoded {
-            p.r = p.r.powf(2.2);
-            p.g = p.g.powf(2.2);
-            p.b = p.b.powf(2.2);
+            p.r = C::cast_from(p.r.cast_into().powf(2.2));
+            p.g = C::cast_from(p.g.cast_into().powf(2.2));
+            p.b = C::cast_from(p.b.cast_into().powf(2.2));
         }
         p
     })
 }
 
-pub fn load_texture_luma64<T: TexView<Luma<Real>>>(path: String, srgb_encoded: bool) -> T {
-    load_texture::<Luma<f64>, _, _>(path, move |c| {
-        let mut p = Luma::<u8>::new(c[0]).into(): Luma<f64>;
+pub fn load_texture_luma<C>(path: String, srgb_encoded: bool) -> Texture<Luma<C>>
+where
+    C: ColorChannel + ChannelCast<Real>,
+    Luma<C>: From<Luma<u8>>,
+{
+    load_texture(path, move |c| {
+        let mut p = Luma::<u8>::new(c[0]).into(): Luma<C>;
         if srgb_encoded {
-            p.luma = p.luma.powf(2.2);
+            p.luma = C::cast_from(p.luma.cast_into().powf(2.2));
         }
         p
     })
 }
 
-pub fn load_pbr(path: String, normal_opengl: bool) -> Arc<PbrTex<'static, Rgb<Real>, Luma<Real>>> {
+pub fn load_pbr<C>(path: String, normal_opengl: bool) -> Arc<PbrTex<'static, Rgb<C>, Luma<C>>>
+where
+    C: ColorChannel + ChannelCast<Real>,
+    Rgb<C>: From<Rgb<u8>>,
+    Luma<C>: From<Luma<u8>>,
+    Rgb<Real>: From<Rgb<C>>,
+    Rgb: From<Rgb<C>>,
+    Luma<Real>: From<Luma<C>>,
+{
     use std::sync::Arc;
 
-    let basecolor_tex: Texture<Rgb<f64>> = load_texture_rgb64(path.clone() + "basecolor.png", true);
-    let roughness_tex: Texture<Luma<f64>> =
-        load_texture_luma64(path.clone() + "roughness.png", false);
-    let metal_tex: Texture<Luma<f64>> = load_texture_luma64(path.clone() + "metallic.png", false);
+    let basecolor_tex = load_texture_rgb(path.clone() + "basecolor.png", true);
+    let roughness_tex = load_texture_luma::<C>(path.clone() + "roughness.png", false);
+    let metal_tex = load_texture_luma(path.clone() + "metallic.png", false);
     // let roughness_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(0.0));
     // let metal_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
-    let spec_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
+    use pt::color::ChannelBounds;
+    let spec_tex = mono_texture!(Luma::new(C::MAX_CHVAL));
 
     let normal_tex = {
         let ogl = if normal_opengl { "_opengl" } else { "" };
-        let mut tex: Texture<Rgb<f64>> =
-            load_texture_rgb64(path.clone() + "normal" + ogl + ".png", false);
+        let mut tex = load_texture_rgb::<C>(path.clone() + "normal" + ogl + ".png", false);
         if !normal_opengl {
             for n in tex.as_mut_slice() {
-                let dx_n: Rgb<Real> = Rgb::from(*n);
+                let dx_n: Rgb<Real> = Rgb::new(n[0].cast_into(), n[1].cast_into(), n[2].cast_into());
+                // let dx_n: Rgb<Real> = Rgb::<C>::from(*n);
                 let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
-                *n = gl_n.into();
+                *n = [C::cast_from(gl_n.r), C::cast_from(gl_n.r), C::cast_from(gl_n.r)];
+                // *n = gl_n.into();
             }
         }
         tex
     };
 
-    let pbrtex_mat: Arc<PbrTex<Rgb<Real>, Luma<Real>>> = Arc::new(PbrTex::new(
+    let pbrtex_mat: Arc<PbrTex<Rgb<C>, Luma<C>>> = Arc::new(PbrTex::new(
         basecolor_tex,
         normal_tex,
         roughness_tex,
