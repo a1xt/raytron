@@ -12,3 +12,10 @@ nalgebra = "0.10.*"
 num = "*"
 rand = "*"
 scoped_threadpool =  {version = "0.1.*", git = "https://github.com/Kimundi/scoped-threadpool-rs"}
+
+clippy = {version = "*", optional = true}
+
+
+[features]
+clippy_check = ["clippy"]
+default = []

@@ -1,18 +1,19 @@
 #![feature(slice_patterns)]
 #![feature(box_syntax)]
 #![feature(const_fn)]
-#![feature(associated_consts)]
 #![feature(fixed_size_array)]
 #![feature(conservative_impl_trait)]
 #![feature(associated_type_defaults)]
 #![feature(specialization)]
 #![feature(type_ascription)]
 
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 extern crate core;
 extern crate scoped_threadpool;
 extern crate rand;
 pub extern crate num;
-
 
 
 pub mod math;
