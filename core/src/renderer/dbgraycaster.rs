@@ -1,10 +1,10 @@
 
 
-use super::inner::{RendererHelper, CameraRayGenerator};
-use {RenderSettings, Color};
+use super::inner::{CameraRayGenerator, RendererHelper};
+use {Color, RenderSettings};
 use color;
-use math::{Ray3f, Dot, Norm};
-use traits::{Renderer, SceneHandler, RenderCamera};
+use math::{Dot, Norm, Ray3f};
+use traits::{RenderCamera, Renderer, SceneHandler};
 
 
 pub struct DbgRayCaster {
@@ -27,28 +27,26 @@ impl DbgRayCaster {
             let mat = sp.bsdf;
             if let Some(c) = mat.radiance() {
                 return c;
-            } else {
-                if let Some(light) = scene.light_sources().iter().into_iter().next() {
-                    let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
-                    let shadow_ray = Ray3f::new(
-                        &sp.position,
-                        &(light_point.position - sp.position).normalize(),
-                    );
+            } else if let Some(light) = scene.light_sources().iter().into_iter().next() {
+                let (light_point, _) = light.sample_surface_p((&sp.position, &sp.normal));
+                let shadow_ray = Ray3f::new(
+                    &sp.position,
+                    &(light_point.position - sp.position).normalize(),
+                );
 
-                    let color = Color::new(
-                        (0.5 + sp.normal.x * 0.5) as f32,
-                        (0.5 + sp.normal.y * 0.5) as f32,
-                        (0.5 + sp.normal.z * 0.5) as f32,
-                    );
-                    //return color;
-                    if let Some(lp) = scene.intersection(&shadow_ray) {
+                let color = Color::new(
+                    (0.5 + sp.normal.x * 0.5) as f32,
+                    (0.5 + sp.normal.y * 0.5) as f32,
+                    (0.5 + sp.normal.z * 0.5) as f32,
+                );
+                //return color;
+                if let Some(lp) = scene.intersection(&shadow_ray) {
 
-                        if lp.bsdf.radiance().is_some() {
-                            let cos_theta = sp.normal.dot(&shadow_ray.dir);
+                    if lp.bsdf.radiance().is_some() {
+                        let cos_theta = sp.normal.dot(&shadow_ray.dir);
 
-                            return color * (cos_theta as f32);
+                        return color * (cos_theta as f32);
 
-                        }
                     }
                 }
             }
@@ -73,5 +71,11 @@ impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> RendererHelper<S, C> fo
 impl<S: SceneHandler + ?Sized, C: RenderCamera + ?Sized> Renderer<S, C> for DbgRayCaster {
     fn pre_render(&mut self, _: &S, camera: &C, _: &RenderSettings) {
         self.ray_gen = CameraRayGenerator::with_camera(camera);
+    }
+}
+
+impl Default for DbgRayCaster {
+    fn default() -> Self {
+        Self::new()
     }
 }

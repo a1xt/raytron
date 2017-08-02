@@ -1,6 +1,6 @@
 use polygon::Polygon;
 use std::sync::Arc;
-use traits::{Vertex, Material};
+use traits::{Material, Vertex};
 
 #[derive(Default)]
 pub struct Mesh<'a, V>

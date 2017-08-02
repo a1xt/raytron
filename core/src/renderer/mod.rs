@@ -5,7 +5,7 @@ pub use self::dbgraycaster::DbgRayCaster;
 
 use self::inner::RendererHelper;
 pub use self::pathtracer::PathTracer;
-use {RenderSettings, Color};
+use {Color, RenderSettings};
 
 use scoped_threadpool::Pool;
 use std::ops::DerefMut;
@@ -14,8 +14,8 @@ use std::sync::{Arc, Mutex};
 use traits::{RenderCamera, SceneHandler, TexView};
 
 mod inner {
-    use {RenderSettings, Color};
-    use math::{self, Ray3f, Point3f, Vector3f, Real, Norm};
+    use {Color, RenderSettings};
+    use math::{self, Norm, Point3f, Ray3f, Real, Vector3f};
     use rand::{self, Closed01};
     use traits::{RenderCamera, SceneHandler, TexView};
 

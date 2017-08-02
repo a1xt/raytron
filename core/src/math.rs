@@ -15,7 +15,6 @@ pub type Point4f = Point4<Real>;
 use std::f32::EPSILON;
 pub const FLOAT_EPSILON: Real = EPSILON as Real;
 use color::Rgb;
-use utils::consts;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray3<F>
@@ -78,8 +77,8 @@ pub fn intersection_triangle(
     let p = ray.dir.cross(&e2);
     let det = p.dot(&e1);
 
-    let d = if culling { det } else { det.abs() };
-    if d < FLOAT_EPSILON {
+    let det_check = if culling { det } else { det.abs() };
+    if det_check < FLOAT_EPSILON {
         return None;
     }
 
@@ -114,7 +113,7 @@ pub fn triangle_normal(v0: &Point3f, v1: &Point3f, v2: &Point3f) -> Vector3f {
 
 use rand;
 use rand::{random, Closed01};
-use rand::distributions::{Range, IndependentSample};
+use rand::distributions::{IndependentSample, Range};
 
 
 pub fn hs_uniform_sampling(hemisphere_normal: &Vector3f) -> Vector3f {
@@ -285,7 +284,7 @@ mod intersection_area_priv {
             ((p[axis] - plane_pos <= 0.0) && !right_inside)
     }
 
-    pub fn ix_next(vec: &Vec<(Point2f, bool)>, ix: usize) -> usize {
+    pub fn ix_next(vec: &[(Point2f, bool)], ix: usize) -> usize {
         if ix + 1 >= vec.len() {
             0
         } else {
@@ -338,9 +337,9 @@ pub fn intersection_area_tq(
             let (v_next, is_next_inside) = vertices[ixn];
             if is_v_inside != is_next_inside {
                 let v_split = if is_v_inside {
-                    split_side(&v, &v_next, plane)
+                    split_side(v, &v_next, plane)
                 } else {
-                    split_side(&v_next, &v, plane)
+                    split_side(&v_next, v, plane)
                 };
                 clipped.push((v_split, is_next_inside));
             }

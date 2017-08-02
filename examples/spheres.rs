@@ -2,7 +2,7 @@
 #![feature(type_ascription)]
 #![allow(unused_imports)]
 
-extern crate pt_app;
+extern crate raytron;
 extern crate gfx;
 extern crate gfx_device_gl as gfx_gl;
 extern crate glutin;
@@ -14,24 +14,24 @@ use gfx::format::Float;
 
 use gfx::format::R32_G32_B32_A32;
 
-use glutin::{WindowEvent, ElementState, VirtualKeyCode};
+use glutin::{ElementState, VirtualKeyCode, WindowEvent};
 use image::hdr;
-use pt_app::App;
-use pt_app::pt::{Image, RenderSettings};
-use pt_app::pt::Color;
+use raytron::App;
+use raytron::rtcore::{Image, RenderSettings};
+use raytron::rtcore::Color;
 
 
-//use pt_app::pt::rand;
-use pt_app::pt::color;
-use pt_app::pt::mesh::Mesh;
-use pt_app::pt::polygon::Polygon;
-use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::scenehandler::ShapeList;
-use pt_app::pt::traits::{Renderer, BoundedSurface, SceneHandler};
+//use raytron::rtcore::rand;
+use raytron::rtcore::color;
+use raytron::rtcore::mesh::Mesh;
+use raytron::rtcore::polygon::Polygon;
+use raytron::rtcore::renderer::{DbgRayCaster, PathTracer};
+use raytron::rtcore::scenehandler::ShapeList;
+use raytron::rtcore::traits::{BoundedSurface, Renderer, SceneHandler};
 
-//use pt_app::scenes::meshes::Cube;
-use pt_app::scenes::{Quad, Plane, Cube};
-use pt_app::scenes::spheres;
+//use raytron::scenes::meshes::Cube;
+use raytron::scenes::{Cube, Plane, Quad};
+use raytron::scenes::spheres;
 
 use std::mem;
 use std::string::{String, ToString};
@@ -94,11 +94,11 @@ fn main() {
 
 
 
-    use pt_app::pt::math::{Point3f, Vector3f, Point2, Vector2};
-    use pt_app::pt::texture::Texture;
-    use pt_app::pt::color::{self, Rgb, ColorBlend};
-    use pt_app::pt::polygon::vertex::{TexturedVertex, BaseVertex};
-    use pt_app::pt::polygon::material::DiffuseTex;
+    use raytron::rtcore::math::{Point2, Point3f, Vector2, Vector3f};
+    use raytron::rtcore::texture::Texture;
+    use raytron::rtcore::color::{self, ColorBlend, Rgb};
+    use raytron::rtcore::polygon::vertex::{BaseVertex, TexturedVertex};
+    use raytron::rtcore::polygon::material::DiffuseTex;
     use std::sync::Arc;
 
     // let diftex_w = 128usize;
@@ -132,7 +132,7 @@ fn main() {
     // let pol0 = Polygon::new(&verts[0], &verts[1], &verts[2], mat.clone());
     // let pol1 = Polygon::new(&verts[0], &verts[2], &verts[3], mat.clone());
 
-    use pt_app::pt::polygon::DiffuseMat;
+    use raytron::rtcore::polygon::DiffuseMat;
     // let mut cube = Cube::with_bv(Point3f::new(0., 0., 0.,), (20., 20., 20.,));
     // for (_, v) in cube.materials.iter_mut() {
     //     *v = Arc::new(DiffuseMat::new(color::WHITE, Some(color::WHITE * 5.0)));
@@ -193,7 +193,7 @@ fn main() {
 
     let scene = Box::new(scene_builder.into_shape_list());
 
-    // use pt_app::pt::scenehandlerkdtree::{KdTreeS, KdTreeSetup, Sah};
+    // use raytron::rtcore::scenehandlerkdtree::{KdTreeS, KdTreeSetup, Sah};
     // let obj_iter = s.shape_iter()
     //     .map(move |s| s as &BoundedSurface)
     //     .chain(
@@ -314,14 +314,12 @@ fn main() {
                 WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                     let pressed = el_state == ElementState::Pressed;
                     match key {
-                        VirtualKeyCode::R if pressed => {
-                            if dbg {
-                                dbg = false;
-                                pass_num = 0;
-                            } else {
-                                dbg = true;
-                            }
-                        }
+                        VirtualKeyCode::R if pressed => if dbg {
+                            dbg = false;
+                            pass_num = 0;
+                        } else {
+                            dbg = true;
+                        },
 
                         VirtualKeyCode::I if pressed => {
                             let image_name: String = "res_img/".to_string() +

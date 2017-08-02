@@ -1,4 +1,4 @@
-use math::{self, Vector3f, Point3f, Ray3f, Real};
+use math::{self, Point3f, Ray3f, Real, Vector3f};
 use num::Float;
 use utils::consts;
 

@@ -5,7 +5,7 @@ pub use self::kdtree::{KdTree, KdTreeS};
 pub use self::kdtree::{KdTreeSetup, Sah};
 pub use self::shapelist::{ShapeList, ShapeListBuilder};
 use SurfacePoint;
-use math::{Real, Point3f, Vector3f, Ray3f};
+use math::{Point3f, Ray3f, Real, Vector3f};
 use rand;
 use std::sync::Arc;
 
@@ -91,7 +91,7 @@ pub struct LinearSampler<'a> {
     sum: Real,
 }
 
-use color::{Rgb, ColorChannel};
+use color::{ColorChannel, Rgb};
 fn color_norm<T: ColorChannel>(c: &Rgb<T>) -> Real
 where
     Rgb<Real>: From<Rgb<T>>,
@@ -141,7 +141,8 @@ impl<'a> LuminairesSampler<'a> for LinearSampler<'a> {
             e *= self.sum;
 
             let ix = match self.partial_sum
-                .binary_search_by(|&probe| probe.partial_cmp(&e).unwrap()) {
+                .binary_search_by(|&probe| probe.partial_cmp(&e).unwrap())
+            {
                 Ok(x) | Err(x) => x,
             };
 

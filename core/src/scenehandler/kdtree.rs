@@ -1,11 +1,11 @@
-use super::{LightSourcesHandler, UniformSampler, LuminairesSampler};
+use super::{LightSourcesHandler, LuminairesSampler, UniformSampler};
 use SurfacePoint;
-use aabb::{Aabb3, intersection_aabb};
+use aabb::{intersection_aabb, Aabb3};
 use math::{Ray3f, Real};
 use num::Float;
 use std::cmp::max;
 use std::sync::Arc;
-use traits::{SceneHandler, HasBounds, Surface, BoundedSurface};
+use traits::{BoundedSurface, HasBounds, SceneHandler, Surface};
 use utils::consts;
 
 pub const KDTREE_DEPTH_MAX: usize = 512;

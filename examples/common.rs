@@ -1,4 +1,4 @@
-pub extern crate pt_app;
+pub extern crate raytron;
 pub extern crate gfx;
 pub extern crate gfx_device_gl as gfx_gl;
 pub extern crate glutin;
@@ -7,24 +7,24 @@ pub extern crate image;
 pub extern crate rand;
 pub extern crate tobj;
 
-use gfx::{Factory, Device};
-use gfx::format::{Formatted, ChannelTyped, Rgba32F};
+use gfx::{Device, Factory};
+use gfx::format::{ChannelTyped, Formatted, Rgba32F};
 
-use glutin::{WindowEvent, ElementState, VirtualKeyCode};
+use glutin::{ElementState, VirtualKeyCode, WindowEvent};
 use image::hdr;
-pub use pt_app::*;
+pub use raytron::*;
 
-use pt_app::App;
-pub use pt_app::camera_controller::{CameraController, FPSCameraController};
-use pt_app::pt::{Image, RenderSettings, TexView, Texture, Mesh};
-use pt_app::pt::color::{self, Color, ColorChannel, ChannelCast, Rgb, Luma};
-use pt_app::pt::material::PbrTex;
-use pt_app::pt::math;
-use pt_app::pt::math::{Real, Norm, Dot, Cross, Vector3f, Point3f, Vector2};
-use pt_app::pt::renderer::{PathTracer, DbgRayCaster};
-use pt_app::pt::traits::{Renderer, SceneHandler, Vertex, Material};
-use pt_app::pt::utils::consts;
-use pt_app::pt::vertex::TbnVertex;
+use raytron::App;
+pub use raytron::camera_controller::{CameraController, FPSCameraController};
+use raytron::rtcore::{Image, Mesh, RenderSettings, TexView, Texture};
+use raytron::rtcore::color::{self, ChannelCast, Color, ColorChannel, Luma, Rgb};
+use raytron::rtcore::material::PbrTex;
+use raytron::rtcore::math;
+use raytron::rtcore::math::{Cross, Dot, Norm, Point3f, Real, Vector2, Vector3f};
+use raytron::rtcore::renderer::{DbgRayCaster, PathTracer};
+use raytron::rtcore::traits::{Material, Renderer, SceneHandler, Vertex};
+use raytron::rtcore::utils::consts;
+use raytron::rtcore::vertex::TbnVertex;
 
 use std;
 use std::io::Write;
@@ -53,6 +53,7 @@ pub struct ExampleApp {
 
 impl ExampleApp {
     pub fn launch<T: AppState>(state: &mut T) {
+        Self::print_controls();
         //let mut state = T::new();
         let mut ex_app = {
             let builder = state.init();
@@ -121,14 +122,12 @@ impl ExampleApp {
                             WindowEvent::KeyboardInput(el_state, _, Some(key), _) => {
                                 let pressed = el_state == ElementState::Pressed;
                                 match key {
-                                    VirtualKeyCode::R if pressed => {
-                                        if dbg {
-                                            dbg = false;
-                                            pass_num = 0;
-                                        } else {
-                                            dbg = true;
-                                        }
-                                    }
+                                    VirtualKeyCode::R if pressed => if dbg {
+                                        dbg = false;
+                                        pass_num = 0;
+                                    } else {
+                                        dbg = true;
+                                    },
 
                                     VirtualKeyCode::I if pressed => {
                                         ex_app.save_img(&res_img, None);
@@ -209,6 +208,16 @@ impl ExampleApp {
         self.app.resize(scr_w, scr_h, 1.0);
         // self.screen_width = w;
         // self.screen_height = h;
+    }
+
+    fn print_controls() {
+        println!("Controls:");
+        println!(" - WASD  - move forward/left/backward/right");
+        println!(" - SPACE - move up");
+        println!(" - SHIFT - move down");
+        println!(" - R     - toggle renderer");
+        println!(" - I     - save image");
+        println!(" - ESC   - quit\n");
     }
 
     fn draw_tex(&mut self, img: &Image) {
@@ -423,7 +432,7 @@ pub fn gamma_decoding<T: TexView<Color>>(img: &mut T) {
 
 macro_rules! mono_texture {
     ($color:expr) => {{
-        use pt_app::pt::texture::Texture;
+        use raytron::rtcore::texture::Texture;
         let mut tex = Texture::new(1, 1);
         tex.set_pixel(0, 0, $color);
         tex
@@ -530,7 +539,7 @@ where
     let metal_tex = load_texture_luma(path.clone() + "metallic.png", false);
     // let roughness_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(0.0));
     // let metal_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
-    use pt::color::ChannelBounds;
+    use rtcore::color::ChannelBounds;
     let spec_tex = mono_texture!(Luma::new(C::MAX_CHVAL));
 
     let normal_tex = {
@@ -619,7 +628,7 @@ where
                     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
                     (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real),
                 );
-                    
+
                 let n = math::triangle_normal(&v0.position(), &v1.position(), &v2.position());
 
                 vertices[ix[0] as usize].tangent += t;

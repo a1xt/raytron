@@ -1,8 +1,8 @@
-use super::{SurfacePoint, Color};
+use super::{Color, SurfacePoint};
 pub use aabb::HasBounds;
 pub use bsdf::Bsdf;
-use math::{Ray3f, Matrix4f, Vector3f, Point3f, Real, Dot, Norm};
-pub use polygon::{Vertex, Material};
+use math::{Dot, Matrix4f, Norm, Point3f, Ray3f, Real, Vector3f};
+pub use polygon::{Material, Vertex};
 
 pub use renderer::Renderer;
 pub use scenehandler::SceneHandler;

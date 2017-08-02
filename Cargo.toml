@@ -1,10 +1,16 @@
 [package]
-name = "app"
+name = "raytron"
 version = "0.1.0"
-authors = ["Alexey Terekhov"]
+authors = ["Alexey Terekhov <alexey.terekhovv@yandex.ru>"]
+license = "MIT/Apache-2.0"
+description = " "
+keywords = ["path-tracer", "3D"]
+readme = "README.md"
+homepage = "https://github.com/a1xt/raytron"
+repository = "https://github.com/a1xt/raytron"
 
 [lib]
-name = "pt_app"
+name = "raytron"
 
 [dependencies]
 
@@ -17,7 +23,7 @@ glutin = "*"
 image = "*"
 nalgebra = "0.10.*"
 obj-rs = "*"
-pathtracer = {path = "pt", version = "*"}
+raytron-core = {path = "core", version = "*"}
 time = "0.1.*"
 rand = "*"
 tobj = "*"
@@ -26,7 +32,7 @@ clippy = {version = "*", optional = true}
 
 
 [features]
-clippy_check = ["clippy", "pathtracer/clippy_check"]
+clippy_check = ["clippy", "raytron-core/clippy_check"]
 default = []
 
 # [profile.release]
@@ -34,11 +40,6 @@ default = []
 # debug = false
 # lto = true
 # debug-assertions = false
-
-
-#[[example]]
-#name = "apptest"
-#path = "examples/apptest/apptest.rs"
 
 [[example]]
 name = "spheres"

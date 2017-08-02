@@ -1,9 +1,9 @@
 use camera_controller::FPSCameraController;
-use pt::{Sphere, Color};
-use pt::bsdf::{Diffuse, Phong};
-use pt::math::{Point3f, Real};
-use pt::scenehandler::{ShapeListBuilder, LinearSampler};
-use pt::traits::Surface;
+use rtcore::{Color, Sphere};
+use rtcore::bsdf::{Diffuse, Phong};
+use rtcore::math::{Point3f, Real};
+use rtcore::scenehandler::{LinearSampler, ShapeListBuilder};
+use rtcore::traits::Surface;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -31,7 +31,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(1.0e5 + 50.0, 0.0, 0.0),
                 1.0e5, ////
-                Arc::new(Diffuse::new(Color::new(0.25, 0.25, 0.75f32), None)), 
+                Arc::new(Diffuse::new(Color::new(0.25, 0.25, 0.75f32), None)),
                 //Arc::new(Phong::new(Color{data: [0.25, 0.25, 0.75f32, 1.0]}, 0.1, 0.9, 200.0)),
             ),
         );
@@ -66,7 +66,7 @@ impl Room {
             Sphere::new(
                 Point3f::new(0.0, -1.0e5 - 50.0, 0.0),
                 1.0e5,
-                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), None)), 
+                Arc::new(Diffuse::new(Color::new(0.9, 0.9, 0.9f32), None)),
                 //Arc::new(Phong::new(Color{data: [0.999, 0.999, 0.999f32, 1.0]}, 0.2, 0.8, 3.0)),
             ),
         );
@@ -111,7 +111,7 @@ impl Room {
                 Arc::new(Diffuse::new(
                     Color::new(1.0, 1.0, 1.0f32),
                     Some(Color::new(15.0, 15.0, 15.0f32)),
-                )), 
+                )),
                 //Arc::new(Diffuse::new(Color::new(0.999, 0.999, 0.999f32), None)),
             ),
         );
@@ -121,7 +121,7 @@ impl Room {
 
     pub fn to_shape_list<'s>(&'s self) -> ShapeListBuilder<'s, &'s Surface, LinearSampler> {
         let mut l = ShapeListBuilder::new();
-        for (_, s) in &self.spheres {
+        for s in self.spheres.values() {
             l.add_shape(s as &Surface);
         }
         l

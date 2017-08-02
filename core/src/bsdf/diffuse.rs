@@ -1,6 +1,6 @@
 use Bsdf;
 use color::{self, Color, Rgb};
-use math::{self, Vector3f, Real, Dot};
+use math::{self, Dot, Real, Vector3f};
 use std::f64::consts::PI;
 
 #[inline]

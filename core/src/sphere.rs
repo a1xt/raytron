@@ -1,8 +1,8 @@
-use {Surface, SurfacePoint, Bsdf};
+use {Bsdf, Surface, SurfacePoint};
 use aabb::{Aabb3, HasBounds};
 use bsdf::BsdfRef;
 use color::Color;
-use math::{self, Norm, Point3f, Vector3f, Ray3f, Real};
+use math::{self, Norm, Point3f, Ray3f, Real, Vector3f};
 use std::borrow::{Borrow, BorrowMut};
 use std::f64::consts::PI;
 use std::sync::Arc;

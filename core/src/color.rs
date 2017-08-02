@@ -2,8 +2,8 @@
 
 pub use self::consts::*;
 use core::array::FixedSizeArray;
-use num::{Num, FromPrimitive, ToPrimitive, Bounded};
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use num::{Bounded, FromPrimitive, Num, ToPrimitive};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use std::u8;
 
 use texture::Texture;

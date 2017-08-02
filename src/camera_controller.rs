@@ -1,9 +1,9 @@
 use fpscamera::FPSCamera;
-use glutin::{WindowEvent, ElementState, VirtualKeyCode, MouseButton};
-use pt::RenderCamera;
-use pt::math;
-use pt::math::{Vector3, ApproxEq, Norm, Real};
-use pt::utils::consts;
+use glutin::{ElementState, MouseButton, VirtualKeyCode, WindowEvent};
+use rtcore::RenderCamera;
+use rtcore::math;
+use rtcore::math::{ApproxEq, Norm, Real, Vector3};
+use rtcore::utils::consts;
 use std::ops::FnMut;
 use std::time;
 use std::time::Instant;
@@ -134,21 +134,19 @@ impl CameraController for FPSCameraController {
                         _ => (),
                     }
                 }
-                WindowEvent::MouseMoved(x, y) => {
-                    if self.cursor_locked {
-                        let cx = self.cam.width() / 2;
-                        let cy = self.cam.height() / 2;
-                        let dx = cx as i32 - x;
-                        let dy = cy as i32 - y;
-                        let rx = dx as Real / self.cam.width() as Real * self.mouse_sens *
-                            self.cam.fovx();
-                        let ry = dy as Real / self.cam.height() as Real * self.mouse_sens *
-                            self.cam.fovy();
+                WindowEvent::MouseMoved(x, y) => if self.cursor_locked {
+                    let cx = self.cam.width() / 2;
+                    let cy = self.cam.height() / 2;
+                    let dx = cx as i32 - x;
+                    let dy = cy as i32 - y;
+                    let rx =
+                        dx as Real / self.cam.width() as Real * self.mouse_sens * self.cam.fovx();
+                    let ry =
+                        dy as Real / self.cam.height() as Real * self.mouse_sens * self.cam.fovy();
 
-                        self.cam.yaw_add(rx).pitch_add(ry);
-                        set_cursor_pos(cx as i32, cy as i32);
-                    }
-                }
+                    self.cam.yaw_add(rx).pitch_add(ry);
+                    set_cursor_pos(cx as i32, cy as i32);
+                },
                 WindowEvent::MouseInput(pressed, MouseButton::Right) => {
                     self.cursor_locked = pressed == ElementState::Pressed;
                     cur_locker(self.cursor_locked);

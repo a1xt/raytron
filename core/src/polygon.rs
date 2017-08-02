@@ -1,9 +1,9 @@
-pub use self::material::{Material, DiffuseMat, DiffuseTex};
-pub use self::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
-use {Surface, SurfacePoint, BsdfRef};
+pub use self::material::{DiffuseMat, DiffuseTex, Material};
+pub use self::vertex::{BaseVertex, TbnVertex, TexturedVertex, Vertex};
+use {BsdfRef, Surface, SurfacePoint};
 use aabb::{Aabb3, HasBounds};
 use color::Color;
-use math::{self, Norm, Point3f, Vector3f, Ray3f, Real, Cross};
+use math::{self, Cross, Norm, Point3f, Ray3f, Real, Vector3f};
 use rand::{self, Closed01};
 use std::marker::PhantomData;
 
@@ -225,16 +225,15 @@ where
 }
 
 pub mod material {
-    use super::vertex::{Vertex, BaseVertex, TexturedVertex, TbnVertex};
-    use bsdf::{Diffuse, Phong, CookTorrance, BsdfRef};
+    use super::vertex::{BaseVertex, TbnVertex, TexturedVertex, Vertex};
+    use bsdf::{BsdfRef, CookTorrance, Diffuse, Phong};
     use color::{self, Color, Rgb};
     use math;
-    use math::{Real, Norm, Cross, Vector3f, Point2f};
+    use math::{Cross, Norm, Point2f, Real, Vector3f};
     use num::{Float, NumCast};
     use std::marker::PhantomData;
     use std::sync::Arc;
     use texture::{TexView, Texture};
-    use utils::consts;
 
     pub trait Material<V: Vertex>: Sync + Send {
         fn bsdf<'s>(&'s self, v: &V) -> BsdfRef<'s>;
@@ -382,7 +381,6 @@ pub mod material {
                             t_max,
                         );
                         if area > 0.0 {
-                            let c = (t_min.to_vector() + t_max.to_vector()) * 0.5;
                             let e = tex.pixel(u, v);
                             sum += Rgb::<Real>::from(e) * area;
                             uv_area += area;
@@ -622,7 +620,7 @@ pub mod material {
 }
 
 pub mod vertex {
-    use math::{Vector3f, Vector2, Point3f, Real};
+    use math::{Point3f, Real, Vector2, Vector3f};
     use math::Norm;
 
     pub trait Vertex: Copy + Clone + Sync + Send {

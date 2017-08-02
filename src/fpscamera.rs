@@ -1,9 +1,9 @@
-use pt::RenderCamera;
-use pt::math;
-use pt::math::{ToHomogeneous, Rotation, Rotate, Inverse};
-use pt::math::{Matrix4, Vector3, Isometry3, Rotation3, PerspectiveMatrix3};
-use pt::math::{Vector3f, Point3f, Real};
-use pt::utils::consts;
+use rtcore::RenderCamera;
+use rtcore::math;
+use rtcore::math::{Inverse, Rotate, Rotation, ToHomogeneous};
+use rtcore::math::{Isometry3, Matrix4, PerspectiveMatrix3, Rotation3, Vector3};
+use rtcore::math::{Point3f, Real, Vector3f};
+use rtcore::utils::consts;
 
 #[derive(Debug, Clone, Copy)]
 pub struct FPSCamera {

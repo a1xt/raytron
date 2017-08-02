@@ -1,12 +1,12 @@
 
 
-use super::inner::{RendererHelper, CameraRayGenerator};
-use {RenderSettings, Color};
+use super::inner::{CameraRayGenerator, RendererHelper};
+use {Color, RenderSettings};
 use color;
-use math::{Ray3f, Dot, Norm, ApproxEq, Real};
+use math::{ApproxEq, Dot, Norm, Ray3f, Real};
 use rand;
 use rand::Closed01;
-use traits::{Renderer, SceneHandler, RenderCamera, Surface};
+use traits::{RenderCamera, Renderer, SceneHandler, Surface};
 use utils::consts;
 
 pub struct PathTracer {
@@ -85,12 +85,16 @@ impl PathTracer {
 
                             if cos_theta > 0.0 && cos_theta_l > 0.0 {
                                 if let Some(ip) = scene.intersection(&shadow_ray) {
-                                    if ip.position.approx_eq_eps(&lp.position, &(consts::POSITION_EPSILON * 2.0)) {
+                                    if ip.position.approx_eq_eps(
+                                        &lp.position,
+                                        &(consts::POSITION_EPSILON * 2.0),
+                                    ) {
 
-                                        let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
+                                        let (fr, pdf_brdf) = sp.bsdf
+                                            .eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
                                         let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
                                         let le = lp.bsdf.radiance().unwrap();
-                                        
+
                                         di = (fr * le) * (pdf_sum_inv as f32);
                                     }
                                 }
@@ -134,7 +138,7 @@ impl PathTracer {
                 le + (direct_illumination + indirect_illumination)
                 // le + direct_illumination;
             }
-            _ => color::BLACK
+            _ => color::BLACK,
         }
     }
 }

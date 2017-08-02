@@ -1,11 +1,10 @@
 use Color;
-use bsdf::diffuse;
 use color::Rgb;
 use math;
-use math::{Vector3f, Real, Dot, Norm};
+use math::{Dot, Norm, Real, Vector3f};
 use rand;
 use rand::Closed01;
-use rand::distributions::{Range, IndependentSample};
+use rand::distributions::{IndependentSample, Range};
 use std::f64::consts::PI;
 use traits::Bsdf;
 use utils::consts;
@@ -20,7 +19,7 @@ pub fn ggx_d(cos_nh: Real, alpha: Real) -> Real {
     alpha2 / ((PI as Real) * d * d)
 }
 
-pub fn ggx_g_partial(cos_no: Real, cos_oh: Real, alpha: Real) -> Real {
+pub fn ggx_g_partial(cos_no: Real, _: Real, alpha: Real) -> Real {
     let alpha2 = alpha * alpha;
     let cos_no2 = cos_no * cos_no;
     let tan_no2 = (1.0 - cos_no2) / cos_no2;
@@ -121,25 +120,21 @@ pub fn sample(
     albedo: &Rgb<Real>,
     alpha: Real,
 ) -> (Vector3f, Rgb<Real>, Real) {
-    let light = -vec_in;
-    let cos_nl = normal.dot(&light);
 
-    let (half, vec_out, cos_vh, cos_lh, cos_nv, cos_nh) = loop {
+    let light = -vec_in;
+    let vec_out = loop {
 
         let half = sample_halfvec(normal, alpha);
         let vec_out = calc_view(&light, &half);
         let cos_vh = half.dot(&vec_out);
-        let cos_lh = half.dot(&light);
         let cos_nv = normal.dot(&vec_out);
-        let cos_nh = normal.dot(&half);
 
-        if cos_lh > 0.0 && cos_vh > 0.0 && cos_nv > 0.0 {
-            break (half, vec_out, cos_vh, cos_lh, cos_nv, cos_nh);
+        if cos_vh > 0.0 && cos_nv > 0.0 {
+            break vec_out;
         }
     };
 
-    let f = math::fresnel3_schlick_f0(cos_lh, f0);
-    let (ks, kd) = (0.5, 0.5);
+    let ks = 0.5;
     let Closed01(e) = rand::random::<Closed01<Real>>();
 
     let vec_out = if e <= ks {

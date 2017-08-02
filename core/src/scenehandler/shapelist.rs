@@ -1,12 +1,13 @@
-use super::{LightSourcesHandler, UniformSampler, LuminairesSampler};
+use super::{LightSourcesHandler, LuminairesSampler, UniformSampler};
 use SurfacePoint;
 use math::{Ray3f, Real};
 use std;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use traits::{Surface, SceneHandler};
+use traits::{SceneHandler, Surface};
 use utils::consts;
 
+#[derive(Default)]
 pub struct ShapeListBuilder<'a, T, S = UniformSampler<'a>>
 where
     T: AsRef<Surface + 'a> + Sync + 'a,
@@ -105,7 +106,7 @@ where
     fn light_sources(&self) -> LightSourcesHandler {
         LightSourcesHandler {
             scene: self,
-            sampler: super::lt_arc_trait_hack(self.sampler.clone()), 
+            sampler: super::lt_arc_trait_hack(self.sampler.clone()),
             //sampler: self.sampler.clone(),
         }
     }

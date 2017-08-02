@@ -7,7 +7,7 @@ pub use self::diffuse::Diffuse;
 pub use self::phong::Phong;
 
 use color::Color;
-use math::{Vector3f, Real, Dot};
+use math::{Dot, Real, Vector3f};
 use std::ops::Deref;
 use std::sync::Arc;
 

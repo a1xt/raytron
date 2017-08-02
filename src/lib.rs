@@ -1,8 +1,7 @@
 #![feature(conservative_impl_trait)]
 #![feature(box_syntax)]
-
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
 
 #[macro_use]
 extern crate gfx;
@@ -10,9 +9,9 @@ pub extern crate gfx_window_glutin;
 pub extern crate gfx_device_gl;
 pub extern crate glutin;
 pub extern crate nalgebra as na;
-pub extern crate pathtracer as pt;
+pub extern crate raytron_core as rtcore;
 
-pub use pt::utils;
+pub use rtcore::utils;
 
 pub mod fpscamera;
 pub mod camera_controller;
@@ -23,13 +22,13 @@ pub use camera_controller::{CameraController, FPSCameraController};
 pub use fpscamera::FPSCamera;
 use gfx::{Device, Factory};
 use gfx::Bundle;
-use gfx::format::{Rgba8, DepthStencil, R32_G32_B32_A32, Float};
-use gfx::handle::{RenderTargetView, DepthStencilView, ShaderResourceView};
+use gfx::format::{DepthStencil, Float, R32_G32_B32_A32, Rgba8};
+use gfx::handle::{DepthStencilView, RenderTargetView, ShaderResourceView};
 
 use gfx::memory::Usage;
-use glutin::{CursorState, Event, GlRequest, Api};
+use glutin::{Api, CursorState, Event, GlRequest};
 
-use pt::math::Real;
+use rtcore::math::Real;
 use std::string::String;
 
 pub type ColorFormat = Rgba8;
@@ -160,7 +159,7 @@ impl<D: Device, F: Factory<D::Resources>> App<D, F> {
             });
         }
 
-        use glutin::{WindowEvent, VirtualKeyCode};
+        use glutin::{VirtualKeyCode, WindowEvent};
         for event in &self.events {
             match *event {
                 WindowEvent::KeyboardInput(_, _, Some(VirtualKeyCode::Escape), _) |

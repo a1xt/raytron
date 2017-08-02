@@ -1,11 +1,11 @@
 use {Bsdf, Color};
 use color;
 use math;
-use math::{Cross, Norm, Dot};
-use math::{Vector3f, Real};
+use math::{Cross, Dot, Norm};
+use math::{Real, Vector3f};
 use rand;
 use rand::Closed01;
-use rand::distributions::{Range, IndependentSample};
+use rand::distributions::{IndependentSample, Range};
 use std::f32::consts::PI;
 
 

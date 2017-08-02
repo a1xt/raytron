@@ -1,9 +1,9 @@
 pub mod spheres;
 
-use pt::math::{Point3f, Vector3f, Real, Norm, Cross};
-use pt::mesh::Mesh;
-use pt::polygon::{Vertex, Material};
-use pt::utils::consts;
+use rtcore::math::{Cross, Norm, Point3f, Real, Vector3f};
+use rtcore::mesh::Mesh;
+use rtcore::polygon::{Material, Vertex};
+use rtcore::utils::consts;
 use std::sync::Arc;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -181,52 +181,40 @@ impl Cube {
         let mut planes = Vec::with_capacity(sides.len());
         for &side in &sides {
             let (origin, up, size) = match side {
-                CubeSide::Front => {
-                    (
-                        Point3f::new(c.x, c.y, c.z + dz),
-                        Vector3f::new(0.0, 1.0, 0.0),
-                        (size.x, size.y),
-                    )
-                }
-                CubeSide::Back => {
-                    (
-                        Point3f::new(c.x, c.y, c.z - dz),
-                        Vector3f::new(0.0, 1.0, 0.0),
-                        (size.x, size.y),
-                    )
-                }
-                CubeSide::Right => {
-                    (
-                        Point3f::new(c.x + dx, c.y, c.z),
-                        Vector3f::new(0.0, 1.0, 0.0),
-                        (size.z, size.y),
-                    )
-                }
-                CubeSide::Left => {
-                    (
-                        Point3f::new(c.x - dx, c.y, c.z),
-                        Vector3f::new(0.0, 1.0, 0.0),
-                        (size.z, size.y),
-                    )
-                }
-                CubeSide::Top => {
-                    (
-                        Point3f::new(c.x, c.y + dy, c.z),
-                        Vector3f::new(0.0, 0.0, -1.0),
-                        (size.x, size.z),
-                    )
-                }
-                CubeSide::Bottom => {
-                    (
-                        Point3f::new(c.x, c.y - dy, c.z),
-                        Vector3f::new(0.0, 0.0, 1.0),
-                        (size.x, size.z),
-                    )
-                }
+                CubeSide::Front => (
+                    Point3f::new(c.x, c.y, c.z + dz),
+                    Vector3f::new(0.0, 1.0, 0.0),
+                    (size.x, size.y),
+                ),
+                CubeSide::Back => (
+                    Point3f::new(c.x, c.y, c.z - dz),
+                    Vector3f::new(0.0, 1.0, 0.0),
+                    (size.x, size.y),
+                ),
+                CubeSide::Right => (
+                    Point3f::new(c.x + dx, c.y, c.z),
+                    Vector3f::new(0.0, 1.0, 0.0),
+                    (size.z, size.y),
+                ),
+                CubeSide::Left => (
+                    Point3f::new(c.x - dx, c.y, c.z),
+                    Vector3f::new(0.0, 1.0, 0.0),
+                    (size.z, size.y),
+                ),
+                CubeSide::Top => (
+                    Point3f::new(c.x, c.y + dy, c.z),
+                    Vector3f::new(0.0, 0.0, -1.0),
+                    (size.x, size.z),
+                ),
+                CubeSide::Bottom => (
+                    Point3f::new(c.x, c.y - dy, c.z),
+                    Vector3f::new(0.0, 0.0, 1.0),
+                    (size.x, size.z),
+                ),
             };
 
             let normal = origin - center;
-            let mut plane = Plane::build(
+            let plane = Plane::build(
                 origin,
                 origin + normal,
                 up,

@@ -6,9 +6,8 @@
 #![feature(associated_type_defaults)]
 #![feature(specialization)]
 #![feature(type_ascription)]
-
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
 
 extern crate core;
 extern crate scoped_threadpool;
@@ -35,14 +34,14 @@ pub use self::color::{Color, Image};
 
 use self::math::{Point3f, Vector3f};
 pub use self::mesh::Mesh;
-pub use self::polygon::{Polygon, PolygonS, PolygonR};
+pub use self::polygon::{Polygon, PolygonR, PolygonS};
 pub use self::polygon::material;
 pub use self::polygon::vertex;
 pub use self::scenehandler::ShapeList;
 
 pub use self::sphere::Sphere;
 pub use self::texture::{TexView, Texture};
-pub use self::traits::{Bsdf, Surface, SceneHandler, Renderer, RenderCamera};
+pub use self::traits::{Bsdf, RenderCamera, Renderer, SceneHandler, Surface};
 
 
 pub struct SurfacePoint<'a> {
