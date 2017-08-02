@@ -318,7 +318,7 @@ impl<'a> ExampleAppBuilder {
             App::<GLDevice, GLFactory>::new(screen_width as u32, screen_height as u32, name);
 
 
-        let dbg_render_chunk = (100, 75);
+        let dbg_render_chunk = (screen_width as u32 / 4, screen_height as u32 / 4);
         let dbg_setup_d = RenderSettings::new(1, 1).with_threads(4, dbg_render_chunk);
         let dbg_setup = self.dbg_setup.unwrap_or(dbg_setup_d);
 
@@ -430,7 +430,7 @@ macro_rules! mono_texture {
     }};
 }
 
-pub fn load_hdr (path: String) -> Texture<Rgb> {
+pub fn load_hdr(path: String) -> Texture<Rgb> {
     use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
@@ -538,10 +538,15 @@ where
         let mut tex = load_texture_rgb::<C>(path.clone() + "normal" + ogl + ".png", false);
         if !normal_opengl {
             for n in tex.as_mut_slice() {
-                let dx_n: Rgb<Real> = Rgb::new(n[0].cast_into(), n[1].cast_into(), n[2].cast_into());
+                let dx_n: Rgb<Real> =
+                    Rgb::new(n[0].cast_into(), n[1].cast_into(), n[2].cast_into());
                 // let dx_n: Rgb<Real> = Rgb::<C>::from(*n);
                 let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
-                *n = [C::cast_from(gl_n.r), C::cast_from(gl_n.r), C::cast_from(gl_n.r)];
+                *n = [
+                    C::cast_from(gl_n.r),
+                    C::cast_from(gl_n.g),
+                    C::cast_from(gl_n.b),
+                ];
                 // *n = gl_n.into();
             }
         }
@@ -614,14 +619,8 @@ where
                     (&(v1.position - v0.position), duv1.x as Real, duv1.y as Real),
                     (&(v2.position - v0.position), duv2.x as Real, duv2.y as Real),
                 );
-                let pol_normal =
-                    math::triangle_normal(&v0.position(), &v1.position(), &v2.position());
-                let n = t.cross(&b).normalize();
-                let n = if pol_normal.dot(&n) < 0.0 {
-                    b.cross(&t).normalize()
-                } else {
-                    n
-                };
+                    
+                let n = math::triangle_normal(&v0.position(), &v1.position(), &v2.position());
 
                 vertices[ix[0] as usize].tangent += t;
                 vertices[ix[0] as usize].bitangent += b;

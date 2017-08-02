@@ -53,88 +53,88 @@ impl PathTracer {
 
         let di_enable = self.di_samples_weight.is_some();
 
-        if let Some(sp) = scene.intersection(ray) {
-            let mat = sp.bsdf.as_ref();
+        match scene.intersection(ray) {
+            Some(ref sp) if sp.normal.dot(&(-ray.dir)) > 0.0 => {
+                let mat = sp.bsdf.as_ref();
 
-            let le = if let Some(c) = mat.radiance() {
-                if depth > 0 && di_enable {
-                    color::BLACK
+                let le = if let Some(c) = mat.radiance() {
+                    if depth > 0 && di_enable {
+                        color::BLACK
+                    } else {
+                        c
+                    }
                 } else {
-                    c
-                }
-            } else {
-                color::BLACK
-            };
+                    color::BLACK
+                };
 
-            let direct_illumination = if let Some((brdf_w, ls_w)) = self.di_samples_weight {
-                let mut di = color::BLACK;
+                let direct_illumination = if let Some((brdf_w, ls_w)) = self.di_samples_weight {
+                    let mut di = color::BLACK;
 
-                let Closed01(e) = rand::random::<Closed01<Real>>();
-                if e > brdf_w {
-                    // light source sampling
+                    let Closed01(e) = rand::random::<Closed01<Real>>();
+                    if e > brdf_w {
+                        // light source sampling
 
-                    if let Some((lp, pdf_ls)) = scene
-                        .light_sources()
-                        .sample((&sp.position, &sp.normal), Surface::sample_surface_d_proj)
-                    {
-                        let shadow_ray =
-                            Ray3f::new(&sp.position, &(lp.position - sp.position).normalize());
-                        let cos_theta = sp.normal.dot(&shadow_ray.dir);
-                        let cos_theta_l = lp.normal.dot(&(-shadow_ray.dir));
+                        if let Some((lp, pdf_ls)) = scene
+                            .light_sources()
+                            .sample((&sp.position, &sp.normal), Surface::sample_surface_d_proj)
+                        {
+                            let shadow_ray =
+                                Ray3f::new(&sp.position, &(lp.position - sp.position).normalize());
+                            let cos_theta = sp.normal.dot(&shadow_ray.dir);
+                            let cos_theta_l = lp.normal.dot(&(-shadow_ray.dir));
 
-                        if cos_theta > 0.0 && cos_theta_l > 0.0 {
-                            if let Some(ip) = scene.intersection(&shadow_ray) {
-                                if ip.position.approx_eq_eps(&lp.position, &(consts::POSITION_EPSILON * 2.0)) {
+                            if cos_theta > 0.0 && cos_theta_l > 0.0 {
+                                if let Some(ip) = scene.intersection(&shadow_ray) {
+                                    if ip.position.approx_eq_eps(&lp.position, &(consts::POSITION_EPSILON * 2.0)) {
 
-                                    let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
-                                    let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
-                                    let le = lp.bsdf.radiance().unwrap();
-                                    
-                                    di = (fr * le) * (pdf_sum_inv as f32);
+                                        let (fr, pdf_brdf) = sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
+                                        let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
+                                        let le = lp.bsdf.radiance().unwrap();
+                                        
+                                        di = (fr * le) * (pdf_sum_inv as f32);
+                                    }
                                 }
                             }
                         }
-                    }
-                } else {
-                    // brdf sampling
-                    let (brdf_ray_dir, _, _) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
-                    let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
+                    } else {
+                        // brdf sampling
+                        let (brdf_ray_dir, _, _) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
+                        let shadow_ray = Ray3f::new(&sp.position, &brdf_ray_dir);
 
-                    if let Some(ip) = scene.intersection(&shadow_ray) {
-                        if let Some(le) = ip.bsdf.radiance() {
+                        if let Some(ip) = scene.intersection(&shadow_ray) {
+                            if let Some(le) = ip.bsdf.radiance() {
 
-                            let pdf_ls = scene.light_sources().pdf(
-                                ip.surface,
-                                (&ip.position, &ip.normal),
-                                (&sp.position, &sp.normal),
-                                Surface::pdf_d_proj,
-                            );
-                            let (fr, pdf_brdf) =
-                                sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
+                                let pdf_ls = scene.light_sources().pdf(
+                                    ip.surface,
+                                    (&ip.position, &ip.normal),
+                                    (&sp.position, &sp.normal),
+                                    Surface::pdf_d_proj,
+                                );
+                                let (fr, pdf_brdf) =
+                                    sp.bsdf.eval_proj(&sp.normal, &ray.dir, &shadow_ray.dir);
 
-                            let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
-                            let res = (fr * le) * (pdf_sum_inv as f32);
-                            di += res;
+                                let pdf_sum_inv = 1.0 / (pdf_brdf * brdf_w + pdf_ls * ls_w);
+                                let res = (fr * le) * (pdf_sum_inv as f32);
+                                di += res;
+                            }
                         }
                     }
-                }
 
-                di
+                    di
 
-            } else {
-                color::BLACK
-            };
+                } else {
+                    color::BLACK
+                };
 
-            let (new_ray_dir, fr, pdf_p) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
-            let new_ray = Ray3f::new(&sp.position, &new_ray_dir);
-            let li = self.trace_path_rec::<S>(scene, &new_ray, depth + 1);
-            let indirect_illumination = (fr * li) * (1.0 / pdf_p) as f32;
+                let (new_ray_dir, fr, pdf_p) = sp.bsdf.sample_proj(&sp.normal, &ray.dir);
+                let new_ray = Ray3f::new(&sp.position, &new_ray_dir);
+                let li = self.trace_path_rec::<S>(scene, &new_ray, depth + 1);
+                let indirect_illumination = (fr * li) * (1.0 / pdf_p) as f32;
 
-            return le + (direct_illumination + indirect_illumination);
-        // return le + direct_illumination;
-
-        } else {
-            return color::BLACK;
+                le + (direct_illumination + indirect_illumination)
+                // le + direct_illumination;
+            }
+            _ => color::BLACK
         }
     }
 }
