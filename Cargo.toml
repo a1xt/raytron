@@ -14,19 +14,20 @@ name = "raytron"
 
 [dependencies]
 
-gfx_core = { git = 'https://github.com/gfx-rs/gfx' }
-gfx_device_gl = { git = 'https://github.com/gfx-rs/gfx' }
-gfx_window_glutin = { git = 'https://github.com/gfx-rs/gfx' }
-gfx = { git = 'https://github.com/gfx-rs/gfx' }
+raytron-core = {path = "core"}
 
-glutin = "*"
-image = "*"
-nalgebra = "0.10.*"
-obj-rs = "*"
-raytron-core = {path = "core", version = "*"}
-time = "0.1.*"
-rand = "*"
-tobj = "*"
+gfx_core = "0.7"
+gfx_device_gl = "0.14"
+gfx_window_glutin = "0.16"
+gfx = "0.16"
+
+glutin = "0.8"
+image = "0.14"
+nalgebra = "0.10"
+obj-rs = "0.4"
+time = "0.1"
+rand = "0.3"
+tobj = "0.1"
 
 clippy = {version = "*", optional = true}
 
