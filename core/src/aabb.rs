@@ -116,7 +116,6 @@ mod tests {
     #[test]
     fn intersects() {
         let aabb0 = Aabb3::new(Point3f::new(-3.0, -3.0, -3.0), Point3f::new(3.0, 3.0, 3.0));
-        let aabb1 = Aabb3::new(Point3f::new(-1.0, -1.0, -1.0), Point3f::new(1.0, 1.0, 1.0));
         let aabb2 = Aabb3::new(Point3f::new(-2.0, -2.0, -2.0), Point3f::new(4.0, 4.0, 4.0));
         let aabb3 = Aabb3::new(Point3f::new(3.5, 3.5, 3.5), Point3f::new(6.0, 6.0, 6.0));
 

@@ -413,7 +413,7 @@ mod test {
             Point2f::new(2.0, 3.0),
             Point2f::new(3.0, 2.0),
         ];
-        let area = intersection_area_tq(tr[0], tr4[1], t43[2], quad[0], quad[1]);
+        let area = intersection_area_tq(tr4[0], tr4[1], tr4[2], quad[0], quad[1]);
         assert_eq!(area, 0.0);
     }
 
