@@ -2,6 +2,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT_or_Apache_2.0-blue.svg)](#license)
 [![](https://tokei.rs/b1/github/a1xt/raytron)](#)
+[![Build Status](https://travis-ci.org/a1xt/raytron.svg?branch=master)](https://travis-ci.org/a1xt/raytron)
 
 Yet another path tracer.
 
