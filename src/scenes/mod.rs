@@ -1,5 +1,3 @@
-pub mod spheres;
-
 use rtcore::math::{Cross, Norm, Point3f, Real, Vector3f};
 use rtcore::mesh::Mesh;
 use rtcore::polygon::{Material, Vertex};
