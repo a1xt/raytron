@@ -403,12 +403,12 @@ pub mod material {
         }
     }
 
-    pub struct PbrMat {
+    pub struct CookTorranceMat {
         pub bsdf: CookTorrance,
     }
 
 
-    impl PbrMat {
+    impl CookTorranceMat {
         pub fn new<C, F>(base_color: C, roughness: F, specular: F, metal: F) -> Self
         where
             C: Into<Rgb<Real>>,
@@ -431,7 +431,7 @@ pub mod material {
         }
     }
 
-    impl<V: Vertex> Material<V> for PbrMat {
+    impl<V: Vertex> Material<V> for CookTorranceMat {
         fn bsdf<'s>(&'s self, _: &V) -> BsdfRef<'s> {
             BsdfRef::Ref(&self.bsdf)
         }

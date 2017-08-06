@@ -1,33 +1,26 @@
 #![feature(box_syntax)]
 #![feature(type_ascription)]
-#![allow(unused_imports)]
-#![allow(dead_code)]
-#![allow(unused_variables)]
 
 pub mod common;
 use common::*;
-use image::hdr;
-use rtcore::{Image, Mesh, Polygon, PolygonS, RenderSettings, TexView, Texture};
-use rtcore::bsdf::{CookTorrance, Diffuse, Phong};
-use rtcore::color;
-use rtcore::color::{Color, Rgb};
-use rtcore::material::{DiffuseMat, DiffuseTex};
-use rtcore::math;
+use rtcore::{Image, Mesh, Polygon, PolygonS, RenderSettings, TexView};
+// use rtcore::bsdf::{CookTorrance};
+// use rtcore::color;
+use rtcore::color::{Color};
+use rtcore::material::{DiffuseTex};
 use rtcore::math::{Point3f, Real, Vector2, Vector3f};
 use rtcore::renderer::PathTracer;
-use rtcore::scenehandler::{KdTreeS, ShapeList};
-use rtcore::scenehandler::{LinearSampler, ShapeListBuilder, UniformSampler};
+use rtcore::scenehandler::{KdTreeS};
+use rtcore::scenehandler::{LinearSampler};
 use rtcore::scenehandler::kdtree::{KdTreeSetup, Sah};
-use rtcore::sphere::Sphere;
-use rtcore::traits::{BoundedSurface, Surface};
+// use rtcore::sphere::Sphere;
+use rtcore::traits::{BoundedSurface};
 use rtcore::traits::{Renderer, SceneHandler};
 use rtcore::vertex::{TbnVertex, TexturedVertex};
 use scenes::{Cube, CubeSide, Quad};
 
-use scenes::spheres;
 use std::collections::BTreeMap;
 use std::io::Write;
-use std::iter::once;
 use std::sync::Arc;
 
 pub fn lifetime_hack<'a, 'b, T>(t: &'a T) -> &'b T {
@@ -35,19 +28,16 @@ pub fn lifetime_hack<'a, 'b, T>(t: &'a T) -> &'b T {
 }
 
 pub struct Envmap {
-    // hdr_img: Box<Image>,
-    // black_tex: Box<Image>,
-    //envbox: Cube<'static, TexturedVertex>,
     envbox_mesh: Box<Mesh<'static, TexturedVertex>>,
     envbox_polygons: Vec<Polygon<'static, TexturedVertex>>,
     model_polygons: Vec<PolygonS<'static, TbnVertex>>,
-    sphere: Sphere,
+    // sphere: Sphere,
 }
 
 impl Envmap {
     fn new() -> Self {
-        // let hdr_img_path = "data/hdr/grace_cross.hdr".to_string();
-        let hdr_img_path = "data/hdr/rnl_cross.hdr".to_string();
+        let hdr_img_path = "data/hdr/grace_cross.hdr".to_string();
+        // let hdr_img_path = "data/hdr/rnl_cross.hdr".to_string();
         // let hdr_img_path = "data/hdr/campus_cross.hdr".to_string();
         let hdr_img: Arc<TexView<Color>> = Arc::new(load_hdr(hdr_img_path));
         let black_tex: Arc<TexView<Color>> = Arc::new(Image::new(1, 1));
@@ -104,62 +94,45 @@ impl Envmap {
         let envbox_polygons = unsafe { ::std::mem::transmute(envbox_mesh.to_polygons()) };
         println!("done!");
 
-        // let model_mat = load_pbr::<Real>("data/rusted_iron2/".to_string(), false);
-        // //let model_mat = load_pbr("data/rusted_iron/".to_string());
-        // //let model_mat = Arc::new(DiffuseMat::new(color::WHITE, None));
-        // let teapot_scale = 0.4;
-        // //let scale = Vector3f::new(15.0, 15.0, 15.0);
-        // let teapot_dpos = Vector3f::new(0.0, -20.0, 0.0);
-        // let model_mesh = load_obj_pbr(
-        //     "data/teapot.obj".to_string(),
-        //     //"data/artorias/artorias.obj".to_string(),
-        //     |_| model_mat.clone(),
-        //     |pos| pos * teapot_scale + teapot_dpos,
-        // ).into_iter()
-        //     .fold(Mesh::new(), |mut base, mut mesh| {
-        //         base.merge(&mut mesh);
-        //         base
-        //     });
-
-        let scale = 0.03;
-        // let scale = 5.0;
-        let dpos = Vector3f::new(0.0, -50.0, 0.0);
+        let model_mat = load_pbr::<Real>("data/rusted_iron2/".to_string(), false);
+        let teapot_scale = 0.4;
+        let teapot_dpos = Vector3f::new(0.0, -20.0, 0.0);
         let model_mesh = load_obj_pbr(
-            "data/artorias/artorias_knight.obj".to_string(),
-            // "data/artorias/artorias.obj".to_string(),
-            |name| load_pbr::<u8>("data/artorias/low/".to_string() + &name + "/", true),
-            |pos| pos * scale + dpos,
+            "data/teapot.obj".to_string(),
+            |_| model_mat.clone(),
+            |pos| pos * teapot_scale + teapot_dpos,
         ).into_iter()
             .fold(Mesh::new(), |mut base, mut mesh| {
                 base.merge(&mut mesh);
                 base
             });
 
-
-
+        // let scale = 0.03;
+        // let dpos = Vector3f::new(0.0, -50.0, 0.0);
+        // let model_mesh = load_obj_pbr(
+        //     "data/artorias/artorias_knight.obj".to_string(),
+        //     |name| load_pbr::<u8>("data/artorias/".to_string() + &name + "/", true),
+        //     |pos| pos * scale + dpos,
+        // ).into_iter()
+        //     .fold(Mesh::new(), |mut base, mut mesh| {
+        //         base.merge(&mut mesh);
+        //         base
+        //     });
 
         let model_polygons = model_mesh.into_polygons();
 
 
         Self {
-            // hdr_img,
-            // black_tex,
             envbox_mesh,
             envbox_polygons,
-            sphere: Sphere::new(
-                Point3f::new(0.0, 0.0, 0.0),
-                15.0,
-                //Arc::new(Diffuse::new(color::WHITE, None)),
-                //Arc::new(Phong::new(color::WHITE, 0.0, 1.0, 10000.0)),
-                Arc::new(CookTorrance::new(color::WHITE, color::BLACK, 0.0)),
-            ),
+            // sphere: Sphere::new(
+            //     Point3f::new(0.0, 0.0, 0.0),
+            //     15.0,
+            //     Arc::new(CookTorrance::new(color::WHITE, color::BLACK, 0.0))),
             model_polygons,
         }
     }
 
-    fn init(&mut self) {
-        //self.envbox_polygons = self.envbox_mesh.polygons();
-    }
 }
 
 impl AppState for Envmap {
@@ -168,27 +141,18 @@ impl AppState for Envmap {
     }
 
     fn init(&mut self) -> ExampleAppBuilder {
-        self.init();
-        ExampleAppBuilder::new().size(200, 300)
+        ExampleAppBuilder::new().size(512, 512)
     }
 
     fn init_camera(&self, ctrl: &mut FPSCameraController) {
-        ctrl.camera_mut().set_pos(&Point3f::new(0.0, -10.0, 100.0));
-        //ctrl.camera_mut().yaw_add((-30.0 as Real).to_radians());
+        ctrl.camera_mut().set_pos(&Point3f::new(0.0, 15.0, 80.0));
+        ctrl.camera_mut().pitch_add(-15.0f64.to_radians());
         ctrl.set_move_speed(15.0);
         ctrl.set_mouse_sensitivity(0.20);
     }
 
     fn create_scene<'s>(&'s self) -> Box<SceneHandler + 's> {
-        // let mut scene = ShapeListBuilder::<&Surface, UniformSampler>::new();
-        // for p in self.envbox_polygons.iter() {
-        //     scene.add_shape(p.as_ref());
-        // }
-        // scene.add_shape(&self.sphere);
-        // box scene.into_shape_list()
-
         let pol_iter = self.envbox_polygons.iter().map(|r| r as &BoundedSurface);
-        //let it = pol_iter.chain(once(&self.sphere as &BoundedSurface));
         let model_iter = self.model_polygons.iter().map(|r| r as &BoundedSurface);
         let it = pol_iter.chain(model_iter);
         let kdtree_setup = KdTreeSetup::new(32, 16, Sah::new(1.0, 1.0));
@@ -201,14 +165,14 @@ impl AppState for Envmap {
     }
 
     fn post_process(&self, img: &mut Image) {
-        let t = 0.75;
-        // tone_mapping_exp(img, t);
+        let t = 1.1;
+        tone_mapping_exp(img, t);
         // tone_mapping_simple(img);
         gamma_encoding(img);
     }
 
     fn create_renderer<'s>(&'s self) -> (Box<Renderer<SceneHandler + 's> + 's>, RenderSettings) {
-        let pt_render_chunk = (50, 60);
+        let pt_render_chunk = (64, 64);
         let rdr_setup = RenderSettings::new(128, 2).with_threads(4, pt_render_chunk);
         let rdr = box PathTracer::new(&rdr_setup).with_direct_illumination(0.5, 0.5);
         (rdr, rdr_setup)

@@ -20,10 +20,10 @@ use raytron::rtcore::{Image, Mesh, RenderSettings, TexView, Texture};
 use raytron::rtcore::color::{self, ChannelCast, Color, ColorChannel, Luma, Rgb};
 use raytron::rtcore::material::PbrTex;
 use raytron::rtcore::math;
-use raytron::rtcore::math::{Cross, Dot, Norm, Point3f, Real, Vector2, Vector3f};
+use raytron::rtcore::math::{Norm, Point3f, Real, Vector2};
 use raytron::rtcore::renderer::{DbgRayCaster, PathTracer};
 use raytron::rtcore::traits::{Material, Renderer, SceneHandler, Vertex};
-use raytron::rtcore::utils::consts;
+use raytron::rtcore::utils;
 use raytron::rtcore::vertex::TbnVertex;
 
 use std;
@@ -381,6 +381,16 @@ pub trait AppState {
 }
 
 pub fn tone_mapping_exp<T: TexView<Color>>(img: &mut T, t: f32) {
+    // let mut avg = color::BLACK;
+    // for j in 0..img.height() {
+    //     for i in 0..img.width() {
+    //         let p = img.pixel(i, j);
+    //         avg += p;
+    //     }
+    // }
+    // avg /= (img.width() * img.height()) as f32;
+    // let t = (0.299 * avg.r.powi(2) + 0.587 * avg.g.powi(2) + 0.114 * avg.b.powi(2)).sqrt();
+    // println!(" -- t: {}", t);
     for j in 0..img.height() {
         for i in 0..img.width() {
             let c = img.pixel(i, j);
@@ -440,7 +450,6 @@ macro_rules! mono_texture {
 }
 
 pub fn load_hdr(path: String) -> Texture<Rgb> {
-    use std::path::Path;
     use std::fs::File;
     use std::io::BufReader;
 
@@ -539,7 +548,6 @@ where
     let metal_tex = load_texture_luma(path.clone() + "metallic.png", false);
     // let roughness_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(0.0));
     // let metal_tex: Texture<Luma<f64>> = mono_texture!(Luma::from(1.0));
-    use rtcore::color::ChannelBounds;
     let spec_tex = mono_texture!(Luma::new(C::MAX_CHVAL));
 
     let normal_tex = {
@@ -550,7 +558,7 @@ where
                 let dx_n: Rgb<Real> =
                     Rgb::new(n[0].cast_into(), n[1].cast_into(), n[2].cast_into());
                 // let dx_n: Rgb<Real> = Rgb::<C>::from(*n);
-                let gl_n = ::utils::normal_dx_to_ogl(&dx_n);
+                let gl_n = utils::normal_dx_to_ogl(&dx_n);
                 *n = [
                     C::cast_from(gl_n.r),
                     C::cast_from(gl_n.g),
