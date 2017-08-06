@@ -1,0 +1,35 @@
+environment:
+  global:
+    PROJECT_NAME: raytron
+  matrix:
+    - TARGET: x86_64-pc-windows-msvc
+      CHANNEL: nightly
+      BITS: 64
+    - TARGET: x86_64-pc-windows-gnu
+      CHANNEL: nightly
+      BITS: 64
+
+install:
+  - set PATH=C:\msys64\mingw%BITS%\bin;C:\msys64\usr\bin;%PATH%
+  - curl -sSf -o rustup-init.exe https://win.rustup.rs
+  # Install rust
+  - rustup-init.exe -y --default-host %TARGET% --default-toolchain %CHANNEL%-%TARGET%
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  # Print version info
+  - rustc -Vv
+  - cargo -V
+
+
+build: false
+
+build_script:
+  # Build both build/test configurations to make sure both compile
+  - cargo build --release --verbose
+
+test_script:
+  # Test compilation reuses built dependencies during `cargo build --release`
+  - cargo test --release --verbose
+
+cache:
+  - target
+  - C:\Users\appveyor\.cargo\registry
