@@ -212,6 +212,7 @@ impl ExampleApp {
 
     fn print_controls() {
         println!("Controls:");
+        println!(" - Right click(hold) - camera rotation");
         println!(" - WASD  - move forward/left/backward/right");
         println!(" - SPACE - move up");
         println!(" - SHIFT - move down");
